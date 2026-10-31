@@ -41,8 +41,8 @@ def nova_hold_save(c,p,uid):
         raise ValueError('اختر أصناف الفاتورة قبل تعليقها')
     checked=[]
     for x in items:
-        pk=one(c,'''SELECT pk.id,pr.active FROM packages pk
-              JOIN products pr ON pr.id=pk.product_id WHERE pk.id=?''',
+        pk=one(c,"""SELECT pk.id,pr.active FROM packages pk
+              JOIN products pr ON pr.id=pk.product_id WHERE pk.id=?""",
               (posint(x.get('package_id'),'العبوة'),))
         if not pk or not pk['active']:raise ValueError('صنف غير متاح')
         checked.append({'package_id':pk['id'],'qty':posint(x.get('qty'),'الكمية')})
@@ -97,11 +97,11 @@ def nova_pharmacy_tasks(c,uid):
     limit_date=(date.today()+timedelta(days=90)).isoformat()
     held=one(c,'SELECT COUNT(*) n FROM nova_pos_held WHERE owner_id=?',(uid,))['n']
     outstanding=one(c,'SELECT COUNT(*) n FROM purchase_lines WHERE qty>received')['n']
-    short=one(c,'''SELECT COUNT(*) n FROM products p WHERE p.active=1 AND p.reorder_point>0
+    short=one(c,"""SELECT COUNT(*) n FROM products p WHERE p.active=1 AND p.reorder_point>0
           AND COALESCE((SELECT SUM(qty_base) FROM lots l WHERE l.product_id=p.id
-                 AND l.status='sellable' AND (l.expiry='' OR l.expiry>=?)),0)<p.reorder_point''',(today(),))['n']
-    expiry=one(c,'''SELECT COUNT(*) n FROM lots WHERE status='sellable' AND qty_base>0
-          AND expiry!='' AND expiry>=? AND expiry<=?''',(today(),limit_date))['n']
+                 AND l.status='sellable' AND (l.expiry='' OR l.expiry>=?)),0)<p.reorder_point""",(today(),))['n']
+    expiry=one(c,"""SELECT COUNT(*) n FROM lots WHERE status='sellable' AND qty_base>0
+          AND expiry!='' AND expiry>=? AND expiry<=?""",(today(),limit_date))['n']
     unpriced=one(c,'SELECT COUNT(*) n FROM packages pk JOIN products p ON p.id=pk.product_id WHERE p.active=1 AND pk.sale_price=0')['n']
     return {'held_carts':held,'receipts_outstanding':outstanding,'reorder_items':short,
             'expiry_90_days':expiry,'unpriced_packages':unpriced,
