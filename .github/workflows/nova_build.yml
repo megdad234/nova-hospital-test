@@ -1,0 +1,52 @@
+name: NOVA Hospital - Build and Test Windows Setup
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'NOVA_Hospital_GitHub_Ready_Source.zip'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nova-windows-build
+  cancel-in-progress: true
+jobs:
+  build-install-and-test:
+    runs-on: windows-2025
+    timeout-minutes: 85
+    steps:
+      - name: Check out NOVA testing repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Extract complete NOVA source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $zip=Join-Path $env:GITHUB_WORKSPACE 'NOVA_Hospital_GitHub_Ready_Source.zip'
+          if(!(Test-Path -LiteralPath $zip)){throw 'NOVA source ZIP not uploaded to repository root'}
+          Expand-Archive -LiteralPath $zip -DestinationPath $env:GITHUB_WORKSPACE -Force
+          if(!(Test-Path 'windows/build-windows.ps1')){throw 'Windows build script missing'}
+          if(!(Test-Path 'windows/ci-acceptance.ps1')){throw 'Windows acceptance script missing'}
+          Write-Host 'NOVA_SOURCE_EXTRACTED'
+      - name: Set up Python on temporary Windows build runner only
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Inno Setup on temporary Windows build runner only
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+      - name: Run source tests and build Windows installer
+        shell: pwsh
+        run: ./windows/build-windows.ps1
+      - name: Install, upgrade, and test rollback on synthetic records
+        shell: pwsh
+        run: ./windows/ci-acceptance.ps1
+      - name: Publish development installer artifact only after acceptance
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-Hospital-Windows-Setup-DEV-UNAPPROVED
+          path: windows/output/NOVA-Hospital-Setup-DEV.exe
+          retention-days: 7
+          if-no-files-found: error
