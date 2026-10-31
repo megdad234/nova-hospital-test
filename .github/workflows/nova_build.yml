@@ -51,12 +51,40 @@ jobs:
         run: |
           python .github/ci/windows_sqlite_test_cleanup.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows test fixture lifecycle fix failed' }
+      - name: Restore previously verified development Windows build
+        id: setup_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: windows/output/NOVA-Hospital-Setup-DEV.exe
+          key: nova-windows-setup-dev-v1-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip') }}
       - name: Run source tests and build Windows installer
+        if: steps.setup_cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: ./windows/build-windows.ps1
+      - name: Cache built installer to avoid repeating unchanged-source rebuilds
+        if: steps.setup_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: windows/output/NOVA-Hospital-Setup-DEV.exe
+          key: nova-windows-setup-dev-v1-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip') }}
+      - name: Verify installer exists before acceptance
+        shell: pwsh
+        run: |
+          if (!(Test-Path -LiteralPath windows/output/NOVA-Hospital-Setup-DEV.exe -PathType Leaf)) { throw 'No Windows installer for acceptance' }
       - name: Install, upgrade, and test rollback on synthetic records
         shell: pwsh
         run: ./windows/ci-acceptance.ps1
+      - name: Print synthetic Windows installer diagnostics on failure
+        if: failure()
+        shell: pwsh
+        run: |
+          $root=Join-Path $env:ProgramData 'NOVA_Hospital'
+          foreach ($name in @('update-preflight.log','update-rollback.log','stdout.log','stderr.log')) {
+            $path=Join-Path $root ('logs\\'+$name)
+            Write-Host ('---- '+$path+' ----')
+            if (Test-Path -LiteralPath $path) { Get-Content -LiteralPath $path -Tail 80 } else { Write-Host 'NOT_FOUND' }
+          }
+          Get-Service -Name NOVA_Hospital_Server -ErrorAction SilentlyContinue | Format-List Status,Name,DisplayName
       - name: Publish development installer artifact only after acceptance
         if: success()
         uses: actions/upload-artifact@v4
