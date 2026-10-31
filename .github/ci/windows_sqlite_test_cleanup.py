@@ -51,8 +51,8 @@ probe_expected = "with app.db_connect() as c:"
 if probe_source.count(probe_expected) != 2:
     raise SystemExit("Unexpected synthetic concurrency DB context count")
 probe_fixed = probe_source.replace(
-    "from pathlib import Path\\n",
-    "from pathlib import Path\\nfrom contextlib import closing\\n", 1,
+    "from pathlib import Path\n",
+    "from pathlib import Path\nfrom contextlib import closing\n", 1,
 ).replace(probe_expected, "with closing(app.db_connect()) as c, c:")
 if "from contextlib import closing" not in probe_fixed:
     raise SystemExit("Concurrency probe import patch failed")
