@@ -104,32 +104,32 @@ def create_patient(c, actor, data):""")
 patch("hospital/gateway.py",
  "core.require_role(role,'admin','lab');return self.reply(lab.update_test(c,user,data))",
  """core.require_role(role,'admin','lab')
-                         if role=='lab' and not core.lab_pricing_allowed(c,user['id'],role) and data.get('price') is not None:
-                             previous=pharmacy.one(c,'SELECT price FROM hospital_lab_tests WHERE id=?',(data.get('test_id'),))
-                             if not previous or int(data['price'])!=previous['price']:raise PermissionError('لا تملك صلاحية تعديل أسعار المعمل')
-                         return self.reply(lab.update_test(c,user,data))""")
+                       if role=='lab' and not core.lab_pricing_allowed(c,user['id'],role) and data.get('price') is not None:
+                          previous=pharmacy.one(c,'SELECT price FROM hospital_lab_tests WHERE id=?',(data.get('test_id'),))
+                          if not previous or int(data['price'])!=previous['price']:raise PermissionError('لا تملك صلاحية تعديل أسعار المعمل')
+                       return self.reply(lab.update_test(c,user,data))""")
 patch("hospital/gateway.py",
  "core.require_role(role,'admin','lab');return self.reply(core.create_test(c,user,data),201)",
  """core.require_role(role,'admin','lab')
-                         if role=='lab' and not core.lab_pricing_allowed(c,user['id'],role) and int(data.get('price') or 0)!=0:
-                             raise PermissionError('لا تملك صلاحية تسعير الفحص الجديد')
-                         return self.reply(core.create_test(c,user,data),201)""")
+                       if role=='lab' and not core.lab_pricing_allowed(c,user['id'],role) and int(data.get('price') or 0)!=0:
+                          raise PermissionError('لا تملك صلاحية تسعير الفحص الجديد')
+                       return self.reply(core.create_test(c,user,data),201)""")
 patch("hospital/gateway.py",
  "core.require_role(role,'admin');return self.reply(core.staff_list(c))",
  """core.require_role(role,'admin')
-                         members=core.staff_list(c)
-                         for member in members:member['lab_pricing']=core.lab_pricing_allowed(c,member['id'],member['role'])
-                         return self.reply(members)""")
+                       members=core.staff_list(c)
+                       for member in members:member['lab_pricing']=core.lab_pricing_allowed(c,member['id'],member['role'])
+                       return self.reply(members)""")
 patch("hospital/gateway.py",
  "if path=='/api/hospital/staff-role':",
  """if path=='/api/hospital/staff-lab-pricing':
-                         core.require_role(role,'admin');return self.reply(core.set_lab_pricing(c,user,data))
-                     if path=='/api/hospital/staff-role':""")
+                       core.require_role(role,'admin');return self.reply(core.set_lab_pricing(c,user,data))
+                    if path=='/api/hospital/staff-role':""")
 patch("hospital/gateway.py",
  "if path=='/api/hospital/lab/stats':",
  """if path=='/api/hospital/lab/pricing-permission':
-                         return self.reply({'allowed':core.lab_pricing_allowed(c,user['id'],role)})
-                     if path=='/api/hospital/lab/stats':""")
+                       return self.reply({'allowed':core.lab_pricing_allowed(c,user['id'],role)})
+                    if path=='/api/hospital/lab/stats':""")
 patch("hospital/static/app.js",
  "['services-admin','الخدمات والأسعار'],['brand','هوية المستشفى']",
  "['services-admin','الخدمات والأسعار'],['catalog','أسعار وفحوصات المعمل'],['brand','هوية المستشفى']")
