@@ -133,13 +133,9 @@ replace('hospital/static/finance-ui.js',
  const brand=state.brand||{},area=$('print-area');""")
 replace('hospital/static/finance-ui.js',
 "المتبقي: '+money(inv.remaining)",
-"'المتبقي بعد هذه الدفعة: '+money(remainAtReceipt)")
+"المتبقي بعد هذه الدفعة: '+money(remainAtReceipt)")
 replace('hospital/finance.py',
 "SELECT payment_no,cash_amount,bank_amount,bank_name,bank_reference,created_at",
 """SELECT payment_no,cash_amount,bank_amount,bank_name,bank_reference,created_at,
                   COALESCE((SELECT full_name FROM users WHERE users.id=nova_payments.created_by),'') cashier_name""")
-replace('hospital/static/finance-ui.js',
-"'<p>التاريخ: '+esc(p.created_at)+'</p><hr>'+",
-"'<p>التاريخ: '+esc(p.created_at)+'</p><p>الكاشير: '+esc(p.cashier_name||'')+'</p><hr>'+")
-
 print('NOVA_BATCH05_PRICING_POLICY_READY')
