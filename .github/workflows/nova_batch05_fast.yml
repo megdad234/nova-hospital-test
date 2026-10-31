@@ -1,0 +1,43 @@
+name: NOVA Batch 05 - Fast Source Validation
+on:
+  push:
+    paths:
+      - '.github/workflows/nova_batch05_fast.yml'
+      - '.github/ci/nova_batch05_cashier_pharmacy.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: unzip -q NOVA_Hospital_GitHub_Ready_Source.zip -d .
+      - name: Apply NOVA patches
+        run: |
+          python .github/ci/nova_batch01_patch.py
+          python .github/ci/nova_batch02_patch.py
+          python .github/ci/nova_batch03_patch.py
+          python .github/ci/nova_batch04_lab_reception.py
+          python .github/ci/nova_batch05_cashier_pharmacy.py
+          python -m compileall -q pharmacy hospital
+      - name: Show UI anchors and cashier schema for independent review
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for path in ('pharmacy/static/app.js','pharmacy/static/ux_v14.js','hospital/static/finance-ui.js','hospital/finance.py'):
+              lines=Path(path).read_text(encoding='utf-8').splitlines()
+              print('===',path,len(lines))
+              if path=='pharmacy/static/app.js':
+                  matches=['function nav','function redraw','function pos','function render','function dashboard','function draw','function sale','const pages','const state','function load']
+              elif path=='pharmacy/static/ux_v14.js':
+                  matches=['function nav','function redraw','function pos','function render','function dashboard','const old','const']
+              elif path=='hospital/static/finance-ui.js':
+                  matches=['function financeCashierView','function financeOpenInvoice','function financeInvoiceForm','function wireFinanceCashier','function financePrintInvoice']
+              else:matches=['def upsert_service','def init(','def cashier_queue','def create_invoice','def quote']
+              for i,line in enumerate(lines,1):
+                  if any(x in line for x in matches):
+                      print(str(i)+':',line[:800])
+          PY
