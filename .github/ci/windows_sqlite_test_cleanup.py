@@ -60,3 +60,20 @@ compile(probe_fixed, str(probe), "exec")
 probe.write_text(probe_fixed, encoding="utf-8")
 print("WIN_CONCURRENCY_SQLITE_CONNECTIONS_CLOSED: 2 scopes")
 
+
+# PyInstaller resolves --add-data paths relative to the SPEC directory.
+# The original script put its spec in windows/, but passed source paths
+# relative to the repository root. Keep the spec at root on the CI runner.
+# This changes only the disposable Windows build script, not application code.
+build = ROOT / "windows" / "build-windows.ps1"
+source = build.read_text(encoding="utf-8")
+old = "--specpath windows"
+if source.count(old) != 1:
+    raise SystemExit("Unexpected PyInstaller spec directory in build script")
+fixed = source.replace(old, "--specpath .")
+if not (ROOT / "pharmacy" / "static").is_dir():
+    raise SystemExit("Pharmacy asset source directory missing")
+if not (ROOT / "hospital" / "static").is_dir():
+    raise SystemExit("Hospital asset source directory missing")
+build.write_text(fixed, encoding="utf-8")
+print("WIN_PYINSTALLER_ASSET_ROOT_CORRECTED")
