@@ -255,8 +255,8 @@ sub("hospital/static/finance-ui.js",
  """<small dir="ltr">@{esc(p.patient_no)}</small>""",
  """<small dir="ltr">@{esc(p.patient_no)}</small><small>@{esc(p.phone||'بدون هاتف')} @{p.age_years!==null&&p.age_years!==undefined?' · '+esc(p.age_years)+' سنة':''}</small>""")
 sub("hospital/static/finance-ui.js",
- "patientOptions();financeQuote()});",
- "patientOptions();financeQuote();novaReceptionPatientCard(p)});")
+ "$('finance-insurer').value=financeState.insuranceId;patientOptions();financeQuote()});",
+ "$('finance-insurer').value=financeState.insuranceId;patientOptions();financeQuote();novaReceptionPatientCard(p)});")
 sub("hospital/static/finance-ui.js",
  "notice('تم تسجيل المريض');patientOptions();financeQuote()",
  "notice('تم تسجيل المريض');patientOptions();financeQuote();novaReceptionPatientCard(p)")
