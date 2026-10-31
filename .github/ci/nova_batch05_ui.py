@@ -102,6 +102,8 @@ def cashier(s):
     s,n=re.subn(r"function financeCashierView\(\)\{.*?(?=function financeInvoiceForm\()",lambda m:view,s,count=1,flags=re.S)
     if n!=1:raise RuntimeError('NOVA05_CASHIER_VIEW_ANCHOR')
     s=one(s,"function wireFinanceCashier(){","function wireFinanceCashier(){novaWireQueue();wireFinanceReception();")
+    s=one(s,"state.role==='frontdesk'||state.role==='admin'?'cashier':'reception'",
+        "['frontdesk','admin','cashier'].includes(state.role)?'cashier':'reception'")
     s=one(s,'<button type="button" class="outline" id="print-invoice">طباعة الفاتورة / الإيصال</button>',
         '<button type="button" class="outline" id="print-invoice">طباعة الفاتورة</button><button type="button" class="outline" id="nova-print-receipt">إيصال آخر دفعة 80mm</button>')
     s=one(s,"$('print-invoice')?.addEventListener('click',()=>financePrintInvoice(financeState.invoice));",
