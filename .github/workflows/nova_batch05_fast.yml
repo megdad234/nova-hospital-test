@@ -95,6 +95,27 @@ jobs:
           PY
       - name: Finance regressions
         run: PYTHONPATH=pharmacy:. python -m unittest -q tests.test_finance_workflow tests.test_finance_refunds
+      - name: Test direct cashier quote and combined work queue over HTTP
+        run: |
+          PYTHONPATH=pharmacy:. python - <<'PY'
+          import unittest
+          from tests.test_hospital_gateway import HospitalServerFixture
+          class CashierAcceptance(HospitalServerFixture, unittest.TestCase):
+              def test_direct_cashier_patient_quote_invoice_and_search(self):
+                  cashier=self.make_user('cashier','batch05Cashier')
+                  patient=cashier.post('/api/hospital/patients',{'full_name':'Synthetic Batch Five Cashier'})
+                  svc=next(x for x in self.admin.get('/api/hospital/services') if x['code']=='CONS-GP')
+                  self.admin.post('/api/hospital/service',{'id':svc['id'],'code':svc['code'],
+                      'category_code':svc['category_code'],'name':svc['name'],'price':9000})
+                  q=cashier.post('/api/hospital/invoice-quote',{'patient_id':patient['id'],'services':[svc['key']]})
+                  self.assertEqual(q['patient_due'],9000)
+                  inv=cashier.post('/api/hospital/nova-cashier-quick-invoice',{'patient_id':patient['id'],'services':[svc['key']]})
+                  rows=cashier.get('/api/hospital/cashier-queue?status=pending&q=Batch%20Five')
+                  self.assertTrue(any(x['number']==inv['invoice_no'] for x in rows['rows']))
+                  self.assertEqual(rows['total'],1)
+          result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(CashierAcceptance))
+          if not result.wasSuccessful():raise SystemExit(1)
+          PY
       - name: Inspect direct cashier authorization
         run: |
           grep -n -A 3 -B 2 "invoice-quote\|/api/hospital/patients\|nova-cashier-quick-invoice" hospital/gateway.py || true
