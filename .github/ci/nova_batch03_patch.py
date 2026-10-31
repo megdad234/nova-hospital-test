@@ -12,6 +12,7 @@ def replace(file,old,new):
 page=ROOT/"pharmacy/static/index.html"
 html=page.read_text(encoding="utf-8")
 html=html.replace("مدار","NOVA").replace("MADAR","NOVA")
+html=html.replace("<title>NOVA — صيدلية المستشفى</title>","<title>NOVA Hospital — صيدلية المستشفى</title>")
 page.write_text(html,encoding="utf-8");files.append("pharmacy/static/index.html")
 
 # Existing pharmacy logo asset may be from upstream; use hospital logo after authenticated brand read.
@@ -124,6 +125,6 @@ files.append("tests/test_nova_batch03.py")
 legacy=ROOT/"pharmacy/tests/test_hospital_brand.py"
 source=legacy.read_text(encoding="utf-8")
 if "مدار | MADAR" not in source:raise RuntimeError("Expected obsolete upstream brand assertion missing")
-legacy.write_text(source.replace("مدار | MADAR","NOVA — صيدلية المستشفى"),encoding="utf-8")
+legacy.write_text(source.replace("مدار | MADAR","NOVA Hospital — صيدلية المستشفى"),encoding="utf-8")
 files.append("pharmacy/tests/test_hospital_brand.py")
 print("NOVA_BATCH03_PATCH_APPLIED",files)
