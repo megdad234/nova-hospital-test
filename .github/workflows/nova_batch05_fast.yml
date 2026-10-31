@@ -26,6 +26,10 @@ jobs:
           python -m compileall -q pharmacy hospital
       - name: Display laboratory printer context
         run: sed -n '82,98p' hospital/static/app.js
+      - name: Inspect zero-price and cashier shift hooks
+        run: |
+          sed -n '220,390p' hospital/finance.py
+          sed -n '190,245p' hospital/static/finance-ui.js
       - name: JavaScript grammar checks on all changed screens
         run: |
           node --check pharmacy/static/app.js
