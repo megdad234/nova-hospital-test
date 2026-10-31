@@ -95,6 +95,9 @@ jobs:
           PY
       - name: Finance regressions
         run: PYTHONPATH=pharmacy:. python -m unittest -q tests.test_finance_workflow tests.test_finance_refunds
+      - name: Inspect direct cashier authorization
+        run: |
+          grep -n -A 3 -B 2 "invoice-quote\|/api/hospital/patients\|nova-cashier-quick-invoice" hospital/gateway.py || true
       - name: Show UI anchors and cashier schema for independent review
         if: always()
         run: |
