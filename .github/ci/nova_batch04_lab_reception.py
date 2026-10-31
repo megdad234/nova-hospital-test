@@ -52,6 +52,17 @@ sub("hospital/lab.py",
                   WHERE p.id=hospital_lab_lines.parameter_id),'')
         WHERE section_name='' AND parameter_id IS NOT NULL''')
     cols={row['name'] for row in c.execute('PRAGMA table_info(hospital_lab_tests)')}""")
+
+sub("hospital/lab.py",
+ "        for key,val in DEFAULT_BRAND.items():",
+ """        # Apply section names to new seed rows in the same first installation.
+        for test_code,groups in lab_catalog.PARAMETER_SECTIONS.items():
+            for section,codes in groups.items():
+                for code in codes:
+                    c.execute('''UPDATE hospital_lab_parameters SET section_name=?
+                        WHERE section_name='' AND test_id=(SELECT id FROM hospital_lab_tests WHERE code=?)
+                        AND code=?''',(section,test_code,code))
+        for key,val in DEFAULT_BRAND.items():""")
 sub("hospital/lab.py",
  """(item_id,parameter_id,code,name,unit,reference_range) VALUES(?,?,?,?,?,?)''',
            (item_id,p['id'],p['code'],p['name'],p['unit'],select_range(pat,p)))""",
@@ -113,7 +124,7 @@ def patient_activity(c,pid):
     for row in pharmacy.query(c,'''SELECT id,order_no,status,created_at FROM hospital_orders
                                 WHERE patient_id=? ORDER BY id DESC LIMIT 30''',(pid,)):
         # Lab requests that belong to a unified invoice are not presented twice.
-        if pharmacy.one(c,'SELECT 1 AS n FROM nova_invoices WHERE lab_order_id=? LIMIT 1',(row['id'],)):
+        if 'lab_order_id' in {v['name'] for v in c.execute('PRAGMA table_info(nova_invoices)')} and pharmacy.one(c,'SELECT 1 AS n FROM nova_invoices WHERE lab_order_id=? LIMIT 1',(row['id'],)):
             continue
         names=pharmacy.query(c,'SELECT test_name FROM hospital_order_items WHERE order_id=?',(row['id'],))
         result.append({'kind':'laboratory','no':row['order_no'],'status':row['status'],
@@ -242,7 +253,7 @@ sub("hospital/static/finance-ui.js",
  """</div><div id="nova-patient-activity" class="nova-patient-activity"></div>~)}@{panel('تسجيل مريض جديد""")
 sub("hospital/static/finance-ui.js",
  """@{panel('آخر الطلبات',invoiceTable(financeState.invoices.filter(x=>x.status==='pending').slice(0,25)))}""",
- """@{panel('طلبات اليوم وحالتها',invoiceTable(financeState.invoices.filter(x=>String(x.created_at||'').slice(0,10)===new Date().toISOString().slice(0,10)).slice(0,30)))}""")
+ """@{panel('طلبات اليوم وحالتها',invoiceTable(financeState.invoices.filter(x=>String(x.created_at||'').slice(0,10)===new Date().toLocaleDateString('sv-SE')).slice(0,30)))}""")
 sub("hospital/static/finance-ui.js",
  """<small dir="ltr">@{esc(p.patient_no)}</small>""",
  """<small dir="ltr">@{esc(p.patient_no)}</small><small>@{esc(p.phone||'بدون هاتف')} @{p.age_years!==null&&p.age_years!==undefined?' · '+esc(p.age_years)+' سنة':''}</small>""")
