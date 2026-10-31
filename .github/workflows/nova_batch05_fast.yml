@@ -58,6 +58,23 @@ jobs:
                   assert app.nova_pharmacy_tasks(c,uid)['held_carts']==1
                   app.nova_hold_delete(c,{'held_id':save['held_id']},uid)
                   assert app.nova_pharmacy_tasks(c,uid)['held_carts']==0
+                  from datetime import date,timedelta
+                  insurance=app.create_party(c,{'name':'Synthetic Insurer'},'authority',uid)['id']
+                  supplier=app.create_party(c,{'name':'Synthetic Supplier'},'supplier',uid)['id']
+                  exp=(date.today()+timedelta(days=180)).isoformat()
+                  app.purchase(c,{'supplier_id':supplier,'invoice_ref':'SYN-ROUND',
+                     'items':[{'package_id':pack,'qty':2,'unit_cost':1,'expiry':exp}]},uid)
+                  sale=app.sell(c,{'idempotency':uuid.uuid4().hex,'authority_id':insurance,
+                     'coverage':50,'items':[{'package_id':pack,'qty':2}],
+                     'payments':[{'method':'cash','amount':1}]},uid)
+                  line=app.one(c,'SELECT id FROM sale_lines WHERE sale_id=?',(sale['id'],))['id']
+                  for _ in (1,2):
+                      app.sale_return(c,{'sale_id':sale['id'],
+                         'items':[{'sale_line_id':line,'qty':1}],
+                         'reason':'Synthetic refund','refund_method':'cash'},uid)
+                  ret=app.one(c,'SELECT SUM(covered) n FROM sale_returns WHERE sale_id=?',(sale['id'],))['n']
+                  assert ret==sale['covered'],(ret,sale['covered'])
+                  print('NOVA05_SYNTHETIC_INSURANCE_REFUND_ROUNDING_PASS')
                   c.close()
                   print('NOVA05_SYNTHETIC_PHARMACY_HOLD_TASKS_PASS')
               finally:app.DB,app.DATA=old_db,old_data
