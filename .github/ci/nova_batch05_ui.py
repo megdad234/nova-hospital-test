@@ -179,6 +179,9 @@ def patients(s):
 change('hospital/static/app.js',patients)
 def routes(s):
     if "if path=='/api/hospital/invoice-payment':" not in s:raise RuntimeError('NOVA05_ADOPT_ANCHOR')
+    # Read-only price quote is required by direct cashier checkout and combined frontdesk.
+    s=one(s,"core.require_role(role,'admin','reception')\n                        return self.reply(finance.quote(c,data))",
+            "core.require_role(role,'admin','reception','cashier','frontdesk')\n                        return self.reply(finance.quote(c,data))")
     s=one(s,"                    if path=='/api/hospital/invoice-payment':",
      """                    if path=='/api/hospital/nova-legacy-adopt':
                          core.require_role(role,'admin','cashier','frontdesk')
