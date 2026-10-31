@@ -191,9 +191,6 @@ function novaLabGroupedRows(lines,editable){
 regex("hospital/static/app.js",
       r"\$\{lines\.map\(x=>~<tr><td><b>\$\{esc\(x\.name\)\}</b>.*?\.join\(''\)\}",
       "@{novaLabGroupedRows(lines,true)}")
-regex("hospital/static/app.js",
-      r"\$\{table\(\['التحليل','النتيجة','الوحدة','الطبيعي'\],lines\.filter\(x=>x\.value\)\.map\(x=>~<tr>.*?\.join\(''\)\)\}",
-      "@{table(['التحليل','النتيجة','الوحدة','الطبيعي'],[~<tr><td colspan=\"4\">@{novaLabGroupedRows(lines.filter(x=>x.value),false)}</td></tr>~])}" )
 # Replace report renderer in one operation because all its HTML is one JS line.
 regex("hospital/static/app.js",r"^async function printReport\(id\)\{.*$",
  """async function printReport(id){
