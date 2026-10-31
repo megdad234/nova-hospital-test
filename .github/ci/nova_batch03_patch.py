@@ -120,4 +120,10 @@ test=ROOT/"tests/test_nova_batch03.py"
 if test.exists():raise RuntimeError("Unexpected existing test")
 test.write_text(hospital_test,encoding="utf-8")
 files.append("tests/test_nova_batch03.py")
+# Update the obsolete upstream-brand check to the newly required hospital identity.
+legacy=ROOT/"pharmacy/tests/test_hospital_brand.py"
+source=legacy.read_text(encoding="utf-8")
+if "مدار | MADAR" not in source:raise RuntimeError("Expected obsolete upstream brand assertion missing")
+legacy.write_text(source.replace("مدار | MADAR","NOVA — صيدلية المستشفى"),encoding="utf-8")
+files.append("pharmacy/tests/test_hospital_brand.py")
 print("NOVA_BATCH03_PATCH_APPLIED",files)
