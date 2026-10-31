@@ -137,11 +137,12 @@ def patients(c, term=''):""")
 # Finance invoice relation may instead be stored under another link: the next step validates schema.
 # Endpoint roles keep receptionist away from payment references and other cashier-only data.
 sub("hospital/gateway.py",
- "                    if path=='/api/hospital/patients':",
+ "                    if path=='/api/hospital/patients':\n                         core.require_role(role,'admin','reception','lab');term=",
  """                    if path.startswith('/api/hospital/patient-activity/'):
                         core.require_role(role,'admin','reception')
                         return self.reply(core.patient_activity(c,core.integer(path.rsplit('/',1)[-1],'المريض',1)))
-                    if path=='/api/hospital/patients':""")
+                    if path=='/api/hospital/patients':
+                         core.require_role(role,'admin','reception','lab');term=""")
 sub("hospital/gateway.py",
  "                    if path=='/api/hospital/patients':\n                         core.require_role(role,'admin','reception','lab');return self.reply(core.create_patient(c,user,data),201)",
  """                    if path=='/api/hospital/patient-edit':
