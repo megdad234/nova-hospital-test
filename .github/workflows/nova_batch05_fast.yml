@@ -79,6 +79,8 @@ jobs:
                   print('NOVA05_SYNTHETIC_PHARMACY_HOLD_TASKS_PASS')
               finally:app.DB,app.DATA=old_db,old_data
           PY
+      - name: Finance regressions
+        run: PYTHONPATH=pharmacy:. python -m unittest -q tests.test_finance_workflow tests.test_finance_refunds
       - name: Show UI anchors and cashier schema for independent review
         if: always()
         run: |
