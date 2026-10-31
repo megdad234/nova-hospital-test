@@ -17,7 +17,13 @@ def inject(file,anchor,addition):
 def append(file,code):
     p=R/file;s=p.read_text(encoding='utf-8')
     if 'NOVA_BATCH05_EXTENSION' in s:raise RuntimeError('batch05 already applied '+file)
-    p.write_text(s+'\n'+code,encoding='utf-8');changes.append(file)
+    if file=='pharmacy/app.py':
+        anchor='class Handler(http.server.BaseHTTPRequestHandler):'
+        if s.count(anchor)!=1:raise RuntimeError('Handler anchor missing')
+        s=s.replace(anchor,code+'\n'+anchor)
+    else:
+        s=s+'\n'+code
+    p.write_text(s,encoding='utf-8');changes.append(file)
 
 # 1) Pharmacist Hold / Resume lives on central SQLite; drafts never affect sale allocations.
 append('pharmacy/app.py', '''
@@ -176,7 +182,7 @@ def cashier_queue(c,params):
 ''')
 # Add new read-only cashier endpoint next to existing invoices endpoint.
 inject('hospital/gateway.py',
-       "                    if path=='/api/hospital/invoices':",
+       "                    if path=='/api/hospital/invoices':\n                        core.require_role(role,'admin','reception','cashier')",
        """                    if path=='/api/hospital/cashier-queue':
                         core.require_role(role,'admin','cashier','frontdesk')
                         params=parse_qs(urlparse(self.path).query)
@@ -184,9 +190,13 @@ inject('hospital/gateway.py',
 """)
 # Same exact path also occurs in POST handler, insert once in GET (first occurrence).
 # Frontdesk is a combined receptionist/cashier identity, not an administrator.
-modify('hospital/gateway.py',
-       "core.require_role(role,'admin','cashier')",
-       "core.require_role(role,'admin','cashier','frontdesk')",
-       count=13)
+# Expand existing cashier functions to the explicitly combined frontdesk role.
+gate=R/'hospital/gateway.py'
+original=gate.read_text(encoding='utf-8')
+n=original.count("core.require_role(role,'admin','cashier')")
+if not 3<=n<=25:raise RuntimeError('Unexpected cashier authorization count: '+str(n))
+gate.write_text(original.replace("core.require_role(role,'admin','cashier')",
+                                   "core.require_role(role,'admin','cashier','frontdesk')"),encoding='utf-8')
+changes.append('hospital/gateway.py')
 
 print('NOVA_B05_PATCH_APPLIED',len(changes),sorted(set(changes)))
