@@ -132,7 +132,7 @@ replace('hospital/static/finance-ui.js',
 """ const remainAtReceipt=Math.max(0,inv.patient_due-inv.payments.slice(0,selected+1).reduce((n,x)=>n+x.cash_amount+x.bank_amount,0));
  const brand=state.brand||{},area=$('print-area');""")
 replace('hospital/static/finance-ui.js',
-"'المتبقي: '+money(inv.remaining)",
+"المتبقي: '+money(inv.remaining)",
 "'المتبقي بعد هذه الدفعة: '+money(remainAtReceipt)")
 replace('hospital/finance.py',
 "SELECT payment_no,cash_amount,bank_amount,bank_name,bank_reference,created_at",
