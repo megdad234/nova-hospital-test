@@ -45,6 +45,11 @@ jobs:
       - name: Install Inno Setup on temporary Windows build runner only
         shell: pwsh
         run: choco install innosetup --yes --no-progress
+      - name: Close synthetic SQLite test connections properly on Windows
+        shell: pwsh
+        run: |
+          python .github/ci/windows_sqlite_test_cleanup.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows test fixture lifecycle fix failed' }
       - name: Run source tests and build Windows installer
         shell: pwsh
         run: ./windows/build-windows.ps1
