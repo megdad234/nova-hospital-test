@@ -40,17 +40,6 @@ sub("hospital/lab.py",
         existing={r['name'] for r in c.execute('PRAGMA table_info('+table+')')}
         if 'section_name' not in existing:
             c.execute("ALTER TABLE "+table+" ADD COLUMN section_name TEXT NOT NULL DEFAULT ''")
-    # Only blank, previously unclassified rows are populated. Staff customizations remain untouched.
-    for test_code,groups in lab_catalog.PARAMETER_SECTIONS.items():
-        for section,codes in groups.items():
-            for code in codes:
-                c.execute('''UPDATE hospital_lab_parameters SET section_name=?
-                    WHERE section_name='' AND test_id=(SELECT id FROM hospital_lab_tests WHERE code=?)
-                    AND code=?''',(section,test_code,code))
-    c.execute('''UPDATE hospital_lab_lines SET section_name=
-        COALESCE((SELECT p.section_name FROM hospital_lab_parameters p
-                  WHERE p.id=hospital_lab_lines.parameter_id),'')
-        WHERE section_name='' AND parameter_id IS NOT NULL''')
     cols={row['name'] for row in c.execute('PRAGMA table_info(hospital_lab_tests)')}""")
 
 sub("hospital/lab.py",
@@ -62,6 +51,10 @@ sub("hospital/lab.py",
                     c.execute('''UPDATE hospital_lab_parameters SET section_name=?
                         WHERE section_name='' AND test_id=(SELECT id FROM hospital_lab_tests WHERE code=?)
                         AND code=?''',(section,test_code,code))
+        c.execute('''UPDATE hospital_lab_lines SET section_name=
+          COALESCE((SELECT p.section_name FROM hospital_lab_parameters p
+                    WHERE p.id=hospital_lab_lines.parameter_id),'')
+          WHERE section_name='' AND parameter_id IS NOT NULL''')
         for key,val in DEFAULT_BRAND.items():""")
 sub("hospital/lab.py",
  "(item_id,parameter_id,code,name,unit,reference_range) VALUES(?,?,?,?,?,?)",
