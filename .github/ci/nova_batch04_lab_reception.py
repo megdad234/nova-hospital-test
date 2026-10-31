@@ -1,0 +1,332 @@
+# coding: utf-8
+"""NOVA batch 04: laboratory workspace/report + reception workspace.
+Patches only CI-extracted sources. Fails on unexpected code drift.
+Never opens or writes a customer's installed database.
+"""
+from pathlib import Path
+import re
+
+ROOT=Path(__file__).resolve().parents[2]
+done=[]
+def decode(s):
+    return s.replace("~",chr(96)).replace("@{","$"+"{")
+def sub(path,old,new,count=1):
+    file=ROOT/path
+    s=file.read_text(encoding="utf-8")
+    old,new=decode(old),decode(new)
+    if s.count(old)!=count:
+        raise RuntimeError("NOVA04_ANCHOR %s: %d/%d %s"%(path,s.count(old),count,old[:85]))
+    file.write_text(s.replace(old,new),encoding="utf-8")
+    done.append(path)
+def regex(path,pattern,repl,count=1):
+    file=ROOT/path;s=file.read_text(encoding='utf-8')
+    new,n=re.subn(pattern,lambda m:decode(repl),s,count=count,flags=re.M)
+    if n!=count:raise RuntimeError('NOVA04_REGEX_ANCHOR '+path+': '+str(n))
+    file.write_text(new,encoding='utf-8');done.append(path)
+def add(path,s):
+    file=ROOT/path;orig=file.read_text(encoding='utf-8')
+    if 'NOVA04_EXTENSION' in orig:raise RuntimeError('NOVA04 already applied: '+path)
+    file.write_text(orig+"\n"+decode(s),encoding="utf-8");done.append(path)
+
+# Laboratory: categories already stored on tests; persist parameter sections
+# without changing or overwriting existing published result values.
+sub("hospital/lab.py",
+ "'hospital_phone':'', 'lab_title'",
+ "'hospital_phone':'', 'hospital_website':'', 'lab_title'")
+sub("hospital/lab.py",
+ "    c.executescript(SCHEMA)\n    cols={row['name'] for row in c.execute('PRAGMA table_info(hospital_lab_tests)')}",
+ """    c.executescript(SCHEMA)
+    for table in ('hospital_lab_parameters','hospital_lab_lines'):
+        existing={r['name'] for r in c.execute('PRAGMA table_info('+table+')')}
+        if 'section_name' not in existing:
+            c.execute("ALTER TABLE "+table+" ADD COLUMN section_name TEXT NOT NULL DEFAULT ''")
+    # Only blank, previously unclassified rows are populated. Staff customizations remain untouched.
+    for test_code,groups in lab_catalog.PARAMETER_SECTIONS.items():
+        for section,codes in groups.items():
+            for code in codes:
+                c.execute('''UPDATE hospital_lab_parameters SET section_name=?
+                    WHERE section_name='' AND test_id=(SELECT id FROM hospital_lab_tests WHERE code=?)
+                    AND code=?''',(section,test_code,code))
+    c.execute('''UPDATE hospital_lab_lines SET section_name=
+        COALESCE((SELECT p.section_name FROM hospital_lab_parameters p
+                  WHERE p.id=hospital_lab_lines.parameter_id),'')
+        WHERE section_name='' AND parameter_id IS NOT NULL''')
+    cols={row['name'] for row in c.execute('PRAGMA table_info(hospital_lab_tests)')}""")
+sub("hospital/lab.py",
+ """(item_id,parameter_id,code,name,unit,reference_range) VALUES(?,?,?,?,?,?)''',
+           (item_id,p['id'],p['code'],p['name'],p['unit'],select_range(pat,p)))""",
+ """(item_id,parameter_id,code,name,unit,reference_range,section_name) VALUES(?,?,?,?,?,?,?)''',
+           (item_id,p['id'],p['code'],p['name'],p['unit'],select_range(pat,p),p['section_name']))""")
+add("hospital/lab_catalog.py", """
+# NOVA04_EXTENSION — grouping affects input and print layout, not medical reference ranges.
+PARAMETER_SECTIONS={
+  'URINE':{
+    'Macroscopy':('COLOR','APPEAR','SG','PH','PROT','GLUC','KET','BLOOD','NIT','LEU'),
+    'Microscopy':('WBC','RBC','EPI','CRYS')},
+  'STOOL':{
+    'Macroscopy':('COLOR','CONS','MUCUS'),
+    'Microscopy':('RBC','PUS','OVA','PARASITE')}
+}
+""")
+
+# Reception: correction is by patient ID, never by matching name; audit changes.
+sub("hospital/core.py","\ndef patients(c, term=''):",
+ """
+def update_patient(c,actor,data):
+    pid=integer(data.get('patient_id'),'رقم الملف',1)
+    allowed={'full_name','phone','gender','age_years'}
+    if any(k not in allowed|{'patient_id'} for k in data):
+        raise ValueError('حقل غير مسموح بتعديله')
+    c.execute('BEGIN IMMEDIATE')
+    try:
+        current=pharmacy.one(c,'SELECT * FROM hospital_patients WHERE id=?',(pid,))
+        if not current:raise ValueError('ملف المريض غير موجود')
+        updates={}
+        if 'full_name' in data:updates['full_name']=safe_text(data,'full_name',160,True)
+        if 'phone' in data:updates['phone']=safe_text(data,'phone',35)
+        if 'gender' in data:
+            value=safe_text(data,'gender',12)
+            if value not in ('','male','female'):raise ValueError('الجنس غير معروف')
+            updates['gender']=value
+        if 'age_years' in data:
+            value=data.get('age_years')
+            updates['age_years']=None if value is None or str(value).strip()=='' else integer(value,'العمر')
+            if updates['age_years'] is not None and updates['age_years']>125:raise ValueError('العمر غير صحيح')
+        if updates:
+            c.execute('UPDATE hospital_patients SET '+','.join(k+'=?' for k in updates)+' WHERE id=?',
+                      (*updates.values(),pid))
+            track(c,actor['id'],'patient_corrected',pid,
+                  {'before':{k:current[k] for k in updates},'after':updates})
+        c.execute('COMMIT')
+    except Exception:c.execute('ROLLBACK');raise
+    return dict(pharmacy.one(c,'SELECT * FROM hospital_patients WHERE id=?',(pid,)))
+
+def patient_activity(c,pid):
+    patient=pharmacy.one(c,'SELECT id,patient_no,full_name FROM hospital_patients WHERE id=?',(pid,))
+    if not patient:raise ValueError('ملف المريض غير موجود')
+    result=[]
+    for row in pharmacy.query(c,'''SELECT id,invoice_no,status,created_at FROM nova_invoices
+                                WHERE patient_id=? ORDER BY id DESC LIMIT 30''',(pid,)):
+        names=pharmacy.query(c,'SELECT name FROM nova_invoice_lines WHERE invoice_id=?',(row['id'],))
+        result.append({'kind':'services','no':row['invoice_no'],'status':row['status'],
+                       'created_at':row['created_at'],'services':[x['name'] for x in names]})
+    for row in pharmacy.query(c,'''SELECT id,order_no,status,created_at FROM hospital_orders
+                                WHERE patient_id=? ORDER BY id DESC LIMIT 30''',(pid,)):
+        # Lab requests that belong to a unified invoice are not presented twice.
+        if pharmacy.one(c,'SELECT 1 AS n FROM nova_invoices WHERE lab_order_id=? LIMIT 1',(row['id'],)):
+            continue
+        names=pharmacy.query(c,'SELECT test_name FROM hospital_order_items WHERE order_id=?',(row['id'],))
+        result.append({'kind':'laboratory','no':row['order_no'],'status':row['status'],
+                       'created_at':row['created_at'],'services':[x['test_name'] for x in names]})
+    result.sort(key=lambda x:x['created_at'],reverse=True)
+    return {'patient':dict(patient),'visits':result[:30]}
+
+def patients(c, term=''):""")
+# Finance invoice relation may instead be stored under another link: the next step validates schema.
+# Endpoint roles keep receptionist away from payment references and other cashier-only data.
+sub("hospital/gateway.py",
+ "                    if path=='/api/hospital/patients':",
+ """                    if path.startswith('/api/hospital/patient-activity/'):
+                        core.require_role(role,'admin','reception')
+                        return self.reply(core.patient_activity(c,core.integer(path.rsplit('/',1)[-1],'المريض',1)))
+                    if path=='/api/hospital/patients':""")
+sub("hospital/gateway.py",
+ "                    if path=='/api/hospital/patients':\n                         core.require_role(role,'admin','reception','lab');return self.reply(core.create_patient(c,user,data),201)",
+ """                    if path=='/api/hospital/patient-edit':
+                         core.require_role(role,'admin','reception')
+                         return self.reply(core.update_patient(c,user,data))
+                    if path=='/api/hospital/patients':
+                         core.require_role(role,'admin','reception','lab');return self.reply(core.create_patient(c,user,data),201)""")
+
+# Laboratory picker: existing search, selected checkboxes, favorites and totals are retained.
+sub("hospital/static/app.js",
+ "function testChoices(){const list=state.tests.filter(t=>searchTest(t,state.filter));",
+ "function testChoices(){const list=state.tests.filter(t=>searchTest(t,state.filter)&&(!state.labCategory||t.category===state.labCategory));")
+# Categories as easy-to-scan filters; native existing checkbox handlers are used on the initial render.
+sub("hospital/static/app.js",
+ """<div class="quick-tests">@{state.tests.filter(t=>t.popular)""",
+ """<div class="nova-lab-categories"><label>قسم الفحوصات<select id="nova-lab-category" onchange="novaChooseLabCategory(this.value)"><option value="">كل الأقسام</option>@{[...new Set(state.tests.map(t=>t.category).filter(Boolean))].sort().map(c=>~<option value="@{esc(c)}" @{state.labCategory===c?'selected':''}>@{esc(c)}</option>~).join('')}</select></label></div><h3>الفحوصات الشائعة</h3><div class="quick-tests">@{state.tests.filter(t=>t.popular)""")
+add("hospital/static/app.js", """
+// NOVA04_EXTENSION — category filter using existing medical test selection IDs.
+function novaChooseLabCategory(category){
+  state.labCategory=category;
+  const box=$('test-options');
+  if(!box)return;
+  box.innerHTML=testChoices();
+  box.querySelectorAll('[data-pickcheck]').forEach(el=>el.addEventListener('change',()=>{
+    const id=Number(el.dataset.pickcheck);
+    if(el.checked)state.selected.add(id);else state.selected.delete(id);
+    const count=$('selected-count');if(count)count.textContent=state.selected.size+' فحص محدد';
+  }));
+}
+// Structured inputs and printouts use the SAME saved section names.
+function novaLabGroupedRows(lines,editable){
+  const groups=new Map();
+  for(const line of lines||[]){
+    const section=line.section_name||'';
+    if(!groups.has(section))groups.set(section,[]);
+    groups.get(section).push(line);
+  }
+  return [...groups.entries()].map(([section,rows])=>
+    (section?'<tr class="nova-lab-section"><th colspan="4">'+esc(section)+'</th></tr>':'')+
+    rows.map(x=>'<tr><td><b>'+esc(x.name)+'</b></td>'+
+      '<td>'+(editable?'<input data-line="'+x.id+'" value="'+esc(x.value)+'" maxlength="4000" aria-label="نتيجة '+esc(x.name)+'" autocomplete="off" dir="auto">':'<b dir="auto">'+esc(x.value)+'</b>')+'</td>'+
+      '<td dir="ltr">'+(esc(x.unit)||'—')+'</td>'+
+      '<td dir="ltr" class="reference">'+(esc(x.reference_range)||'—')+'</td></tr>').join('')
+  ).join('');
+}
+""")
+# Make both the lab data entry and the read-only mode use section rows.
+regex("hospital/static/app.js",
+      r"\$\{lines\.map\(x=>~<tr><td><b>\$\{esc\(x\.name\)\}</b>.*?\.join\(''\)\}",
+      "@{novaLabGroupedRows(lines,true)}")
+regex("hospital/static/app.js",
+      r"\$\{table\(\['التحليل','النتيجة','الوحدة','الطبيعي'\],lines\.filter\(x=>x\.value\)\.map\(x=>~<tr>.*?\.join\(''\)\)\}",
+      "@{table(['التحليل','النتيجة','الوحدة','الطبيعي'],[~<tr><td colspan=\"4\">@{novaLabGroupedRows(lines.filter(x=>x.value),false)}</td></tr>~])}" )
+# Replace report renderer in one operation because all its HTML is one JS line.
+regex("hospital/static/app.js",r"^async function printReport\(id\)\{.*$",
+ """async function printReport(id){
+  try{
+    const d=await api('lab/report/'+id),brand=d.brand||{};
+    const logo=brand.hospital_logo?~<img class="print-logo" src="@{esc(brand.hospital_logo)}" alt="شعار المستشفى">~:'';
+    const name=brand.hospital_name||'اسم المستشفى',english=brand.hospital_name_en||'';
+    const timestamp=String(d.print_time||'').replace('T',' ').slice(0,19);
+    const tests=(d.items||[]).map(item=>{
+      const groups=new Map();
+      for(const line of (item.lines||[]).filter(x=>String(x.value||'').trim())){
+        const key=line.section_name||'';
+        if(!groups.has(key))groups.set(key,[]);
+        groups.get(key).push(line);
+      }
+      const rows=[...groups.entries()].map(([section,items])=>
+        (section?~<tr class="nova-lab-section"><th colspan="4">@{esc(section)}</th></tr>~:'')+
+        items.map(x=>~<tr><td>@{esc(x.name)}</td><td><strong dir="auto">@{esc(x.value)}</strong></td><td dir="ltr">@{esc(x.unit)||'—'}</td><td dir="ltr">@{esc(x.reference_range)||'—'}</td></tr>~).join('')
+      ).join('');
+      return ~<section class="lab-print-test"><h3 class="print-test">@{esc(item.test_name)}</h3><table class="lab-results"><thead><tr><th>Test</th><th>Result</th><th>Unit</th><th>Reference Range</th></tr></thead><tbody>@{rows}</tbody></table></section>~;
+    }).join('');
+    const html=~<article class="lab-print nova-clinical-print" dir="rtl">
+      <header class="print-head">@{logo}<div class="print-hospital"><h2>@{esc(name)}</h2>
+      @{english?~<p lang="en" dir="ltr">@{esc(english)}</p>~:''}
+      <h3>المختبر / Laboratory</h3></div></header>
+      <div class="print-patient"><b>اسم المريض: @{esc(d.patient_name)}</b>
+      <span>رقم الملف: @{esc(d.patient_no)}</span>
+      @{d.age_years!==null&&d.age_years!==undefined?~<span>العمر: @{esc(d.age_years)} سنة</span>~:''}
+      @{d.gender?~<span>الجنس: @{d.gender==='male'?'ذكر':'أنثى'}</span>~:''}
+      <span>رقم الطلب: @{esc(d.order_no)}</span><span>التاريخ: @{esc(timestamp)}</span></div>
+      @{tests}
+      @{d.partial?'<p class="small">تقرير جزئي — توجد فحوصات أخرى لم تُنشر بعد.</p>':''}
+      <footer class="print-foot"><span>@{esc(brand.hospital_phone||'')}&nbsp;&nbsp; @{esc(brand.hospital_website||'')}</span>
+      <small>Powered by NOVA Hospital System</small></footer></article>~;
+    const area=$('print-area');area.innerHTML=html;
+    document.body.classList.add('printing-lab');
+    const cleanup=()=>{document.body.classList.remove('printing-lab');area.innerHTML=''};
+    window.addEventListener('afterprint',cleanup,{once:true});
+    await Promise.all([...area.querySelectorAll('img')].map(x=>x.decode?.().catch(()=>{})||Promise.resolve()));
+    window.print();
+  }catch(e){notice(e.message,true)}
+}""")
+# The hospital website is optional; address remains stored for other documents but is not shown on labs.
+sub("hospital/static/app.js",
+ """<label>رقم التواصل<input name="hospital_phone" maxlength="200" value="@{esc(b.hospital_phone)}"></label>""",
+ """<label>رقم التواصل<input name="hospital_phone" maxlength="200" value="@{esc(b.hospital_phone)}"></label><label>الموقع الإلكتروني — يظهر أسفل نتيجة المعمل<input name="hospital_website" maxlength="200" value="@{esc(b.hospital_website||'')}"></label>""")
+
+# Reception summary, collapsed registration, selected patient history and corrections.
+sub("hospital/static/finance-ui.js",
+ "  return ~<div class=\"split\">@{panel('المريض'",
+ "  return ~@{novaReceptionSummary()}<div class=\"split\">@{panel('المريض'")
+sub("hospital/static/finance-ui.js",
+ """@{panel('تسجيل مريض جديد — اختياري',financePatientForm())}</div>""",
+ """@{panel('تسجيل مريض جديد — اختياري',~<details class="nova-reception-new" id="nova-new-patient"><summary>+ فتح استمارة مريض جديد</summary>@{financePatientForm()}</details>~)}</div>""")
+sub("hospital/static/finance-ui.js",
+ """</div>~)}@{panel('تسجيل مريض جديد""",
+ """</div><div id="nova-patient-activity" class="nova-patient-activity"></div>~)}@{panel('تسجيل مريض جديد""")
+sub("hospital/static/finance-ui.js",
+ """@{panel('آخر الطلبات',invoiceTable(financeState.invoices.filter(x=>x.status==='pending').slice(0,25)))}""",
+ """@{panel('طلبات اليوم وحالتها',invoiceTable(financeState.invoices.filter(x=>String(x.created_at||'').slice(0,10)===new Date().toISOString().slice(0,10)).slice(0,30)))}""")
+sub("hospital/static/finance-ui.js",
+ """<small dir="ltr">@{esc(p.patient_no)}</small>""",
+ """<small dir="ltr">@{esc(p.patient_no)}</small><small>@{esc(p.phone||'بدون هاتف')} @{p.age_years!==null&&p.age_years!==undefined?' · '+esc(p.age_years)+' سنة':''}</small>""")
+sub("hospital/static/finance-ui.js",
+ "patientOptions();financeQuote()});",
+ "patientOptions();financeQuote();novaReceptionPatientCard(p)});")
+sub("hospital/static/finance-ui.js",
+ "notice('تم تسجيل المريض');patientOptions();financeQuote()",
+ "notice('تم تسجيل المريض');patientOptions();financeQuote();novaReceptionPatientCard(p)")
+add("hospital/static/finance-ui.js", """
+// NOVA04_EXTENSION — receptionist view is intentionally separate from cashier amounts/references.
+function novaReceptionSummary(){
+  const today=new Date().toLocaleDateString('en-CA');
+  const rows=financeState.invoices.filter(x=>String(x.created_at||'').slice(0,10)===today);
+  const pending=rows.filter(x=>x.status==='pending').length;
+  return ~<section class="nova-reception-hero">
+    <div><strong>مكتب الاستقبال</strong><p>ابحث عن المريض أولاً، ثم أنشئ طلب خدمات جديد.</p></div>
+    <div class="nova-reception-metrics">
+      <span>الطلبات المعروضة اليوم <b>@{rows.length}</b></span>
+      <span>بانتظار الكاشير <b>@{pending}</b></span>
+      <span>تمت التسوية <b>@{rows.filter(x=>x.status==='settled').length}</b></span>
+    </div>
+  </section>~;
+}
+async function novaReceptionPatientCard(patient){
+ const box=$('nova-patient-activity');if(!box)return;
+ box.innerHTML='<p class="muted">جاري فتح سجل المريض...</p>';
+ try{
+  const info=await api('patient-activity/'+patient.id);
+  if(financeState.patient?.id!==patient.id)return;
+  const p=financeState.patient;
+  const status={pending:'بانتظار الدفع',settled:'تم الدفع',paid:'تم الدفع',completed:'مكتمل',void:'ملغى'};
+  const visits=(info.visits||[]).map(v=>
+    ~<tr><td dir="ltr">@{esc(v.no)}</td><td>@{esc((v.services||[]).join('، '))}</td>
+     <td>@{esc(String(v.created_at||'').replace('T',' ').slice(0,16))}</td>
+     <td><span class="tag @{v.status==='pending'?'orange':'green'}">@{esc(status[v.status]||v.status)}</span></td></tr>~).join('');
+  box.innerHTML=~<div class="nova-profile">
+    <div class="panel-head"><h3>@{esc(p.full_name)}</h3><span class="tag">@{esc(p.patient_no)}</span></div>
+    <p>الهاتف: @{esc(p.phone||'غير مسجل')} · العمر: @{p.age_years??'—'}</p>
+    <details><summary>تصحيح بيانات المريض</summary>
+      <form id="nova-patient-edit" class="form">
+      <label>الاسم<input name="full_name" maxlength="160" required value="@{esc(p.full_name)}"></label>
+      <label>الهاتف<input name="phone" maxlength="35" value="@{esc(p.phone||'')}"></label>
+      <label>العمر (اختياري)<input name="age_years" type="number" min="0" max="125" value="@{esc(p.age_years??'')}"></label>
+      <label>الجنس<select name="gender"><option value="">غير محدد</option>
+      <option value="male" @{p.gender==='male'?'selected':''}>ذكر</option>
+      <option value="female" @{p.gender==='female'?'selected':''}>أنثى</option></select></label>
+      <div class="actions"><button type="submit" class="primary">حفظ التصحيح</button></div>
+      </form></details>
+    <h4>الطلبات والزيارات السابقة</h4>
+    <div class="table-wrap"><table><thead><tr><th>الرقم</th><th>الخدمات</th><th>التاريخ</th><th>الحالة</th></tr></thead>
+    <tbody>@{visits||'<tr><td colspan="4">ما في طلبات سابقة</td></tr>'}</tbody></table></div>
+  </div>~;
+  form('nova-patient-edit',async data=>{
+    const changed=await api('patient-edit',{patient_id:p.id,...Object.fromEntries(data)});
+    const idx=state.patients.findIndex(x=>x.id===p.id);
+    if(idx!==-1)state.patients[idx]=changed;
+    financeState.patient=changed;
+    $('finance-selected-patient').textContent='المريض: '+changed.full_name+' — '+changed.patient_no;
+    patientOptions();notice('تم تصحيح بيانات المريض');await novaReceptionPatientCard(changed);
+  });
+ }catch(e){box.textContent='تعذر تحميل ملف المريض: '+e.message}
+}
+""")
+
+# Premium CSS: use existing green NOVA design system, not a new app.
+add("hospital/static/style.css", """
+/* NOVA04_EXTENSION — reception and laboratory */
+.nova-reception-hero{background:linear-gradient(120deg,#0b594f,#127866);color:#fff;display:flex;justify-content:space-between;gap:18px;align-items:center;padding:22px 26px;border-radius:18px;box-shadow:0 8px 22px #093c301c}
+.nova-reception-hero strong{font-size:1.34rem}.nova-reception-hero p{margin:6px 0 0;opacity:.88}
+.nova-reception-metrics{display:flex;gap:12px;flex-wrap:wrap}.nova-reception-metrics span{display:grid;gap:5px;padding:10px 16px;border-radius:12px;background:#ffffff20;font-size:.82rem}
+.nova-reception-metrics b{font-size:1.3rem}.nova-reception-new>summary,.nova-profile details>summary{color:#096b5e;font-weight:750;cursor:pointer;padding:12px}
+.nova-reception-new[open]>summary{margin-bottom:12px}.nova-profile{border:1px solid #cee5dc;border-radius:14px;padding:18px;margin-top:15px;background:#f9fdfa}
+.nova-profile h4{margin:16px 0 9px}.nova-profile p{font-size:.86rem;color:#45665e}
+.nova-patient-activity:empty{display:none}.nova-lab-categories{border:1px solid #d2e6de;padding:10px;border-radius:12px;background:#f6fcf9;margin-bottom:13px}
+.nova-lab-categories select{padding:10px;border-radius:9px;border:1px solid #bcd7ca;min-width:220px;margin-inline-start:10px}
+.nova-lab-section th{background:#e6f2eb!important;color:#125545;font-weight:850;font-size:.94rem;text-align:start;padding:12px}
+.nova-clinical-print .print-head{justify-content:center;text-align:center;border-bottom:2px solid #305d55;padding-bottom:12px}
+.nova-clinical-print .print-logo{max-height:85px;max-width:95px;object-fit:contain}
+.nova-clinical-print .print-hospital h3{margin:4px 0;font-size:1rem}
+.nova-clinical-print .print-foot{font-size:11px;display:flex;flex-direction:column;gap:5px}
+.nova-clinical-print .print-foot small{font-size:8px;color:#888}
+.nova-clinical-print .lab-print-test{break-inside:avoid}
+@media(max-width:900px){.nova-reception-hero{flex-direction:column;align-items:stretch}}
+@media print{.nova-clinical-print .print-foot{display:flex!important}.nova-clinical-print .lab-print-test{break-inside:avoid}}
+""")
+print("NOVA04_APPLIED",len(done),sorted(set(done)))
