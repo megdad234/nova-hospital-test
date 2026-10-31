@@ -17,6 +17,7 @@ add('hospital/finance.py',"""
 def _free_schema(c):
     c.execute('CREATE TABLE IF NOT EXISTS nova_free_approved (kind TEXT NOT NULL,source_id INTEGER NOT NULL,approved_by INTEGER NOT NULL,approved_at TEXT NOT NULL,PRIMARY KEY(kind,source_id))')
 def _free_approved(c,kind,source_id):
+    if kind in ('svc','service'):kind='service'
     _free_schema(c)
     return bool(pharmacy.one(c,'SELECT 1 AS approved FROM nova_free_approved WHERE kind=? AND source_id=?',(kind,source_id)))
 def free_list(c):
@@ -96,4 +97,18 @@ async function novaFreeApprovalPanel(){
  };
 }
 """)
+# Only one open shift per individual cashier; transfers between employees remain auditable.
+replace('hospital/finance.py',
+"        s=c.execute('INSERT INTO nova_cashier_shifts(cashier_id,opened_at,opening_cash) VALUES(?,?,?)',",
+"""        if pharmacy.one(c,'SELECT id FROM nova_cashier_shifts WHERE cashier_id=? AND closed_at IS NULL',(actor['id'],)):
+            raise ValueError('لديك وردية مفتوحة بالفعل؛ أقفلها قبل بدء وردية جديدة')
+        s=c.execute('INSERT INTO nova_cashier_shifts(cashier_id,opened_at,opening_cash) VALUES(?,?,?)',""")
+# Shared print surface already hides app on the printing-lab selector: reuse it for 80mm.
+replace('hospital/static/finance-ui.js',
+"document.body.classList.add('printing-nova-thermal');",
+"document.body.classList.add('printing-nova-thermal','printing-lab');")
+replace('hospital/static/finance-ui.js',
+"document.body.classList.remove('printing-nova-thermal');area.innerHTML=''",
+"document.body.classList.remove('printing-nova-thermal','printing-lab');area.innerHTML=''")
+
 print('NOVA_BATCH05_PRICING_POLICY_READY')
