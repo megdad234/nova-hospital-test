@@ -111,4 +111,35 @@ replace('hospital/static/finance-ui.js',
 "document.body.classList.remove('printing-nova-thermal');area.innerHTML=''",
 "document.body.classList.remove('printing-nova-thermal','printing-lab');area.innerHTML=''")
 
+# Allow every individual partial payment to be reprinted, not just the last one.
+replace('hospital/static/finance-ui.js',
+"  box.scrollIntoView({behavior:'smooth',block:'start'});",
+"""  if(inv.payments?.length){
+    const bar=document.createElement('div');bar.className='toolbar';
+    bar.innerHTML=inv.payments.map((p,i)=>'<button type="button" class="outline" data-nova-reprint="'+i+'">إيصال '+esc(p.payment_no)+'</button>').join('');
+    box.appendChild(bar);
+    bar.querySelectorAll('[data-nova-reprint]').forEach(btn=>btn.onclick=()=>novaPrintReceipt(inv,Number(btn.dataset.novaReprint)));
+  }
+  box.scrollIntoView({behavior:'smooth',block:'start'});""")
+replace('hospital/static/finance-ui.js',
+"function novaPrintReceipt(inv){",
+"function novaPrintReceipt(inv,index){")
+replace('hospital/static/finance-ui.js',
+"const p=inv?.payments?.[inv.payments.length-1];",
+"const selected=index??(inv?.payments?.length-1),p=inv?.payments?.[selected];")
+replace('hospital/static/finance-ui.js',
+" const brand=state.brand||{},area=$('print-area');",
+""" const remainAtReceipt=Math.max(0,inv.patient_due-inv.payments.slice(0,selected+1).reduce((n,x)=>n+x.cash_amount+x.bank_amount,0));
+ const brand=state.brand||{},area=$('print-area');""")
+replace('hospital/static/finance-ui.js',
+"'المتبقي: '+money(inv.remaining)",
+"'المتبقي بعد هذه الدفعة: '+money(remainAtReceipt)")
+replace('hospital/finance.py',
+"SELECT payment_no,cash_amount,bank_amount,bank_name,bank_reference,created_at",
+"""SELECT payment_no,cash_amount,bank_amount,bank_name,bank_reference,created_at,
+                  COALESCE((SELECT full_name FROM users WHERE users.id=nova_payments.created_by),'') cashier_name""")
+replace('hospital/static/finance-ui.js',
+"'<p>التاريخ: '+esc(p.created_at)+'</p><hr>'+",
+"'<p>التاريخ: '+esc(p.created_at)+'</p><p>الكاشير: '+esc(p.cashier_name||'')+'</p><hr>'+")
+
 print('NOVA_BATCH05_PRICING_POLICY_READY')
