@@ -171,7 +171,7 @@ patch("hospital/static/finance-ui.js",
  "طلبات المعمل القديمة","طلبات المعمل الواردة — فتح الطلب للتحصيل")
 patch("hospital/static/finance-ui.js",
  "كل الأسعار مبدئياً صفر حتى تحددها الإدارة؛ لا يوجد سعر افتراضي مفترض.",
- "لتسعير التحاليل من مكتبة المعمل اضغط <button type=\\"button\\" onclick=\\"navigate('catalog')\\">أسعار تحاليل المعمل</button>. بقية الأسعار مبدئياً صفر حتى تحددها الإدارة.")
+ "لتسعير التحاليل من مكتبة المعمل اضغط <button type=\"button\" onclick=\"navigate('catalog')\">أسعار تحاليل المعمل</button>. بقية الأسعار مبدئياً صفر حتى تحددها الإدارة.")
 dental=[
  ('DENT-FOLLOW','مراجعة أسنان','followup'),('DENT-EXT-TOOTH','خلع سن عادي','extraction'),
  ('DENT-EXT-MOLAR','خلع ضرس عادي','molar extraction'),('DENT-SURG-EXT','خلع جراحي','surgical extraction'),
