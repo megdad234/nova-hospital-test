@@ -169,8 +169,13 @@ function novaPrintReceipt(inv){
     return s
 change('hospital/static/finance-ui.js',cashier)
 def patients(s):
-    return one(s,"['admin','reception','lab','frontdesk'].includes(state.role)",
+    s=one(s,"['admin','reception','lab','frontdesk'].includes(state.role)",
                "['admin','reception','lab','frontdesk','cashier'].includes(state.role)")
+    # Batch04's original two-line print tail remained after its new async report renderer.
+    # Remove exactly that unreachable invalid JavaScript; retain the new renderer intact.
+    orphan="\n await Promise.all([...area.querySelectorAll('img')].map(x=>x.decode?.().catch(()=>{})||Promise.resolve()));\n window.print()}catch(e){notice(e.message,true)}}"
+    s=one(s,orphan,"")
+    return s
 change('hospital/static/app.js',patients)
 def routes(s):
     if "if path=='/api/hospital/invoice-payment':" not in s:raise RuntimeError('NOVA05_ADOPT_ANCHOR')
