@@ -24,6 +24,36 @@ jobs:
           python .github/ci/nova_batch05_cashier_pharmacy.py
           python .github/ci/nova_batch05_ui.py
           python -m compileall -q pharmacy hospital
+      - name: JavaScript grammar checks on all changed screens
+        run: |
+          node --check pharmacy/static/app.js
+          node --check hospital/static/app.js
+          node --check hospital/static/finance-ui.js
+      - name: Check synthetic cashier queue and held-cart operations
+        run: |
+          PYTHONPATH=pharmacy:. python - <<'PY'
+          import tempfile,uuid
+          from pathlib import Path
+          import app
+          old_db,old_data=app.DB,app.DATA
+          with tempfile.TemporaryDirectory() as temp:
+              app.DATA=Path(temp);app.DB=app.DATA/'audit.sqlite3'
+              try:
+                  app.init_db();c=app.db_connect()
+                  app.bootstrap(c,{'username':'owner','full_name':'Synthetic Owner','password':'TestPassword123456'})
+                  uid=app.one(c,'SELECT id FROM users')['id']
+                  product=app.create_product(c,{'sku':'SYN-'+uuid.uuid4().hex[:9],'name':'Synthetic Medicine','packages':[{'unit_name':'unit','factor':1,'barcode':'syn'+uuid.uuid4().hex[:9],'sale_price':1,'is_default':1}]},uid)
+                  pack=app.one(c,'SELECT id FROM packages WHERE product_id=?',(product['id'],))['id']
+                  save=app.nova_hold_save(c,{'items':[{'package_id':pack,'qty':2}]},uid)
+                  assert len(app.nova_held_list(c,uid))==1
+                  assert app.one(c,'SELECT COUNT(*) n FROM sales')['n']==0
+                  assert app.nova_pharmacy_tasks(c,uid)['held_carts']==1
+                  app.nova_hold_delete(c,{'held_id':save['held_id']},uid)
+                  assert app.nova_pharmacy_tasks(c,uid)['held_carts']==0
+                  c.close()
+                  print('NOVA05_SYNTHETIC_PHARMACY_HOLD_TASKS_PASS')
+              finally:app.DB,app.DATA=old_db,old_data
+          PY
       - name: Show UI anchors and cashier schema for independent review
         if: always()
         run: |
