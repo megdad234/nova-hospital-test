@@ -20,7 +20,7 @@ def sub(path,old,new,count=1):
     done.append(path)
 def regex(path,pattern,repl,count=1):
     file=ROOT/path;s=file.read_text(encoding='utf-8')
-    new,n=re.subn(pattern,lambda m:decode(repl),s,count=count,flags=re.M)
+    new,n=re.subn(decode(pattern),lambda m:decode(repl),s,count=count,flags=re.M)
     if n!=count:raise RuntimeError('NOVA04_REGEX_ANCHOR '+path+': '+str(n))
     file.write_text(new,encoding='utf-8');done.append(path)
 def add(path,s):
