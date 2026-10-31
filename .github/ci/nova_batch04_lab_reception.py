@@ -330,4 +330,60 @@ add("hospital/static/style.css", """
 @media(max-width:900px){.nova-reception-hero{flex-direction:column;align-items:stretch}}
 @media print{.nova-clinical-print .print-foot{display:flex!important}.nova-clinical-print .lab-print-test{break-inside:avoid}}
 """)
+
+# Additional end-to-end HTTP acceptance checks on a disposable test database.
+qa=ROOT/"tests/test_nova_batch04.py"
+if qa.exists():raise RuntimeError('NOVA04 test file already exists')
+qa.write_text('''import unittest
+import urllib.error
+from tests.test_hospital_gateway import HospitalServerFixture
+
+class NovaReceptionAndLabAcceptance(HospitalServerFixture,unittest.TestCase):
+    def test_same_patient_name_is_allowed_and_edits_target_only_selected_id(self):
+        front=self.make_user('reception','novaReception04')
+        p1=front.post('/api/hospital/patients',{'full_name':'Ahmed Common Name','age_years':'30'})
+        p2=front.post('/api/hospital/patients',{'full_name':'Ahmed Common Name','age_years':'40'})
+        self.assertNotEqual(p1['id'],p2['id'])
+        self.assertNotEqual(p1['patient_no'],p2['patient_no'])
+        changed=front.post('/api/hospital/patient-edit',{
+            'patient_id':p1['id'],'full_name':'Ahmed Corrected Name','phone':'0112345678','age_years':'31'})
+        self.assertEqual(changed['patient_no'],p1['patient_no'])
+        self.assertEqual(changed['age_years'],31)
+        original=next(p for p in front.get('/api/hospital/patients?q=Ahmed') if p['id']==p2['id'])
+        self.assertEqual(original['full_name'],'Ahmed Common Name')
+        with self.assertRaises(urllib.error.HTTPError) as x:
+            front.post('/api/hospital/patient-edit',{'patient_id':p2['id'],'patient_no':'HACK'})
+        self.assertEqual(x.exception.code,400)
+
+    def test_reception_history_is_authorized_and_contains_no_payment_references(self):
+        front=self.make_user('reception','novaReceptionHistory')
+        cashier=self.make_user('cashier','novaRestrictedCashier')
+        patient=front.post('/api/hospital/patients',{'full_name':'Synthetic Reception History'})
+        s=next(x for x in front.get('/api/hospital/services') if x['code']=='CONS-GP')
+        invoice=front.post('/api/hospital/invoices',{'patient_id':patient['id'],'services':[s['key']]})
+        history=front.get('/api/hospital/patient-activity/'+str(patient['id']))
+        self.assertEqual(history['visits'][0]['no'],invoice['invoice_no'])
+        self.assertEqual(history['visits'][0]['status'],'pending')
+        self.assertNotIn('bank_reference',history['visits'][0])
+        self.assertNotIn('amount',history['visits'][0])
+        with self.assertRaises(urllib.error.HTTPError) as x:
+            cashier.get('/api/hospital/patient-activity/'+str(patient['id']))
+        self.assertEqual(x.exception.code,403)
+
+    def test_lab_sections_are_seeded_and_hospital_website_is_saved(self):
+        tests=self.admin.get('/api/hospital/tests')
+        for code in ('URINE','STOOL'):
+            tid=next(x['id'] for x in tests if x['code']==code)
+            profile=self.admin.get('/api/hospital/lab/profile/'+str(tid))
+            sections={x['section_name'] for x in profile['parameters']}
+            self.assertTrue({'Macroscopy','Microscopy'}.issubset(sections))
+        brand=self.admin.post('/api/hospital/lab/brand',{
+          'hospital_name':'مستشفى تجريبي','hospital_name_en':'Synthetic Hospital',
+          'hospital_phone':'099999999','hospital_website':'hospital.example'})
+        self.assertEqual(brand['hospital_website'],'hospital.example')
+        self.assertEqual(self.admin.get('/api/hospital/lab/brand')['hospital_name'],'مستشفى تجريبي')
+
+if __name__=='__main__':unittest.main()
+''',encoding="utf-8")
+done.append("tests/test_nova_batch04.py")
 print("NOVA04_APPLIED",len(done),sorted(set(done)))
