@@ -188,8 +188,11 @@ dental=[
  ('DENT-REPAIR','إصلاح تركيبة','repair'),('DENT-XRAY','أشعة أسنان','dental xray'),
  ('DENT-POST','مراجعة بعد الخلع','post extraction'),('DENT-DRESS','غيار أسنان','dressing')
 ]
-patch("hospital/finance.py",
- "  ('dental','DENT-CONS','كشف أسنان','dental',0),\n",
- "  ('dental','DENT-CONS','كشف أسنان','dental',0),\n"+
- "".join("  ('dental',%r,%r,%r,0),\n"%x for x in dental))
+_target=ROOT/"hospital/finance.py"
+_text=_target.read_text(encoding="utf-8")
+_line="('dental','DENT-CONS','كشف أسنان','dental',0),"
+if _text.count(_line)!=1:raise RuntimeError("Dental seed anchor missing or duplicated")
+_newline="".join("  ('dental',%r,%r,%r,0),\n"%x for x in dental)
+_target.write_text(_text.replace(_line,_line+"\n"+_newline),encoding="utf-8")
+changes.append("hospital/finance.py")
 print("NOVA_BATCH01_PATCH_APPLIED",len(changes),len(set(changes)),sorted(set(changes)))
