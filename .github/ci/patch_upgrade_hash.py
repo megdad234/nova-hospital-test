@@ -40,3 +40,20 @@ for filename, expected in [('preflight-upgrade.ps1', 6), ('recover-failed-upgrad
     compile("assert True", filename, "exec")
     p.write_text(patched, encoding='utf-8')
     print(f'NOVA_PS_HASH_FALLBACK_APPLIED: {filename} ({count} calls)')
+
+# Keep the security test meaningful: it should verify SHA256 integrity
+# and resource closure, not require one particular PowerShell cmdlet.
+test_file = root / "tests" / "test_update_and_brand.py"
+test_content = test_file.read_text(encoding="utf-8")
+old_assertion = "        self.assertIn('Get-FileHash',preflight)"
+new_assertion = (
+    "        self.assertIn('Get-NovaSHA256',preflight)\n"
+    "        self.assertIn('SHA256]::Create()',preflight)\n"
+    "        self.assertIn('$stream.Dispose()',preflight)"
+)
+if test_content.count(old_assertion) != 1:
+    raise SystemExit("Original preflight hash assertion changed unexpectedly")
+test_content = test_content.replace(old_assertion, new_assertion)
+compile(test_content, str(test_file), "exec")
+test_file.write_text(test_content, encoding="utf-8")
+print("NOVA_SHA256_SECURITY_REGRESSION_ASSERTIONS_UPDATED")
