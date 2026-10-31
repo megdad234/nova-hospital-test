@@ -24,6 +24,8 @@ jobs:
           python .github/ci/nova_batch05_cashier_pharmacy.py
           python .github/ci/nova_batch05_ui.py
           python -m compileall -q pharmacy hospital
+      - name: Display laboratory printer context
+        run: sed -n '82,98p' hospital/static/app.js
       - name: JavaScript grammar checks on all changed screens
         run: |
           node --check pharmacy/static/app.js
