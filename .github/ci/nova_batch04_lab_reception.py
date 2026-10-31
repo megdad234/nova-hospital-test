@@ -64,10 +64,11 @@ sub("hospital/lab.py",
                         AND code=?''',(section,test_code,code))
         for key,val in DEFAULT_BRAND.items():""")
 sub("hospital/lab.py",
- """(item_id,parameter_id,code,name,unit,reference_range) VALUES(?,?,?,?,?,?)''',
-           (item_id,p['id'],p['code'],p['name'],p['unit'],select_range(pat,p)))""",
- """(item_id,parameter_id,code,name,unit,reference_range,section_name) VALUES(?,?,?,?,?,?,?)''',
-           (item_id,p['id'],p['code'],p['name'],p['unit'],select_range(pat,p),p['section_name']))""")
+ "(item_id,parameter_id,code,name,unit,reference_range) VALUES(?,?,?,?,?,?)",
+ "(item_id,parameter_id,code,name,unit,reference_range,section_name) VALUES(?,?,?,?,?,?,?)")
+sub("hospital/lab.py",
+ "(item_id,p['id'],p['code'],p['name'],p['unit'],select_range(pat,p))",
+ "(item_id,p['id'],p['code'],p['name'],p['unit'],select_range(pat,p),p['section_name'])")
 add("hospital/lab_catalog.py", """
 # NOVA04_EXTENSION — grouping affects input and print layout, not medical reference ranges.
 PARAMETER_SECTIONS={
