@@ -42,3 +42,21 @@ for filename, expected in TARGETS.items():
     compile(patched, filename, "exec")
     path.write_text(patched, encoding="utf-8")
     print(f"WIN_TEST_SQLITE_CONNECTIONS_CLOSED: {filename} ({count} scopes)")
+
+# The synthetic concurrency probe also used transaction-only SQLite context
+# managers. Close their handles before its TemporaryDirectory is deleted.
+probe = ROOT / "concurrency_probe.py"
+probe_source = probe.read_text(encoding="utf-8")
+probe_expected = "with app.db_connect() as c:"
+if probe_source.count(probe_expected) != 2:
+    raise SystemExit("Unexpected synthetic concurrency DB context count")
+probe_fixed = probe_source.replace(
+    "from pathlib import Path\\n",
+    "from pathlib import Path\\nfrom contextlib import closing\\n", 1,
+).replace(probe_expected, "with closing(app.db_connect()) as c, c:")
+if "from contextlib import closing" not in probe_fixed:
+    raise SystemExit("Concurrency probe import patch failed")
+compile(probe_fixed, str(probe), "exec")
+probe.write_text(probe_fixed, encoding="utf-8")
+print("WIN_CONCURRENCY_SQLITE_CONNECTIONS_CLOSED: 2 scopes")
+
