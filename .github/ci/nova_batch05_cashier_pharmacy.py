@@ -127,21 +127,21 @@ changes.append('pharmacy/app.py')
 modify('pharmacy/app.py',
        "        checked=[];value=0;covered=0;seen_lines=set()",
        """        earlier_return=one(c,'SELECT COALESCE(SUM(amount),0) a,COALESCE(SUM(covered),0) v FROM sale_returns WHERE sale_id=?',(saleid,))
-         checked=[];value=0;covered=0;seen_lines=set()""")
+        checked=[];value=0;covered=0;seen_lines=set()""")
 modify('pharmacy/app.py',
        "            amount=qty*row['unit_price'];cv=(amount*s['coverage']+50)//100",
        """            amount=qty*row['unit_price']
-             cv=min((amount*s['coverage']+50)//100,
+            cv=min((amount*s['coverage']+50)//100,
                     max(0,s['covered']-earlier_return['v']-covered))""")
 modify('pharmacy/app.py',
        "        rid=c.execute('INSERT INTO sale_returns",
        """        if checked and earlier_return['a']+value==s['total']:
-             remainder=s['covered']-earlier_return['v']-covered
-             if remainder>0:
-                 row,qty,amount,cv=checked[-1]
-                 if cv+remainder>amount:raise ValueError('توزيع تغطية المرتجع غير صالح')
-                 checked[-1]=(row,qty,amount,cv+remainder);covered+=remainder
-         rid=c.execute('INSERT INTO sale_returns""")
+            remainder=s['covered']-earlier_return['v']-covered
+            if remainder>0:
+                row,qty,amount,cv=checked[-1]
+                if cv+remainder>amount:raise ValueError('توزيع تغطية المرتجع غير صالح')
+                checked[-1]=(row,qty,amount,cv+remainder);covered+=remainder
+        rid=c.execute('INSERT INTO sale_returns""")
 
 # 3) Cashier search: unified, paginated, legacy labs selectable but not charged twice.
 append('hospital/finance.py', '''
