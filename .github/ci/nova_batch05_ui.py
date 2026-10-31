@@ -106,6 +106,8 @@ def cashier(s):
         '<button type="button" class="outline" id="print-invoice">طباعة الفاتورة</button><button type="button" class="outline" id="nova-print-receipt">إيصال آخر دفعة 80mm</button>')
     s=one(s,"$('print-invoice')?.addEventListener('click',()=>financePrintInvoice(financeState.invoice));",
        "$('print-invoice')?.addEventListener('click',()=>financePrintInvoice(financeState.invoice));\n   $('nova-print-receipt')?.addEventListener('click',()=>novaPrintReceipt(financeState.invoice));")
+    s=one(s,"const inv=await api('invoices',{",
+            "const inv=await api(state.role==='cashier'?'nova-cashier-quick-invoice':'invoices',{")
     s+="""
 // NOVA_BATCH05_EXTENSION: unified cashier queue, server-side search & pagination.
 let novaQueuePage=0,novaQueueTyping=null,novaQueuePoll=null;
@@ -177,9 +179,12 @@ def routes(s):
                          core.require_role(role,'admin','cashier','frontdesk')
                          return self.reply(finance.adopt_lab_order(c,user,data))
                     if path=='/api/hospital/invoice-payment':""")
-    s,n=re.subn(r"(if path=='/api/hospital/invoices':\s*\n\s*core\.require_role\(role,'admin','reception','frontdesk')",
-                lambda m:m.group(0).replace("'frontdesk')","'frontdesk','cashier')"),s,count=1)
-    if n!=1:raise RuntimeError('NOVA05_DIRECT_CASHIER_PERMISSION')
+    # Explicit quick-order path avoids silently broadening all reception write permissions.
+    s=one(s,"                    if path=='/api/hospital/nova-legacy-adopt':",
+       """                    if path=='/api/hospital/nova-cashier-quick-invoice':
+                         core.require_role(role,'admin','cashier','frontdesk')
+                         return self.reply(finance.create_invoice(c,user,data),201)
+                    if path=='/api/hospital/nova-legacy-adopt':""")
     s=s.replace("core.require_role(role,'admin','reception','lab');term=",
                 "core.require_role(role,'admin','reception','lab','cashier');term=")
     s=s.replace("core.require_role(role,'admin','reception','lab');return self.reply(core.create_patient",
