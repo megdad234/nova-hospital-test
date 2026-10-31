@@ -135,14 +135,13 @@ replace('hospital/static/finance-ui.js',
 "المتبقي: '+money(inv.remaining)",
 "المتبقي بعد هذه الدفعة: '+money(remainAtReceipt)")
 
-# Print the exact installment automatically (including partial payment); detailed A4 invoice
-# can still be printed manually. The cashier name is sourced from the payment audit record.
+# Print each exact installment automatically; old detailed invoice remains available.
 replace('hospital/static/finance-ui.js',
 "if(receipt.status==='settled')financePrintInvoice(financeState.invoice);",
-"       novaPrintReceipt(financeState.invoice);")
+"novaPrintReceipt(financeState.invoice);")
 replace('hospital/static/finance-ui.js',
-"'</p><p>التاريخ: '+esc(p.created_at)+'</p><hr>'+",
-"'</p><p>التاريخ: '+esc(p.created_at)+'</p><p>الكاشير: '+esc(p.cashier_name||'')+'</p><hr>'+")
+"التاريخ: '+esc(p.created_at)+'</p><hr>'+",
+"التاريخ: '+esc(p.created_at)+'</p><p>الكاشير: '+esc(p.cashier_name||'')+'</p><hr>'+")
 replace('hospital/finance.py',
 "SELECT payment_no,cash_amount,bank_amount,bank_name,bank_reference,created_at",
 """SELECT payment_no,cash_amount,bank_amount,bank_name,bank_reference,created_at,
