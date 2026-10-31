@@ -79,6 +79,18 @@ jobs:
                   print('NOVA05_SYNTHETIC_PHARMACY_HOLD_TASKS_PASS')
               finally:app.DB,app.DATA=old_db,old_data
           PY
+      - name: Show exact old finance permission test expectations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/test_finance_workflow.py')
+          x=p.read_text(encoding='utf-8').splitlines()
+          for name in ('test_admin_can_change_staff_roles_and_server_enforces_the_change','test_combined_lab_consult_insurance_and_split_payment','test_legacy_lab_order_adopted_once_no_duplicate_and_insurance_zero_price'):
+              i=next(i for i,v in enumerate(x) if v.strip().startswith('def '+name+'('))
+              j=next((k for k in range(i+1,len(x)) if x[k].startswith('    def test_')),len(x))
+              print('===',name,'===')
+              for k in range(i,j):print(k+1,x[k])
+          PY
       - name: Finance regressions
         run: PYTHONPATH=pharmacy:. python -m unittest -q tests.test_finance_workflow tests.test_finance_refunds
       - name: Show UI anchors and cashier schema for independent review
