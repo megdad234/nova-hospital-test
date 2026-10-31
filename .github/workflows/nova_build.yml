@@ -7,6 +7,7 @@ on:
       - '.github/workflows/nova_build.yml'
       - '.github/ci/windows_sqlite_test_cleanup.py'
       - '.github/ci/patch_upgrade_hash.py'
+      - '.github/ci/nova_batch01_patch.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -57,12 +58,17 @@ jobs:
         run: |
           python .github/ci/patch_upgrade_hash.py
           if ($LASTEXITCODE -ne 0) { throw 'NOVA update integrity patch failed' }
+      - name: Apply reviewed NOVA Batch 01 source fixes
+        shell: pwsh
+        run: |
+          python .github/ci/nova_batch01_patch.py
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA Batch 01 source patch failed; installer not built' }
       - name: Restore previously verified development Windows build
         id: setup_cache
         uses: actions/cache/restore@v4
         with:
           path: windows/output/NOVA-Hospital-Setup-DEV.exe
-          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py') }}
+          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py') }}
       - name: Run source tests and build Windows installer
         if: steps.setup_cache.outputs.cache-hit != 'true'
         shell: pwsh
@@ -72,7 +78,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: windows/output/NOVA-Hospital-Setup-DEV.exe
-          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py') }}
+          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py') }}
       - name: Verify installer exists before acceptance
         shell: pwsh
         run: |
