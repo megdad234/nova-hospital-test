@@ -41,3 +41,13 @@ Fast workflow `.github/workflows/nova_batch05_fast.yml` tests Python compilation
 - Real database migration must have a verified backup. CI uses disposable synthetic records, not live patient data.
 - Keep separate 80mm receipt for every installment and detailed A4 invoice.
 - Don't claim production-certified hospital system just because synthetic CI passed.
+
+
+## Final verified Windows build (31 Oct 2026 UTC / 1 Nov 2026 Sudan)
+- Successful main Windows CI: https://github.com/megdad234/nova-hospital-test/actions/runs/41254331311
+- Source SHA of accepted installer: `80a176fa7d8d` (corresponding to approved Batch 05 patch set).
+- Windows test stages all passed: full Python source tests / installer compile and packaging; fresh Windows install and restart; in-place upgrade with database backup; fault-injected offline rollback.
+- Artifact `NOVA-Hospital-Windows-Setup-DEV-UNAPPROVED`, artifact ID `13062870119`; produced 31 Oct 23:58 UTC, 11,504,474 bytes as ZIP.
+- Installer `NOVA-Hospital-Setup-DEV.exe`, 12,054,336 bytes; SHA256 `1dee3b84fb0bc123dfd12dde188c7d234a351247d2eabd090cbda7330b704209`.
+- Receipt print refinement: automatically prints 80mm receipt for each completed payment, including partial payments; cashier identity and historical per-installment balance, plus print any individual installment.
+- Physical printer, actual LAN workstations, live database upgrades and real users still require on-site acceptance; never call certified production on CI alone.
