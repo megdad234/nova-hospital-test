@@ -112,10 +112,16 @@ modify('pharmacy/app.py', "'/api/v1/products':'catalog',",
        "'/api/v1/held-sales':'sale','/api/v1/pharmacy-tasks':'reports','/api/v1/products':'catalog',")
 modify('pharmacy/app.py', "'/api/v1/products':lambda:catalog(c),",
        "'/api/v1/held-sales':lambda:nova_held_list(c,u['id']),'/api/v1/pharmacy-tasks':lambda:nova_pharmacy_tasks(c,u['id']),\n                     '/api/v1/products':lambda:catalog(c),")
-inject('pharmacy/app.py', "                     '/api/v1/sale':('sale',lambda:sell(c,data,u['id'])),",
-       """                     '/api/v1/hold-sale':('sale',lambda:nova_hold_save(c,data,u['id'])),
-                     '/api/v1/held-sale-delete':('sale',lambda:nova_hold_delete(c,data,u['id'])),
-""")
+# Router formatting changes across upstream versions: anchor to the route key alone.
+router=R/'pharmacy/app.py'
+body=router.read_text(encoding='utf-8')
+hits=list(re.finditer(r"(?m)^(\s*)'/api/v1/sale':",body))
+if len(hits)!=1:raise RuntimeError('B05 sale route not unique: '+str(len(hits)))
+indent=hits[0].group(1)
+insert=(indent+"'/api/v1/hold-sale':('sale',lambda:nova_hold_save(c,data,u['id'])),\n"+
+        indent+"'/api/v1/held-sale-delete':('sale',lambda:nova_hold_delete(c,data,u['id'])),\n")
+router.write_text(body[:hits[0].start()]+insert+body[hits[0].start():],encoding='utf-8')
+changes.append('pharmacy/app.py')
 
 # 2) Fix rounding of repeated partial returns covered by insurance, without changing existing invoices.
 modify('pharmacy/app.py',
