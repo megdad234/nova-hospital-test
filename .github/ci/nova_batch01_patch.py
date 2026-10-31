@@ -52,11 +52,15 @@ patch("pharmacy/static/app.js",
   r.qty+=delta;if(r.qty<=0)state.saleRows.splice(i,1);redraw()}""")
 
 # Prevent the duplicate catalog search from searching only the displayed DOM page.
-patch("pharmacy/static/workstation_upgrade.js",
- """catalog=function(){
-  return ~<div class="panel toolbar-panel"><div class="field"><label for="master-product-search">ابحث بسرعة في دليل الأصناف الجاهز</label><input id="master-product-search" oninput="filterMasterProducts()" placeholder="اسم الدواء أو المادة الفعالة أو كود الصنف" autocomplete="off"></div><p class="muted-note">الأسماء مرجع جاهز للشراء والجرد، والكميات مستقلة. يمكن إضافة أي صنف جديد في أي وقت.</p></div>~+madarMasterCatalogView();
-};""",
- "catalog=function(){return madarMasterCatalogView();};")
+# Remove the extra search field that filters only rendered DOM rows.
+import re
+_source=ROOT/"pharmacy/static/workstation_upgrade.js"
+_text=_source.read_text(encoding="utf-8")
+_new,count=re.subn(r"catalog=function\(\)\{\s*return [\s\S]*?\+madarMasterCatalogView\(\);\s*\};",
+                   "catalog=function(){return madarMasterCatalogView();};",_text,count=1)
+if count!=1:raise RuntimeError("BATCH01_ANCHOR_MISMATCH pharmacy duplicate search")
+_source.write_text(_new,encoding="utf-8")
+changes.append("pharmacy/static/workstation_upgrade.js")
 # Hospital-scoped identity in pharmacy receipts and purchasing prints.
 patch("pharmacy/static/app.js","<h2>مدار | MADAR</h2><b>وحدة الصيدلية</b>",
  "<h2>@{esc(window.NOVA_HOSPITAL_BRAND?.hospital_name||'اسم المستشفى')}</h2><b>وحدة الصيدلية</b><p>@{esc(window.NOVA_HOSPITAL_BRAND?.hospital_phone||'')}</p>")
