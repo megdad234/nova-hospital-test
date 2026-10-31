@@ -12,6 +12,7 @@ on:
       - '.github/ci/nova_batch03_patch.py'
       - '.github/ci/nova_batch04_lab_reception.py'
       - '.github/ci/nova_batch05_cashier_pharmacy.py'
+      - '.github/ci/nova_batch05_ui.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -87,12 +88,17 @@ jobs:
         run: |
           python .github/ci/nova_batch05_cashier_pharmacy.py
           if ($LASTEXITCODE -ne 0) { throw 'NOVA Batch 05 patch rejected; installer blocked' }
+      - name: Apply NOVA Batch 05 Premium pharmacist and cashier screens
+        shell: pwsh
+        run: |
+          python .github/ci/nova_batch05_ui.py
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA Batch 05 UI not safe for installer' }
       - name: Restore previously verified development Windows build
         id: setup_cache
         uses: actions/cache/restore@v4
         with:
           path: windows/output/NOVA-Hospital-Setup-DEV.exe
-          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py', '.github/ci/nova_batch02_patch.py', '.github/ci/nova_batch03_patch.py', '.github/ci/nova_batch04_lab_reception.py', '.github/ci/nova_batch05_cashier_pharmacy.py') }}
+          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py', '.github/ci/nova_batch02_patch.py', '.github/ci/nova_batch03_patch.py', '.github/ci/nova_batch04_lab_reception.py', '.github/ci/nova_batch05_cashier_pharmacy.py', '.github/ci/nova_batch05_ui.py') }}
       - name: Run source tests and build Windows installer
         if: steps.setup_cache.outputs.cache-hit != 'true'
         shell: pwsh
@@ -102,7 +108,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: windows/output/NOVA-Hospital-Setup-DEV.exe
-          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py', '.github/ci/nova_batch02_patch.py', '.github/ci/nova_batch03_patch.py', '.github/ci/nova_batch04_lab_reception.py', '.github/ci/nova_batch05_cashier_pharmacy.py') }}
+          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py', '.github/ci/nova_batch02_patch.py', '.github/ci/nova_batch03_patch.py', '.github/ci/nova_batch04_lab_reception.py', '.github/ci/nova_batch05_cashier_pharmacy.py', '.github/ci/nova_batch05_ui.py') }}
       - name: Verify installer exists before acceptance
         shell: pwsh
         run: |
