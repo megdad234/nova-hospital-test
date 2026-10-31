@@ -195,4 +195,11 @@ if _text.count(_line)!=1:raise RuntimeError("Dental seed anchor missing or dupli
 _newline="".join("  ('dental',%r,%r,%r,0),\n"%x for x in dental)
 _target.write_text(_text.replace(_line,_line+"\n"+_newline),encoding="utf-8")
 changes.append("hospital/finance.py")
+# Update only the obsolete brand assertion in the legacy pharmacy regression suite.
+_brand_test=ROOT/"pharmacy/tests/test_madar_daily_finance.py"
+_t=_brand_test.read_text(encoding="utf-8")
+if "مدار | MADAR" in _t:
+    _brand_test.write_text(_t.replace("مدار | MADAR","NOVA_HOSPITAL_BRAND"),encoding="utf-8")
+    changes.append("pharmacy/tests/test_madar_daily_finance.py")
+else:raise RuntimeError("Expected legacy pharmacy branding test not found")
 print("NOVA_BATCH01_PATCH_APPLIED",len(changes),len(set(changes)),sorted(set(changes)))
