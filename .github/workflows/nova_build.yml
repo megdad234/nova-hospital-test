@@ -5,6 +5,7 @@ on:
     paths:
       - 'NOVA_Hospital_GitHub_Ready_Source.zip'
       - '.github/workflows/nova_build.yml'
+      - '.github/ci/windows_sqlite_test_cleanup.py'
   workflow_dispatch:
 permissions:
   contents: read
