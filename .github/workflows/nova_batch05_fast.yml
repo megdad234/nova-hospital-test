@@ -120,7 +120,7 @@ jobs:
           if not result.wasSuccessful():raise SystemExit(1)
           PY
       - name: Verify beneficiary insurance coverage and historical invoices
-        run: PYTHONPATH=pharmacy:. python .github/ci/nova_batch06_acceptance.py
+        run: PYTHONPATH=pharmacy:. python -c "import runpy;runpy.run_path('.github/ci/nova_batch06_acceptance.py',run_name='__main__')"
       - name: Inspect direct cashier authorization
         run: |
           grep -n -A 3 -B 2 "invoice-quote\|/api/hospital/patients\|nova-cashier-quick-invoice" hospital/gateway.py || true
