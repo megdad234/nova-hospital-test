@@ -131,21 +131,15 @@ def _lines(c,keys,insurer_id,beneficiary_type='primary'):""")
     else:beneficiary_type='primary'
     lines,insurer=_lines(c,data.get('services'),iid,beneficiary_type)
     return {'lines':lines,'beneficiary_type':beneficiary_type,'insurer_id':iid,'insurer_name':insurer['name'] if insurer else '',""")
+    s = one(s,"member_no,total,insurer_due,patient_due,note,lab_order_id)",
+              "member_no,total,insurer_due,patient_due,note,lab_order_id,beneficiary_type)")
+    s = one(s,"VALUES(?,?,?,?,?,?,?,?,?,?,?,?)'''",
+              "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)'''")
+    s = one(s,"quoted['total'],quoted['insurer_due'],quoted['patient_due'],note,lab_order_id))",
+              "quoted['total'],quoted['insurer_due'],quoted['patient_due'],note,lab_order_id,quoted['beneficiary_type']))")
     s = one(s,
-      """member_no,total,insurer_due,patient_due,note,lab_order_id)
-                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
-                 (invoice_no,pid,actor['id'],now(),iid or None,quoted['insurer_name'],member,
-                  quoted['total'],quoted['insurer_due'],quoted['patient_due'],note,lab_order_id))""",
-      """member_no,total,insurer_due,patient_due,note,lab_order_id,beneficiary_type)
-                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-                 (invoice_no,pid,actor['id'],now(),iid or None,quoted['insurer_name'],member,
-                  quoted['total'],quoted['insurer_due'],quoted['patient_due'],note,lab_order_id,
-                  quoted['beneficiary_type']))""")
-    s = one(s,
-      """key,insurer['default_coverage'] if insurer else 0)
-            insurer_part=line['price']*coverage//100""",
-      """key,insurer['default_coverage'] if insurer else 0,inv['beneficiary_type'])
-            insurer_part=line['price']*coverage//100""")
+       "_coverage(c,insurer_id,line['category_code'],key,insurer['default_coverage'] if insurer else 0)",
+       "_coverage(c,insurer_id,line['category_code'],key,insurer['default_coverage'] if insurer else 0,inv['beneficiary_type'])")
     # Keep helper code top-level; init is executed after module import.
     s += "\n" + SCHEMA
     return s
