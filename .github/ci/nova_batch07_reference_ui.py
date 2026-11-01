@@ -82,7 +82,6 @@ replace_once(admin,
        notice('رقم العملية البنكية إلزامي لهذا البنك. أدخل الرقم قبل تسجيل التسوية.',true);
        insurance.querySelector('input[name="bank_reference"]')?.focus();
        return;
-     }
      }""")
 
 # Intentional guardrails: UI wording only; no changes to account policies,
