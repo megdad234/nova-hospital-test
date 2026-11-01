@@ -17,6 +17,7 @@ on:
       - '.github/ci/nova_batch05_test_expectations.py'
       - '.github/ci/nova_batch06_insurance.py'
       - '.github/ci/nova_batch06_acceptance.py'
+      - '.github/ci/nova_batch07_reference_ui.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -112,12 +113,17 @@ jobs:
         run: |
           python .github/ci/nova_batch06_insurance.py
           if ($LASTEXITCODE -ne 0) { throw 'NOVA Batch 06 insurance source patch failed; installer blocked' }
+      - name: Add mandatory bank reference indicator and warnings
+        shell: pwsh
+        run: |
+          python .github/ci/nova_batch07_reference_ui.py
+          if ($LASTEXITCODE -ne 0) { throw 'Bank reference UI patch failed; installer blocked' }
       - name: Restore previously verified development Windows build
         id: setup_cache
         uses: actions/cache/restore@v4
         with:
           path: windows/output/NOVA-Hospital-Setup-DEV.exe
-          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py', '.github/ci/nova_batch02_patch.py', '.github/ci/nova_batch03_patch.py', '.github/ci/nova_batch04_lab_reception.py', '.github/ci/nova_batch05_cashier_pharmacy.py', '.github/ci/nova_batch05_ui.py', '.github/ci/nova_batch05_free_policy.py', '.github/ci/nova_batch05_test_expectations.py', '.github/ci/nova_batch06_insurance.py') }}
+          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py', '.github/ci/nova_batch02_patch.py', '.github/ci/nova_batch03_patch.py', '.github/ci/nova_batch04_lab_reception.py', '.github/ci/nova_batch05_cashier_pharmacy.py', '.github/ci/nova_batch05_ui.py', '.github/ci/nova_batch05_free_policy.py', '.github/ci/nova_batch05_test_expectations.py', '.github/ci/nova_batch06_insurance.py', '.github/ci/nova_batch07_reference_ui.py') }}
       - name: Run source tests and build Windows installer
         if: steps.setup_cache.outputs.cache-hit != 'true'
         shell: pwsh
