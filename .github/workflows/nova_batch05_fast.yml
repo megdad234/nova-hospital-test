@@ -10,6 +10,11 @@ on:
       - '.github/ci/nova_batch06_insurance.py'
       - '.github/ci/nova_batch06_acceptance.py'
       - '.github/ci/nova_batch07_reference_ui.py'
+      - '.github/ci/nova_batch08_pharmacy_recovery.py'
+      - 'pharmacy/static/nova_pharmacy_batch08.js'
+      - 'pharmacy/static/nova_pharmacy_batch08.css'
+      - 'pharmacy/tests/test_nova_batch08.py'
+      - 'docs/NOVA_PHARMACY_BATCH08_HANDOFF_AR.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -32,6 +37,7 @@ jobs:
           python .github/ci/nova_batch05_test_expectations.py
           python .github/ci/nova_batch06_insurance.py
           python .github/ci/nova_batch07_reference_ui.py
+          python .github/ci/nova_batch08_pharmacy_recovery.py
           python -m compileall -q pharmacy hospital
       - name: Display laboratory printer context
         run: sed -n '82,98p' hospital/static/app.js
@@ -41,6 +47,7 @@ jobs:
           sed -n '190,245p' hospital/static/finance-ui.js
       - name: JavaScript grammar checks on all changed screens
         run: |
+          node --check pharmacy/static/nova_pharmacy_batch08.js
           node --check pharmacy/static/app.js
           node --check hospital/static/app.js
           node --check hospital/static/finance-ui.js
@@ -98,6 +105,8 @@ jobs:
               print('===',name,'===')
               for k in range(i,j):print(k+1,x[k])
           PY
+      - name: Pharmacy Batch08 invoice price, draft and finance acceptance
+        run: PYTHONPATH=pharmacy:. python -m unittest -q pharmacy.tests.test_nova_batch08
       - name: Finance regressions
         run: PYTHONPATH=pharmacy:. python -m unittest -q tests.test_finance_workflow tests.test_finance_refunds
       - name: Test direct cashier quote and combined work queue over HTTP

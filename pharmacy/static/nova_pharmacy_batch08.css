@@ -1,0 +1,39 @@
+
+/* NOVA Batch08: calm additions to existing purchase layout; do not replace it. */
+.nova-purchase-controls{display:flex;flex-wrap:wrap;align-items:end;gap:9px;border:1px solid #c9ded7;padding:10px 14px;border-radius:11px;margin:9px 0;background:#f5faf8}
+.nova-purchase-controls .field{min-width:160px;max-width:220px;margin:0}
+.nova-purchase-controls input{width:100%;min-width:0}
+.nova-purchase-price-field{min-width:145px}
+.nova-purchase-price-field small{display:block;font-size:11px;margin-top:3px}
+.nova-draft-item{display:flex;flex-wrap:wrap;align-items:center;gap:10px;border-bottom:1px solid #e4eee9;padding:10px 4px}
+.nova-draft-item small{margin-inline-start:auto}
+.nova-not-priced{opacity:.82;border-style:dashed!important}
+.nova-payment-placeholder{display:grid;gap:5px;border:1px solid #d7e5e0;padding:10px;border-radius:9px;margin:10px 0}
+.nova-payment-placeholder span{font-weight:600;color:#125b4d}
+.nova-payment-placeholder small{color:#647f75}
+.nova-expiry-grid,.nova-report-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.nova-expiry-tile{border:1px solid #d6e4dc;background:#f7fcf9;border-radius:12px;padding:14px;color:#204139;text-align:right}
+.nova-expiry-tile strong{display:block;font-size:24px}
+.nova-expiry-tile span{display:block;font-size:13px}
+.nova-expiry-tile:hover{background:#e6f5ed}
+.nova-business-tools{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:15px}
+.nova-business-tools label{display:grid;gap:5px;font-weight:600}
+.nova-business-tools input{min-height:37px;padding:5px;border:1px solid #ccdcd4;border-radius:8px}
+.nova-report-kpis>div{background:#eef8f2;padding:12px;border-radius:12px;display:grid;gap:6px}
+.nova-report-kpis b{font-size:22px;color:#0e604b}
+.nova-report-kpis small{font-size:12px;color:#48675c}
+.nova-report-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.nova-report-section{margin-top:16px;min-width:0}
+.nova-report-section h3{border-bottom:2px solid #66c5a3;padding-bottom:8px;color:#174b3d}
+.nova-report-notes{font-size:12px;color:#536d64;border-top:1px solid #d4e6db;margin-top:14px}
+.nova-report-notes p{margin:6px 0}
+@media(max-width:900px){.nova-report-sections{grid-template-columns:1fr}.nova-expiry-grid,.nova-report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media print{
+ body.nova-print-business .sidebar,body.nova-print-business .topbar,
+ body.nova-print-business #content>*:not(#nova-business-report),
+ body.nova-print-business .nova-business-tools{display:none!important}
+ body.nova-print-business .main{margin:0!important}
+ body.nova-print-business #content{padding:0!important}
+ body.nova-print-business #nova-business-report{box-shadow:none!important;border:0!important}
+ body.nova-print-business .nova-report-section{break-inside:avoid}
+}
