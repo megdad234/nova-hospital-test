@@ -7,6 +7,7 @@ on:
       - '.github/ci/nova_batch05_ui.py'
       - '.github/ci/nova_batch05_free_policy.py'
       - '.github/ci/nova_batch05_test_expectations.py'
+      - '.github/ci/nova_batch06_insurance.py'
   workflow_dispatch:
 permissions:
   contents: read
