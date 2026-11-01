@@ -70,7 +70,7 @@ replace_once(admin,
  field.setAttribute('aria-required',required?'true':'false');
 }""")
 replace_once(admin,
-"""   $('adm-pay-method').addEventListener('change',admPaymentFields);admPaymentFields();""",
+"""   $('adm-pay-method').addEventListener('change',admPaymentFields);admPaymentFields();;""",
 """   insurance.addEventListener('change',admPaymentFields);
    insurance.addEventListener('input',admPaymentFields);
    admPaymentFields();""")
