@@ -75,16 +75,15 @@ replace_once(admin,
    insurance.addEventListener('input',admPaymentFields);
    admPaymentFields();""")
 replace_once(admin,
-"""     if(!Number.isSafeInteger(cash)||cash<0||cash>raw)throw Error('المبلغ النقدي غير صحيح');
-     const company=""",
-"""     if(!Number.isSafeInteger(cash)||cash<0||cash>raw)throw Error('المبلغ النقدي غير صحيح');
+"""if(!Number.isSafeInteger(cash)||cash<0||cash>raw)throw Error('المبلغ النقدي غير صحيح');""",
+"""if(!Number.isSafeInteger(cash)||cash<0||cash>raw)throw Error('المبلغ النقدي غير صحيح');
      const selectedBank=adminState.banks.find(b=>b.id===Number(values.get('bank_id')||0));
      if(raw-cash>0&&selectedBank?.require_reference&&!String(values.get('bank_reference')||'').trim()){
        notice('رقم العملية البنكية إلزامي لهذا البنك. أدخل الرقم قبل تسجيل التسوية.',true);
        insurance.querySelector('input[name="bank_reference"]')?.focus();
        return;
      }
-     const company=""")
+     }""")
 
 # Intentional guardrails: UI wording only; no changes to account policies,
 # bank reference formats, server checks, finance schema, or previously recorded data.
