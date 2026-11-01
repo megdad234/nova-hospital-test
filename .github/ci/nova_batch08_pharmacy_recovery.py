@@ -107,6 +107,52 @@ def nova_purchase_draft_delete(c,p,uid):
     except Exception:rollback(c);raise
     return {'deleted':True,'stock_changed':False}
 
+def nova_bulk_unpriced(c,p,uid):
+    """Preview or approve prices ONLY for stocked, previously unpriced pharmacy packages."""
+    try:
+        pct=Decimal(str(p.get('markup_percent',0)))
+    except (InvalidOperation,ValueError,TypeError):
+        raise ValueError('نسبة زيادة البيع غير صحيحة')
+    if not pct.is_finite() or pct<0 or pct>1000:raise ValueError('النسبة من 0 إلى 1000 فقط')
+    preview=p.get('preview',True) is not False
+    candidates=query(c,"""SELECT pk.id,pk.product_id,pk.factor,pr.name
+        FROM packages pk JOIN products pr ON pr.id=pk.product_id
+        WHERE pk.sale_price=0 AND pr.active=1 AND EXISTS(
+          SELECT 1 FROM lots l WHERE l.product_id=pr.id AND l.status='sellable'
+          AND l.qty_base>0 AND (l.expiry='' OR l.expiry>=date('now')))
+        ORDER BY pr.name,pk.id""")
+    changes=[]
+    for pk in candidates:
+        last=one(c,"""SELECT pl.cost,pl.qty,pl.bonus,pl.discount,src.factor FROM purchase_lines pl
+              JOIN packages src ON src.id=pl.package_id
+              WHERE src.product_id=? AND (pl.received+pl.bonus)>0
+              ORDER BY pl.id DESC LIMIT 1""",(pk['product_id'],))
+        if not last:continue
+        denom=Decimal(last['qty']+last['bonus'])
+        if not denom:continue
+        unit=(Decimal(last['qty'])*Decimal(last['cost'])-Decimal(last['discount']))/denom
+        proposed=int((max(Decimal(0),unit)*Decimal(pk['factor'])/
+                      Decimal(last['factor'])*(Decimal(1)+pct/Decimal(100))+
+                      Decimal('0.5')).to_integral_value(rounding='ROUND_DOWN'))
+        if proposed<1 or proposed>1_000_000_000_000:continue
+        changes.append({'package_id':pk['id'],'name':pk['name'],'price':proposed})
+    if preview:
+        return {'count':len(changes),'sample':changes[:20],'markup_percent':str(pct),
+                'saved':False}
+    begin(c)
+    try:
+        updated=0
+        for rec in changes:
+            res=c.execute('UPDATE packages SET sale_price=? WHERE id=? AND sale_price=0',
+                          (rec['price'],rec['package_id']))
+            if res.rowcount:
+                updated+=1
+                audit(c,uid,'legacy_purchase_price_approved',
+                      {'package_id':rec['package_id'],'new_price':rec['price'],'markup_percent':str(pct)})
+        finish(c)
+    except Exception:rollback(c);raise
+    return {'updated':updated,'saved':True,'markup_percent':str(pct)}
+
 def nova_pharmacy_business_report(c,day_from,day_to):
     """Accounting: revenue minus sold-stock COGS; purchases remain inventory, not expenses.
     Operational reporting, not an independently audited financial statement.
@@ -185,7 +231,8 @@ s=replace_one(s,"'/api/v1/held-sales':lambda:nova_held_list(c,u['id']),",
     "'/api/v1/nova-purchase-drafts':lambda:nova_purchase_draft_list(c,u['id']),\n                     '/api/v1/nova-pharmacy-finance':lambda:nova_pharmacy_business_report(c,(parse_qs(urlparse(self.path).query).get('from') or [today()[:7]+'-01'])[0],(parse_qs(urlparse(self.path).query).get('to') or [today()])[0]),\n                     '/api/v1/held-sales':lambda:nova_held_list(c,u['id']),",
     'GET result routes')
 s=replace_one(s,"'/api/v1/hold-sale':('sale',lambda:nova_hold_save(c,data,u['id'])),",
-    "'/api/v1/nova-purchase-draft-save':('purchase',lambda:nova_purchase_draft_save(c,data,u['id'])),\n                     '/api/v1/nova-purchase-draft-delete':('purchase',lambda:nova_purchase_draft_delete(c,data,u['id'])),\n                     '/api/v1/hold-sale':('sale',lambda:nova_hold_save(c,data,u['id'])),",
+    "'/api/v1/nova-reprice-unpriced':('prices',lambda:nova_bulk_unpriced(c,data,u['id'])),
+                     '/api/v1/nova-purchase-draft-save':('purchase',lambda:nova_purchase_draft_save(c,data,u['id'])),\n                     '/api/v1/nova-purchase-draft-delete':('purchase',lambda:nova_purchase_draft_delete(c,data,u['id'])),\n                     '/api/v1/hold-sale':('sale',lambda:nova_hold_save(c,data,u['id'])),",
     'POST purchase draft routes')
 # Existing static whitelist is explicit: keep installed script served locally over LAN.
 s=replace_one(s,"'/static/ux_v14.js','/static/logo.png'",
