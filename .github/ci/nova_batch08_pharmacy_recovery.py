@@ -231,8 +231,7 @@ s=replace_one(s,"'/api/v1/held-sales':lambda:nova_held_list(c,u['id']),",
     "'/api/v1/nova-purchase-drafts':lambda:nova_purchase_draft_list(c,u['id']),\n                     '/api/v1/nova-pharmacy-finance':lambda:nova_pharmacy_business_report(c,(parse_qs(urlparse(self.path).query).get('from') or [today()[:7]+'-01'])[0],(parse_qs(urlparse(self.path).query).get('to') or [today()])[0]),\n                     '/api/v1/held-sales':lambda:nova_held_list(c,u['id']),",
     'GET result routes')
 s=replace_one(s,"'/api/v1/hold-sale':('sale',lambda:nova_hold_save(c,data,u['id'])),",
-    "'/api/v1/nova-reprice-unpriced':('prices',lambda:nova_bulk_unpriced(c,data,u['id'])),
-                     '/api/v1/nova-purchase-draft-save':('purchase',lambda:nova_purchase_draft_save(c,data,u['id'])),\n                     '/api/v1/nova-purchase-draft-delete':('purchase',lambda:nova_purchase_draft_delete(c,data,u['id'])),\n                     '/api/v1/hold-sale':('sale',lambda:nova_hold_save(c,data,u['id'])),",
+    "'/api/v1/nova-reprice-unpriced':('prices',lambda:nova_bulk_unpriced(c,data,u['id'])),\n                     '/api/v1/nova-purchase-draft-save':('purchase',lambda:nova_purchase_draft_save(c,data,u['id'])),\n                     '/api/v1/nova-purchase-draft-delete':('purchase',lambda:nova_purchase_draft_delete(c,data,u['id'])),\n                     '/api/v1/hold-sale':('sale',lambda:nova_hold_save(c,data,u['id'])),",
     'POST purchase draft routes')
 # Existing static whitelist is explicit: keep installed script served locally over LAN.
 s=replace_one(s,"'/static/ux_v14.js','/static/logo.png'",
