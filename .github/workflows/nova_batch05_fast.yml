@@ -8,6 +8,7 @@ on:
       - '.github/ci/nova_batch05_free_policy.py'
       - '.github/ci/nova_batch05_test_expectations.py'
       - '.github/ci/nova_batch06_insurance.py'
+      - '.github/ci/nova_batch06_acceptance.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -28,6 +29,7 @@ jobs:
           python .github/ci/nova_batch05_ui.py
           python .github/ci/nova_batch05_free_policy.py
           python .github/ci/nova_batch05_test_expectations.py
+          python .github/ci/nova_batch06_insurance.py
           python -m compileall -q pharmacy hospital
       - name: Display laboratory printer context
         run: sed -n '82,98p' hospital/static/app.js
