@@ -57,12 +57,18 @@ class BeneficiaryInsuranceAcceptance(HospitalServerFixture,unittest.TestCase):
         insurer=admin.post("/api/hospital/insurer",{"name":"Synthetic Strict Insurer","default_coverage":60})
         iid=insurer["id"]
         # Standard request client raises on permission denial.
-        self.expect_status(rec,"post","/api/hospital/nova-beneficiary-rate",
-            {"insurer_id":iid,"beneficiary_type":"child","coverage":99},403)
-        self.expect_status(rec,"get","/api/hospital/nova-beneficiary-rates",403)
+        with self.assertRaises(Exception) as forbidden:
+            rec.post("/api/hospital/nova-beneficiary-rate",
+                {"insurer_id":iid,"beneficiary_type":"child","coverage":99})
+        self.assertIn("403",str(forbidden.exception))
+        with self.assertRaises(Exception) as forbidden:
+            rec.get("/api/hospital/nova-beneficiary-rates")
+        self.assertIn("403",str(forbidden.exception))
         pat=rec.post("/api/hospital/patients",{"full_name":"Synthetic Relationship Invalid"})
-        self.expect_status(rec,"post","/api/hospital/patient-insurance",
-            {"patient_id":pat["id"],"insurer_id":iid,"beneficiary_type":"unknown"},400)
+        with self.assertRaises(Exception) as rejected:
+            rec.post("/api/hospital/patient-insurance",
+                {"patient_id":pat["id"],"insurer_id":iid,"beneficiary_type":"unknown"})
+        self.assertIn("400",str(rejected.exception))
         admin.post("/api/hospital/nova-beneficiary-rate",
             {"insurer_id":iid,"beneficiary_type":"father","coverage":0})
         rates=admin.get("/api/hospital/nova-beneficiary-rates")
