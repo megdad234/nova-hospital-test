@@ -227,12 +227,35 @@
       ['تنتهي خلال 30 يوماً',items.filter(x=>x.days>=0&&x.days<=30).length,'30'],
       ['تنتهي خلال 90 يوماً',items.filter(x=>x.days>=0&&x.days<=90).length,'90']
     ];
-    return originalDashboard()+
+    const unpriced=state.products.filter(p=>p.active&&Number(p.available)>0&&p.packages.some(pk=>Number(pk.sale_price)<=0)).length;
+    const fix=unpriced&&can('prices')?
+      '<div class="panel nova-old-prices"><b>'+unpriced+' صنف بالمخزون من فواتير قديمة يحتاج سعر بيع.</b> '+
+      '<button class="btn outline small" onclick="novaRepriceUnpriced()">تسعير الأصناف القديمة دفعة واحدة</button></div>':'';
+    return originalDashboard()+fix+
       '<div class="panel nova-expiry-panel"><div class="panel-head"><h2>متابعة صلاحية الأدوية</h2>'+
       '<span class="muted">من أرصدة التشغيلات المستلمة</span></div><div class="nova-expiry-grid">'+
       cards.map(([label,count,kind])=>'<button class="nova-expiry-tile" type="button" onclick="novaShowExpiry(\''+
         kind+'\')"><strong>'+count+'</strong><span>'+label+'</span></button>').join('')+
       '</div><p class="muted-note">كل مربع يفتح قائمة الأدوية والتشغيلات والكميات. الأصناف المنتهية لا تُتاح للبيع.</p></div>';
+  };
+  window.novaRepriceUnpriced=async function(){
+    try{
+      const chosen=prompt('نسبة الزيادة للأدوية القديمة غير المسعّرة (%)',
+                          String(state.novaPurchaseMarkup||0));
+      if(chosen===null)return;
+      const pct=Number(chosen);
+      if(!Number.isFinite(pct)||pct<0||pct>1000)throw Error('نسبة غير صحيحة');
+      const preview=await api('nova-reprice-unpriced',{markup_percent:pct,preview:true});
+      if(!preview.count)return toast('لا توجد أصناف قديمة قابلة للتسعير من فواتير الشراء');
+      const sample=(preview.sample||[]).slice(0,5)
+        .map(x=>x.name+': '+fmt(x.price)).join('\n');
+      if(!confirm('سيتم تسعير '+preview.count+' عبوة غير مسعّرة فقط.\n'+
+                  'النسبة: '+pct+'% — المعاينة:\n'+sample+
+                  '\n\nلن تتغير الأسعار المسجلة سابقاً ولا الفواتير القديمة. اعتماد؟'))return;
+      const result=await api('nova-reprice-unpriced',{markup_percent:pct,preview:false});
+      await refresh();nav('dashboard');
+      toast('تم تسعير '+result.updated+' عبوة قديمة من آخر تكلفتها المسجلة');
+    }catch(e){toast(e.message,true)}
   };
   window.novaShowExpiry=function(kind){
     const records=novaExpiryItems().filter(x=>kind==='expired'?x.days<0: x.days>=0&&x.days<=Number(kind));
