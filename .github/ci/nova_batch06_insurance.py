@@ -96,9 +96,9 @@ def finance(s):
     s = one(s, "    member=text(data,'member_no',100)\n    start(c)",
             "    member=text(data,'member_no',100)\n    beneficiary=nova_beneficiary(data.get('beneficiary_type','primary'))\n    start(c)")
     # Match the existing statement without assuming its indentation or line breaks.
-    pattern = (r"INSERT INTO nova_patient_insurance\\(patient_id,insurer_id,member_no,changed_at\\)"
-               r"[\\s\\S]*?member_no=excluded\\.member_no,changed_at=excluded\\.changed_at"
-               r"\\s*'''\\s*,\\s*\\(pid,iid,member,now\\(\\)\\)\\)")
+    pattern = (r"INSERT INTO nova_patient_insurance\(patient_id,insurer_id,member_no,changed_at\)"
+               r"[\s\S]*?member_no=excluded\.member_no,changed_at=excluded\.changed_at"
+               r"\s*'''\s*,\s*\(pid,iid,member,now\(\)\)\)")
     repl = """INSERT INTO nova_patient_insurance(patient_id,insurer_id,member_no,changed_at,beneficiary_type)
                  VALUES(?,?,?,?,?) ON CONFLICT(patient_id) DO UPDATE SET insurer_id=excluded.insurer_id,
                  member_no=excluded.member_no,changed_at=excluded.changed_at,
