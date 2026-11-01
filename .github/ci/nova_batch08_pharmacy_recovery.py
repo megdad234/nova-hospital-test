@@ -123,14 +123,14 @@ def nova_bulk_unpriced(c,p,uid):
         ORDER BY pr.name,pk.id""")
     changes=[]
     for pk in candidates:
-        last=one(c,"""SELECT pl.cost,pl.qty,pl.bonus,pl.discount,src.factor FROM purchase_lines pl
+        last=one(c,"""SELECT pl.amount,pl.qty,pl.bonus,src.factor FROM purchase_lines pl
               JOIN packages src ON src.id=pl.package_id
               WHERE src.product_id=? AND (pl.received+pl.bonus)>0
               ORDER BY pl.id DESC LIMIT 1""",(pk['product_id'],))
         if not last:continue
         denom=Decimal(last['qty']+last['bonus'])
         if not denom:continue
-        unit=(Decimal(last['qty'])*Decimal(last['cost'])-Decimal(last['discount']))/denom
+        unit=Decimal(last['amount'])/denom
         proposed=int((max(Decimal(0),unit)*Decimal(pk['factor'])/
                       Decimal(last['factor'])*(Decimal(1)+pct/Decimal(100))+
                       Decimal('0.5')).to_integral_value(rounding='ROUND_DOWN'))
