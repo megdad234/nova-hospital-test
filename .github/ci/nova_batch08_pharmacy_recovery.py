@@ -146,9 +146,9 @@ def nova_pharmacy_business_report(c,day_from,day_to):
     sales_net=sales_gross-sales_returns
     net_cogs=sold_cost-returned_cost
     gross_profit=sales_net-net_cogs
-    expenses=query(c,'''SELECT category,COUNT(*) count,SUM(amount) amount
+    expenses=query(c,"""SELECT category,COUNT(*) count,SUM(amount) amount
         FROM expenses WHERE substr(created_at,1,10) BETWEEN ? AND ?
-        GROUP BY category ORDER BY amount DESC''',period)
+        GROUP BY category ORDER BY amount DESC""",period)
     # Snapshot is current inventory valuation, NOT historical closing stock.
     inventory_sellable=amount("""SELECT SUM(qty_base*unit_cost_milli/1000) FROM lots
         WHERE status='sellable' AND (expiry='' OR expiry>=date('now'))""")
