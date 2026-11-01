@@ -77,6 +77,20 @@ class NovaPurchaseWorkflowRecovery(unittest.TestCase):
         self.assertEqual(app.one(self.c,'SELECT COUNT(*) n FROM purchases')['n'],0)
         self.assertEqual(app.one(self.c,'SELECT COUNT(*) n FROM lots')['n'],0)
 
+    def test_legacy_unpriced_stock_bulk_pricing_requires_preview_and_approval(self):
+        app.purchase(self.c,{'supplier_id':self.supplier,'invoice_ref':'NOVA08-LEGACY',
+            'items':[{'package_id':self.box,'qty':2,'received':2,
+                      'unit_cost':1000,'expiry':self.expiry}]},self.uid)
+        self.assertEqual(app.one(self.c,'SELECT sale_price FROM packages WHERE id=?',(self.box,))['sale_price'],0)
+        preview=app.nova_bulk_unpriced(self.c,{'markup_percent':25,'preview':True},self.uid)
+        self.assertGreaterEqual(preview['count'],2)
+        self.assertEqual(app.one(self.c,'SELECT sale_price FROM packages WHERE id=?',(self.box,))['sale_price'],0)
+        accepted=app.nova_bulk_unpriced(self.c,{'markup_percent':25,'preview':False},self.uid)
+        self.assertGreaterEqual(accepted['updated'],2)
+        self.assertEqual(app.one(self.c,'SELECT sale_price FROM packages WHERE id=?',(self.box,))['sale_price'],1250)
+        self.assertEqual(app.one(self.c,'SELECT sale_price FROM packages WHERE id=?',(self.piece,))['sale_price'],125)
+        self.assertEqual(app.one(self.c,'SELECT COUNT(*) n FROM purchases')['n'],1)
+
     def test_business_report_costs_sold_stock_not_all_purchases(self):
         self.purchase('NOVA08-REPORT')
         app.sell(self.c,{'idempotency':uuid.uuid4().hex,
