@@ -116,8 +116,8 @@ def _lines(c,keys,insurer_id):""",
     return default
 
 def _lines(c,keys,insurer_id,beneficiary_type='primary'):""")
-    s = one(s, "key,insurer['default_coverage'] if insurer else 0)",
-            "key,insurer['default_coverage'] if insurer else 0,beneficiary_type)")
+    s = one(s, "price=s['price'];cov=_coverage(c,insurer_id,s['category_code'],key,insurer['default_coverage'] if insurer else 0)",
+            "price=s['price'];cov=_coverage(c,insurer_id,s['category_code'],key,insurer['default_coverage'] if insurer else 0,beneficiary_type)")
     s = one(s,
       """    lines,insurer=_lines(c,data.get('services'),iid)
     return {'lines':lines,'insurer_id':iid,'insurer_name':insurer['name'] if insurer else '',""",
