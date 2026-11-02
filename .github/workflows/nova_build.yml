@@ -179,6 +179,7 @@ jobs:
           python -m compileall -q pharmacy hospital
           node --check pharmacy/static/nova_pharmacy_batch08.js
           node --check pharmacy/static/app.js
+          $env:PYTHONPATH = 'pharmacy;.'
           python -m unittest -q pharmacy.tests.test_nova_batch12
           if ($LASTEXITCODE -ne 0) { throw 'NOVA12 insurance tests failed; installer blocked' }
       - name: Restore previously verified development Windows build
