@@ -6,6 +6,10 @@ import uuid
 import json
 from datetime import date,timedelta
 from pathlib import Path
+import sys
+ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0,str(ROOT))
+sys.path.insert(0,str(ROOT/'pharmacy'))
 import app
 from hospital import core
 
