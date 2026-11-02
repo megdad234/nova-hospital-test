@@ -50,6 +50,19 @@ class ThermalPrintAcceptance(unittest.TestCase):
         self.assertIn("win.addEventListener('afterprint',cleanup,{once:true})",self.finance)
         self.assertIn("frame.remove()",self.finance)
 
+
+    def test_pharmacy_thermal_ticket_prints_in_isolated_page_not_browser_layout(self):
+        self.assertIn('function novaPrintPharmacyThermalDocument(receiptHTML,paperWidth)',self.pharmacy)
+        self.assertIn("source.classList.contains('thermal-receipt')",self.pharmacy)
+        self.assertIn("source.classList.contains('receipt-test')",self.pharmacy)
+        self.assertIn("paper==='thermal58'?58:80",self.pharmacy)
+        self.assertIn("frame.srcdoc=",self.pharmacy)
+        self.assertIn("win.focus();win.print()",self.pharmacy)
+        self.assertIn("const heightMM=Math.max(85,Math.min(2000,",self.pharmacy)
+        self.assertIn("page.textContent='@page{size:'+width+'mm '+heightMM+'mm;margin:0}'",self.pharmacy)
+        self.assertIn("document.body.classList.add('printing-receipt')",self.pharmacy)
+        self.assertIn("if(paper==='a4'||",self.pharmacy)
+
     def test_pharmacy_and_lab_report_layouts_remain(self):
         self.assertIn('class="thermal-receipt"',self.pharmacy)
         self.assertIn('function printReport(id)',self.lab)
