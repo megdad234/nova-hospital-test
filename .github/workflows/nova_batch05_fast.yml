@@ -26,6 +26,11 @@ on:
       - '.github/ci/nova_batch10_receipt_print.py'
       - 'pharmacy/tests/test_nova_batch10.py'
       - 'docs/NOVA_BATCH10_THERMAL_RECEIPTS_AR.md'
+      - '.github/ci/nova_batch11_unified_print.py'
+      - '.github/ci/nova_unified_thermal_engine.js'
+      - '.github/ci/nova_unified_print_test.js'
+      - 'pharmacy/tests/test_nova_batch11.py'
+      - 'docs/NOVA_BATCH11_UNIFIED_PRINT_AR.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -51,6 +56,7 @@ jobs:
           python .github/ci/nova_batch08_pharmacy_recovery.py
           python .github/ci/nova_batch09_pos_admin.py
           python .github/ci/nova_batch10_receipt_print.py
+          python .github/ci/nova_batch11_unified_print.py
           python -m compileall -q pharmacy hospital
       - name: Display laboratory printer context
         run: sed -n '82,98p' hospital/static/app.js
@@ -60,6 +66,8 @@ jobs:
           sed -n '190,245p' hospital/static/finance-ui.js
       - name: JavaScript grammar checks on all changed screens
         run: |
+          node --check .github/ci/nova_unified_thermal_engine.js
+          node .github/ci/nova_unified_print_test.js
           node --check pharmacy/static/nova_pharmacy_batch08.js
           node --check hospital/static/admin-ui.js
           node --check pharmacy/static/app.js
@@ -119,6 +127,8 @@ jobs:
               print('===',name,'===')
               for k in range(i,j):print(k+1,x[k])
           PY
+      - name: NOVA Batch11 unified pharmacy and hospital receipt acceptance
+        run: PYTHONPATH=pharmacy:. python -m unittest -q pharmacy.tests.test_nova_batch11
       - name: NOVA Batch10 cashier thermal receipt acceptance
         run: PYTHONPATH=pharmacy:. python -m unittest -q pharmacy.tests.test_nova_batch10
       - name: NOVA Batch09 POS and detailed admin ledger acceptance
