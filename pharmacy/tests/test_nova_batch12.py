@@ -3,6 +3,7 @@
 import tempfile
 import unittest
 import uuid
+import json
 from datetime import date,timedelta
 from pathlib import Path
 import app
@@ -72,6 +73,7 @@ class NovaPharmacyInsuranceAcceptance(unittest.TestCase):
         history=next(x for x in app.sales(self.c) if x['id']==sale['id'])
         self.assertEqual(history['insurance_details']['patient_no'],self.person['patient_no'])
         self.assertEqual(history['insurance_details']['card_no'],'0000123')
+        json.dumps(app.sales(self.c),ensure_ascii=False)  # HTTP JSON response contract
         app.nova_insured_enroll(self.c,{'contract_id':self.contract,
             'patient_id':self.person['id'],'card_no':'00009999',
             'eligibility_confirmed':True},self.uid)
