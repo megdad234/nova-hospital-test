@@ -23,6 +23,9 @@ on:
       - 'hospital/static/nova_batch09_collections.css'
       - 'pharmacy/tests/test_nova_batch09.py'
       - 'docs/NOVA_BATCH09_POS_COLLECTION_HANDOFF_AR.md'
+      - '.github/ci/nova_batch10_receipt_print.py'
+      - 'pharmacy/tests/test_nova_batch10.py'
+      - 'docs/NOVA_BATCH10_THERMAL_RECEIPTS_AR.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -47,6 +50,7 @@ jobs:
           python .github/ci/nova_batch07_reference_ui.py
           python .github/ci/nova_batch08_pharmacy_recovery.py
           python .github/ci/nova_batch09_pos_admin.py
+          python .github/ci/nova_batch10_receipt_print.py
           python -m compileall -q pharmacy hospital
       - name: Display laboratory printer context
         run: sed -n '82,98p' hospital/static/app.js
@@ -115,6 +119,8 @@ jobs:
               print('===',name,'===')
               for k in range(i,j):print(k+1,x[k])
           PY
+      - name: NOVA Batch10 cashier thermal receipt acceptance
+        run: PYTHONPATH=pharmacy:. python -m unittest -q pharmacy.tests.test_nova_batch10
       - name: NOVA Batch09 POS and detailed admin ledger acceptance
         run: PYTHONPATH=pharmacy:. python -m unittest -q pharmacy.tests.test_nova_batch09
       - name: Pharmacy Batch08 invoice price, draft and finance acceptance
