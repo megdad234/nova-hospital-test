@@ -250,7 +250,7 @@ function novaPrintPharmacyThermalDocument(receiptHTML,paperWidth){
     '#printable table{width:100%;border-collapse:collapse}',
     '#printable th,#printable td{border:1px solid #ccc;padding:1mm;overflow-wrap:anywhere}',
     '@media print{html,body{width:'+width+'mm!important}#printable{width:'+inside+'mm!important}}'
-  ].join('\\n');
+  ].join('\n');
   frame.srcdoc='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>NOVA — إيصال الصيدلية</title><style>'+css+'</style></head><body>'+receiptHTML+'</body></html>';
   let invoked=false,released=false;
   const cleanup=()=>{if(released)return;released=true;frame.remove()};
