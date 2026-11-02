@@ -72,7 +72,7 @@ receipt_fn=r"""function novaPrintReceipt(inv){
 
 finance=ROOT/'hospital/static/finance-ui.js'
 s=finance.read_text(encoding='utf-8')
-match=list(re.finditer(r'(?ms)^function novaPrintReceipt\(inv\)\{.*?^\}',s))
+match=list(re.finditer(r'(?ms)^[ \t]*function novaPrintReceipt\(inv\)\{.*?^[ \t]*\}',s))
 if len(match)!=1:
     raise RuntimeError('NOVA10 receipt printer function missing or ambiguous: '+str(len(match)))
 s=s[:match[0].start()]+receipt_fn+s[match[0].end():]
