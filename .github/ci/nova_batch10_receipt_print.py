@@ -72,10 +72,17 @@ receipt_fn=r"""function novaPrintReceipt(inv){
 
 finance=ROOT/'hospital/static/finance-ui.js'
 s=finance.read_text(encoding='utf-8')
-match=list(re.finditer(r'(?ms)^[ \t]*function novaPrintReceipt\(inv\)\{.*?^[ \t]*\}',s))
-if len(match)!=1:
-    raise RuntimeError('NOVA10 receipt printer function missing or ambiguous: '+str(len(match)))
-s=s[:match[0].start()]+receipt_fn+s[match[0].end():]
+anchor='function novaPrintReceipt(inv){'
+start=s.find(anchor)
+if start<0 or s.count(anchor)!=1:
+    at=s.find('novaPrintReceipt')
+    raise RuntimeError('NOVA10 receipt anchor missing '+repr(s[max(0,at-45):at+105]))
+end_token="window.addEventListener('afterprint',clear,{once:true});window.print();"
+end=s.find(end_token,start)
+if end<0:raise RuntimeError('NOVA10 old receipt cleanup anchor missing')
+close=s.find('}',end+len(end_token))
+if close<0:raise RuntimeError('NOVA10 receipt closing brace missing')
+s=s[:start]+receipt_fn+s[close+1:]
 old="if(receipt.status==='settled')financePrintInvoice(financeState.invoice);"
 if s.count(old)!=1:
     raise RuntimeError('NOVA10 cashier automatic print anchor missing')
