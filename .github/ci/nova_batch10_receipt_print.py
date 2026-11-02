@@ -16,9 +16,11 @@ def replace_exact(path,old,new,label):
         raise RuntimeError(f"NOVA10 print source drift: {label}, hits={s.count(old)}")
     p.write_text(s.replace(old,new,1),encoding="utf-8")
 
-receipt_fn=r"""function novaPrintReceipt(inv){
+receipt_fn=r"""function novaPrintReceipt(inv,index){
   const last=inv?.payments||[];
-  const p=last[last.length-1];
+  const selected=index??(last.length-1),p=last[selected];
+  const remainAtReceipt=Math.max(0,Number(inv?.patient_due||0)-
+    last.slice(0,selected+1).reduce((n,x)=>n+Number(x.cash_amount||0)+Number(x.bank_amount||0),0));
   if(!p)return notice('لا توجد دفعة مسجلة لإصدار الإيصال',true);
   const brand=state.brand||{},area=$('print-area');
   if(!area)return notice('تعذر العثور على مساحة الطباعة',true);
@@ -45,6 +47,7 @@ receipt_fn=r"""function novaPrintReceipt(inv){
     row('رقم الفاتورة',inv.invoice_no,'ltr')+
     row('التاريخ والوقت',clock,'ltr')+
     row('المريض',inv.patient_name)+
+    (p.cashier_name?row('الكاشير',p.cashier_name):'')+
     '<div class="nova-receipt-divider"></div>'+
     (items?'<div class="nova-receipt-service-title">الخدمات</div>'+items+
       '<div class="nova-receipt-divider"></div>':'')+
@@ -54,7 +57,7 @@ receipt_fn=r"""function novaPrintReceipt(inv){
       (p.bank_reference?row('رقم العملية',p.bank_reference,'ltr'):''):'')+
     '<div class="nova-receipt-divider"></div>'+
     '<div class="nova-receipt-total">'+row('قيمة هذه الدفعة',money(receiptTotal))+'</div>'+
-    row('المتبقي على المريض',money(Number(inv.remaining||0)))+
+    row('المتبقي بعد هذه الدفعة',money(remainAtReceipt))+
     '<div class="nova-receipt-divider"></div>'+
     '<div class="nova-receipt-foot">'+(brand.hospital_phone?
        '<span dir="ltr">'+text(brand.hospital_phone)+'</span>':'')+
@@ -72,7 +75,7 @@ receipt_fn=r"""function novaPrintReceipt(inv){
 
 finance=ROOT/'hospital/static/finance-ui.js'
 s=finance.read_text(encoding='utf-8')
-anchor='function novaPrintReceipt(inv){'
+anchor='function novaPrintReceipt(inv,index){'
 start=s.find(anchor)
 if start<0 or s.count(anchor)!=1:
     at=s.find('novaPrintReceipt')
@@ -83,10 +86,8 @@ if end<0:raise RuntimeError('NOVA10 old receipt cleanup anchor missing')
 close=s.find('}',end+len(end_token))
 if close<0:raise RuntimeError('NOVA10 receipt closing brace missing')
 s=s[:start]+receipt_fn+s[close+1:]
-old="if(receipt.status==='settled')financePrintInvoice(financeState.invoice);"
-if s.count(old)!=1:
-    raise RuntimeError('NOVA10 cashier automatic print anchor missing')
-s=s.replace(old,"if(financeState.invoice?.payments?.length)novaPrintReceipt(financeState.invoice);",1)
+if s.count('novaPrintReceipt(financeState.invoice);')!=1:
+    raise RuntimeError('NOVA10 existing automatic partial-payment receipt printing missing')
 finance.write_text(s,encoding='utf-8')
 
 # CSS isolation matters: previous global A4 @page is applied to thermal tickets
