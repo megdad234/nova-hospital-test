@@ -25,7 +25,7 @@ def patch_backend(s):
     for x in rows:"""
     validation="""    nova_insured_schema(c)
     insured_member=None
-    if p.get('insurance_sale') is True or p.get('insurance_member_id'):
+    if contract_id or p.get('insurance_sale') is True or p.get('insurance_member_id'):
         if not contract:raise ValueError('بيع التأمين يتطلب اختيار عقد فعّال')
         if not partner_id:raise ValueError('حدد المستفيد التأميني أولاً')
         selected=p.get('insurance_member_id')
