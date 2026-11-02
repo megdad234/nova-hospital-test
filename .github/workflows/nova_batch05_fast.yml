@@ -31,6 +31,12 @@ on:
       - '.github/ci/nova_unified_print_test.js'
       - 'pharmacy/tests/test_nova_batch11.py'
       - 'docs/NOVA_BATCH11_UNIFIED_PRINT_AR.md'
+      - '.github/ci/nova_batch12_insurance.py'
+      - '.github/ci/nova_batch12_insurance_backend.pyfrag'
+      - 'pharmacy/static/nova_batch12_insurance.js'
+      - 'pharmacy/static/nova_batch12_insurance.css'
+      - 'pharmacy/tests/test_nova_batch12.py'
+      - 'docs/NOVA_BATCH12_INSURANCE_PATIENT_LINK_AR.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -57,6 +63,7 @@ jobs:
           python .github/ci/nova_batch09_pos_admin.py
           python .github/ci/nova_batch10_receipt_print.py
           python .github/ci/nova_batch11_unified_print.py
+          python .github/ci/nova_batch12_insurance.py
           python -m compileall -q pharmacy hospital
       - name: Display laboratory printer context
         run: sed -n '82,98p' hospital/static/app.js
@@ -127,6 +134,8 @@ jobs:
               print('===',name,'===')
               for k in range(i,j):print(k+1,x[k])
           PY
+      - name: NOVA Batch12 insured patient pharmacy workflow acceptance
+        run: PYTHONPATH=pharmacy:. python -m unittest -q pharmacy.tests.test_nova_batch12
       - name: NOVA Batch11 unified pharmacy and hospital receipt acceptance
         run: PYTHONPATH=pharmacy:. python -m unittest -q pharmacy.tests.test_nova_batch11
       - name: NOVA Batch10 cashier thermal receipt acceptance

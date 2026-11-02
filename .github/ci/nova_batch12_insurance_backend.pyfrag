@@ -1,0 +1,195 @@
+# NOVA Batch12 — one insured patient identity shared with NOVA hospital record.
+# All card numbers are TEXT; existing invoices are never backfilled or rewritten.
+def nova_insured_schema(c):
+    c.executescript("""CREATE TABLE IF NOT EXISTS nova_pharmacy_insured_people(
+      patient_id INTEGER PRIMARY KEY REFERENCES hospital_patients(id),
+      partner_id INTEGER NOT NULL UNIQUE REFERENCES partners(id));
+    CREATE TABLE IF NOT EXISTS nova_pharmacy_insured_cards(
+      member_id INTEGER PRIMARY KEY REFERENCES insurance_members(id),
+      contract_id INTEGER NOT NULL REFERENCES insurance_contracts(id),
+      patient_id INTEGER NOT NULL REFERENCES hospital_patients(id),
+      card_no TEXT NOT NULL CHECK(length(trim(card_no))>0),
+      created_at TEXT NOT NULL);
+    CREATE UNIQUE INDEX IF NOT EXISTS ix_nova_insured_card_unique
+      ON nova_pharmacy_insured_cards(contract_id,card_no COLLATE NOCASE);
+    CREATE TABLE IF NOT EXISTS nova_pharmacy_insured_sales(
+      sale_id INTEGER PRIMARY KEY REFERENCES sales(id),
+      contract_id INTEGER NOT NULL REFERENCES insurance_contracts(id),
+      member_id INTEGER NOT NULL REFERENCES insurance_members(id),
+      patient_id INTEGER NOT NULL REFERENCES hospital_patients(id),
+      patient_name TEXT NOT NULL, patient_no TEXT NOT NULL,
+      card_no TEXT NOT NULL, insurer_name TEXT NOT NULL,
+      coverage INTEGER NOT NULL CHECK(coverage BETWEEN 0 AND 100),
+      eligibility_confirmed INTEGER NOT NULL CHECK(eligibility_confirmed=1),
+      recorded_at TEXT NOT NULL);""")
+
+def nova_insured_search(c, contract_id, term):
+    nova_insured_schema(c)
+    contract=posint(contract_id,'عقد التأمين')
+    term=str(term or '').strip()[:100]
+    if not term:return []
+    # Search by card, name or hospital patient number, never guessed matching.
+    term=term.replace('\\','\\\\').replace('%','\\%').replace('_','\\_')
+    rows=query(c,"""SELECT im.id member_id,im.contract_id,im.partner_id,im.relation,
+       im.coverage_override,ic.coverage_default,ic.active contract_active,
+       ic.starts,ic.ends,ic.authority_id,part.name AS insurer_name,
+       hp.id patient_id,hp.patient_no,hp.full_name patient_name,
+       hp.phone,card.card_no
+       FROM insurance_members im
+       JOIN insurance_contracts ic ON ic.id=im.contract_id
+       JOIN partners part ON part.id=ic.authority_id
+       JOIN nova_pharmacy_insured_cards card ON card.member_id=im.id
+       JOIN hospital_patients hp ON hp.id=card.patient_id
+       WHERE im.contract_id=? AND im.active=1
+       AND ic.active=1 AND ic.starts<=date('now')
+       AND (ic.ends='' OR ic.ends>=date('now'))
+       AND (card.card_no LIKE ? ESCAPE '\\' OR hp.full_name LIKE ? ESCAPE '\\'
+            OR hp.patient_no LIKE ? ESCAPE '\\' OR hp.phone LIKE ? ESCAPE '\\')
+       ORDER BY hp.full_name LIMIT 50""",
+       (contract,)+tuple('%'+term+'%' for _ in range(4)))
+    return [dict(r,coverage=(r['coverage_override'] if r['coverage_override'] is not None
+                       else r['coverage_default'])) for r in rows]
+
+def nova_patient_search(c,term):
+    nova_insured_schema(c)
+    term=str(term or '').strip()[:80]
+    if not term:return []
+    term=term.replace('\\','\\\\').replace('%','\\%').replace('_','\\_')
+    return query(c,"""SELECT id,patient_no,full_name,phone
+      FROM hospital_patients WHERE full_name LIKE ? ESCAPE '\\'
+      OR patient_no LIKE ? ESCAPE '\\' OR phone LIKE ? ESCAPE '\\'
+      ORDER BY id DESC LIMIT 40""",tuple('%'+term+'%' for _ in range(3)))
+
+def nova_insured_enroll(c,p,uid):
+    nova_insured_schema(c)
+    contract_id=posint(p.get('contract_id'),'عقد التأمين')
+    card=textv(p,'card_no',100,True)
+    if not card.strip():raise ValueError('رقم بطاقة التأمين مطلوب')
+    card=card.strip()
+    if p.get('eligibility_confirmed') is not True:
+        raise ValueError('يجب تأكيد فحص البطاقة وأهلية المستفيد قبل تسجيله')
+    patient_id=p.get('patient_id') or 0
+    if patient_id:patient_id=posint(patient_id,'ملف المريض')
+    full_name=textv(p,'full_name',160)
+    phone=textv(p,'phone',35)
+    relation=textv(p,'relation',40) or 'primary'
+    if relation not in ('primary','spouse','child','father','mother'):
+        raise ValueError('نوع المستفيد غير صحيح')
+    contract=one(c,"""SELECT * FROM insurance_contracts WHERE id=? AND active=1
+      AND starts<=date('now') AND (ends='' OR ends>=date('now'))""",(contract_id,))
+    if not contract:raise ValueError('عقد التأمين غير نشط أو منتهي')
+    begin(c)
+    try:
+        if patient_id:
+            patient=one(c,'SELECT id,patient_no,full_name,phone FROM hospital_patients WHERE id=?',(patient_id,))
+            if not patient:raise ValueError('ملف المريض غير موجود')
+        else:
+            if not full_name.strip():raise ValueError('أدخل اسم المريض')
+            # Avoid silently creating exact duplicates; the operator must choose
+            # an existing record when a matching identity is already available.
+            duplicate=one(c,'SELECT id,patient_no FROM hospital_patients WHERE full_name=? AND phone=?',
+                          (full_name,phone))
+            if duplicate:
+                raise ValueError('يوجد مريض بنفس الاسم والهاتف. ابحث عن ملفه واختره بدل تسجيله مرتين: '+duplicate['patient_no'])
+            key='P-'+datetime.now().strftime('%y%m%d')+'-'+uuid.uuid4().hex[:8].upper()
+            patient_id=c.execute("""INSERT INTO hospital_patients(
+             patient_no,full_name,phone,created_at,created_by) VALUES(?,?,?,?,?)""",
+             (key,full_name,phone,now(),uid)).lastrowid
+            patient=one(c,'SELECT id,patient_no,full_name,phone FROM hospital_patients WHERE id=?',(patient_id,))
+            audit(c,uid,'hospital_patient_created_from_pharmacy',
+                  {'patient_id':patient_id,'patient_no':key})
+        link=one(c,'SELECT partner_id FROM nova_pharmacy_insured_people WHERE patient_id=?',(patient_id,))
+        if link:
+            partner_id=link['partner_id']
+        else:
+            partner_id=c.execute("INSERT INTO partners(name,kind,phone) VALUES(?,'customer',?)",
+                 (patient['full_name'],patient['phone'])).lastrowid
+            c.execute('INSERT INTO nova_pharmacy_insured_people(patient_id,partner_id) VALUES(?,?)',
+                      (patient_id,partner_id))
+        existing=one(c,'SELECT * FROM insurance_members WHERE contract_id=? AND partner_id=?',
+                     (contract_id,partner_id))
+        if existing:
+            member_id=existing['id']
+            c.execute('UPDATE insurance_members SET active=1,relation=? WHERE id=?',
+                      (relation,member_id))
+        else:
+            member_id=c.execute("""INSERT INTO insurance_members(
+               contract_id,partner_id,relation,active,created_at) VALUES(?,?,?,1,?)""",
+               (contract_id,partner_id,relation,now())).lastrowid
+        other=one(c,'SELECT member_id FROM nova_pharmacy_insured_cards WHERE contract_id=? AND card_no=? COLLATE NOCASE',
+                  (contract_id,card))
+        if other and other['member_id']!=member_id:
+            raise ValueError('رقم البطاقة مسجل لمستفيد آخر في نفس العقد')
+        c.execute("""INSERT INTO nova_pharmacy_insured_cards(
+            member_id,contract_id,patient_id,card_no,created_at) VALUES(?,?,?,?,?)
+            ON CONFLICT(member_id) DO UPDATE SET card_no=excluded.card_no,
+            patient_id=excluded.patient_id""",
+            (member_id,contract_id,patient_id,card,now()))
+        audit(c,uid,'pharmacy_insured_enrolled',
+           {'patient_id':patient_id,'member_id':member_id,'contract_id':contract_id})
+        finish(c)
+    except Exception:
+        rollback(c);raise
+    # Return a usable record without fetching all patients or cards.
+    row=one(c,"""SELECT im.id member_id,im.contract_id,im.partner_id,im.relation,
+      im.coverage_override,ic.coverage_default,ic.authority_id,
+      pa.name insurer_name,hp.id patient_id,hp.patient_no,
+      hp.full_name patient_name,hp.phone,card.card_no
+      FROM insurance_members im JOIN insurance_contracts ic ON ic.id=im.contract_id
+      JOIN partners pa ON pa.id=ic.authority_id
+      JOIN nova_pharmacy_insured_cards card ON card.member_id=im.id
+      JOIN hospital_patients hp ON hp.id=card.patient_id WHERE im.id=?""",(member_id,))
+    return dict(row,coverage=row['coverage_override'] if row['coverage_override'] is not None
+                else row['coverage_default'])
+
+def nova_insured_sale_snapshot(c,member,contract,uid,coverage,sale_id):
+    card=one(c,"""SELECT card.card_no,hp.id patient_id,hp.patient_no,
+       hp.full_name patient_name,pa.name insurer_name
+       FROM nova_pharmacy_insured_cards card
+       JOIN hospital_patients hp ON hp.id=card.patient_id
+       JOIN insurance_contracts ic ON ic.id=card.contract_id
+       JOIN partners pa ON pa.id=ic.authority_id
+       WHERE card.member_id=? AND card.contract_id=?""",(member['id'],contract['id']))
+    if not card:raise ValueError('بطاقة المستفيد غير مسجلة أو غير مرتبطة بملف المريض')
+    c.execute("""INSERT INTO nova_pharmacy_insured_sales(
+      sale_id,contract_id,member_id,patient_id,patient_name,patient_no,card_no,
+      insurer_name,coverage,eligibility_confirmed,recorded_at)
+      VALUES(?,?,?,?,?,?,?,?,?,1,?)""",
+      (sale_id,contract['id'],member['id'],card['patient_id'],card['patient_name'],
+       card['patient_no'],card['card_no'],card['insurer_name'],coverage,now()))
+
+def nova_insurance_monthly_detail(c,authority,period):
+    nova_insured_schema(c)
+    aid=posint(authority,'شركة التأمين')
+    period=str(period or '')
+    if not re.fullmatch(r'\d{4}-(0[1-9]|1[0-2])',period):
+        raise ValueError('اختر شهراً صحيحاً')
+    # The existing monthly claim engine has sole authority over claim totals.
+    # The claim amount occurs ONCE per invoice, never repeated for every drug.
+    rows=query(c,"""SELECT s.id sale_id,s.ref,s.created_at,s.total,s.covered,
+      si.insurer_name,si.patient_name,si.patient_no,si.card_no,
+      sl.id line_id,pr.name medicine,pk.unit_name,sl.qty,sl.unit_price,
+      sl.total line_total,COALESCE((
+          SELECT SUM(rl.qty) FROM return_lines rl WHERE rl.sale_line_id=sl.id),0) returned_qty,
+      cs.claim_id,cs.covered_amount claimed_amount,
+      COALESCE((SELECT SUM(sr.covered) FROM sale_returns sr WHERE sr.sale_id=s.id),0) returned_covered
+      FROM sales s
+      LEFT JOIN nova_pharmacy_insured_sales si ON si.sale_id=s.id
+      JOIN sale_lines sl ON sl.sale_id=s.id
+      JOIN packages pk ON pk.id=sl.package_id
+      JOIN products pr ON pr.id=pk.product_id
+      LEFT JOIN claim_sales cs ON cs.sale_id=s.id
+      WHERE s.authority_id=? AND substr(s.created_at,1,7)=? AND s.covered>0
+      ORDER BY s.id,sl.id LIMIT 20000""",(aid,period))
+    seen=set()
+    for row in rows:
+        first=row['sale_id'] not in seen
+        if first:seen.add(row['sale_id'])
+        row['covered_invoice_once']=(
+            (row['claimed_amount'] if row['claimed_amount'] is not None
+             else max(0,row['covered']-row['returned_covered'])) if first else 0)
+        row['not_registered_historically']=not bool(row['card_no'])
+    amount=sum(x['covered_invoice_once'] for x in rows)
+    return {'period':period,'authority_id':aid,'rows':rows,
+            'invoice_count':len(seen),'covered_invoices_total':amount,
+            'note':'التفاصيل تعرض قيمة الأدوية وحصة التأمين مرة واحدة لكل فاتورة. الفواتير القديمة بدون بطاقة موثقة تظهر بوضوح، ولا نختلق لها رقماً. التسويات والتعديلات بعد تقديم المطالبة تُراجع في كشف المطالبات الأصلي.'}
