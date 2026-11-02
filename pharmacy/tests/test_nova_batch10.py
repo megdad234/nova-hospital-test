@@ -51,6 +51,6 @@ class ThermalPrintAcceptance(unittest.TestCase):
     def test_pharmacy_and_lab_report_layouts_remain(self):
         self.assertIn('class="thermal-receipt"',self.pharmacy)
         self.assertIn('function printReport(id)',self.lab)
-        self.assertIn('class="lab-print"',self.lab)
+        self.assertIn('class="lab-print nova-clinical-print"',self.lab)
 
 if __name__=='__main__':unittest.main()
