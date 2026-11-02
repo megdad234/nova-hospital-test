@@ -22,8 +22,7 @@ receipt_fn=r"""function novaPrintReceipt(inv,index){
   const remainAtReceipt=Math.max(0,Number(inv?.patient_due||0)-
     last.slice(0,selected+1).reduce((n,x)=>n+Number(x.cash_amount||0)+Number(x.bank_amount||0),0));
   if(!p)return notice('لا توجد دفعة مسجلة لإصدار الإيصال',true);
-  const brand=state.brand||{},area=$('print-area');
-  if(!area)return notice('تعذر العثور على مساحة الطباعة',true);
+  const brand=state.brand||{};
   const text=x=>esc(String(x??'—'));
   // Keep the stored local date/time exactly as written, without browser
   // timezone conversion; enforce one LTR element to avoid Arabic reordering.
@@ -38,7 +37,7 @@ receipt_fn=r"""function novaPrintReceipt(inv,index){
     '<div class="nova-receipt-service"><span>'+text(x.name)+'</span>'+
     '<span>'+money(Number(x.patient_part??x.price??0))+'</span></div>').join('');
   const receiptTotal=cash+bank;
-  area.innerHTML='<article class="nova-thermal nova-thermal-v2" dir="rtl">'+
+  const receiptHTML='<article class="nova-thermal nova-thermal-v2" dir="rtl">'+
     '<div class="nova-receipt-head"><h2>'+text(brand.hospital_name||'NOVA Hospital')+'</h2>'+
     (brand.hospital_name_en?'<p lang="en" dir="ltr">'+text(brand.hospital_name_en)+'</p>':'')+
     '<strong>إيصال تحصيل — مستشفى</strong></div>'+
@@ -62,15 +61,66 @@ receipt_fn=r"""function novaPrintReceipt(inv,index){
     '<div class="nova-receipt-foot">'+(brand.hospital_phone?
        '<span dir="ltr">'+text(brand.hospital_phone)+'</span>':'')+
     '<strong>شكراً لزيارتكم</strong></div></article>';
-  document.body.classList.add('printing-nova-thermal');
-  let cleaned=false;
-  const clear=()=>{
-    if(cleaned)return;
-    cleaned=true;document.body.classList.remove('printing-nova-thermal');area.innerHTML='';
+  novaPrintThermalDocument(receiptHTML);
+}
+/* Keep thermal tickets independent of hospital A4 page settings. */
+function novaPrintThermalDocument(receiptHTML){
+  const previous=document.getElementById('nova-thermal-frame');
+  if(previous)previous.remove();
+  const frame=document.createElement('iframe');
+  frame.id='nova-thermal-frame';
+  frame.title='طباعة إيصال حراري 80mm';
+  frame.setAttribute('aria-hidden','true');
+  frame.style.cssText='position:fixed;left:0;top:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+  const printCSS=[
+    '*{box-sizing:border-box}',
+    'html,body{margin:0!important;padding:0!important;direction:rtl;color:#000;background:#fff}',
+    'body{width:80mm!important;min-width:80mm!important;max-width:80mm!important;padding:4mm!important;font:10pt/1.45 Tahoma,Arial,sans-serif!important}',
+    '.nova-thermal-v2{width:72mm!important;max-width:72mm!important;margin:0!important;padding:0!important;background:white!important;color:#000!important;direction:rtl;font:10pt/1.45 Tahoma,Arial,sans-serif!important;overflow-wrap:anywhere}',
+    '.nova-receipt-head{text-align:center;margin:0 0 2mm}',
+    '.nova-receipt-head h2{font-size:16pt;line-height:1.3;margin:0 0 1mm;font-weight:800}',
+    '.nova-receipt-head p{font-size:9pt;margin:1mm 0}',
+    '.nova-receipt-head strong{display:block;font-size:11pt}',
+    '.nova-receipt-divider{margin:2.4mm 0;border-top:1px dashed #555}',
+    '.nova-receipt-row{display:flex;justify-content:space-between;align-items:baseline;gap:3mm;padding:1.2mm 0;break-inside:avoid}',
+    '.nova-receipt-row span{flex:0 0 auto}',
+    '.nova-receipt-row strong{flex:0 1 auto;text-align:left;overflow-wrap:anywhere}',
+    '.nova-receipt-ltr{direction:ltr!important;unicode-bidi:isolate;text-align:left!important;font-variant-numeric:tabular-nums}',
+    '.nova-receipt-service-title{font-weight:800;margin-bottom:1mm}',
+    '.nova-receipt-service{display:flex;justify-content:space-between;gap:3mm;padding:1mm 0;border-bottom:1px dotted #bbb;break-inside:avoid}',
+    '.nova-receipt-service span:first-child{flex:1;min-width:0}',
+    '.nova-receipt-service span:last-child{flex:0 0 auto;font-weight:700}',
+    '.nova-receipt-total{font-size:12pt;font-weight:800;border-top:1px solid #777;border-bottom:1px solid #777;margin:1mm 0;padding:1mm 0;break-inside:avoid}',
+    '.nova-receipt-foot{display:flex;flex-direction:column;gap:1mm;text-align:center;font-size:9pt;margin-top:2mm}',
+    '@media print{html,body{width:80mm!important}.nova-thermal-v2{width:72mm!important}}'
+  ].join('\n');
+  frame.srcdoc='<!doctype html><html lang="ar" dir="rtl"><head>'+
+    '<meta charset="utf-8"><title>NOVA — إيصال حراري</title><style>'+printCSS+'</style>'+
+    '</head><body>'+receiptHTML+'</body></html>';
+  let printed=false;
+  let released=false;
+  const cleanup=()=>{if(released)return;released=true;frame.remove()};
+  frame.onload=async()=>{
+    if(printed)return;printed=true;
+    try{
+      const doc=frame.contentDocument;
+      if(!doc)throw Error('لا يمكن تحميل مستند الطباعة');
+      if(doc.fonts?.ready)await doc.fonts.ready;
+      const sheet=doc.querySelector('.nova-thermal-v2');
+      if(!sheet)throw Error('محتوى الإيصال غير موجود');
+      // One custom-length page. No hospital A4 CSS can leak into this frame.
+      const px=Math.max(sheet.scrollHeight,sheet.getBoundingClientRect().height);
+      const heightMM=Math.max(85,Math.min(900,Math.ceil(px*25.4/96+15)));
+      const page=doc.createElement('style');
+      page.textContent='@page{size:80mm '+heightMM+'mm;margin:0}';
+      doc.head.appendChild(page);
+      const win=frame.contentWindow;
+      win.addEventListener('afterprint',cleanup,{once:true});
+      win.focus();win.print();
+      setTimeout(cleanup,120000);
+    }catch(e){cleanup();notice('تعذر فتح الإيصال الحراري: '+e.message,true)}
   };
-  window.addEventListener('afterprint',clear,{once:true});
-  window.print();
-  setTimeout(clear,30000);
+  document.body.appendChild(frame);
 }"""
 
 finance=ROOT/'hospital/static/finance-ui.js'
