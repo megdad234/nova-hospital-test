@@ -34,7 +34,20 @@
       if(!currentInsured())return toast('اختر اسم المستفيد ورقم بطاقته قبل إتمام البيع',true);
       if(state.novaInsuranceVerified!==true)return toast('أكد مراجعة بطاقة المستفيد وأهلية العلاج قبل الحفظ',true);
     }
-    return oldConfirmSale();
+    const beforeSaleToken=state.idempotency;
+    const wasInsured=Boolean(state.authorityId||state.insuranceContractId);
+    await oldConfirmSale();
+    // The original checkout changes the idempotency token ONLY on success.
+    // Never carry a previous patient's card, payer or authorisation to the next sale.
+    if(wasInsured&&beforeSaleToken!==state.idempotency){
+      state.novaInsuredMember=null;
+      state.novaInsuranceVerified=false;
+      state.customerId='';
+      state.authorityId='';
+      state.insuranceContractId='';
+      state.coverage=0;
+      nav('pos');
+    }
   };
 
   function insuredPanel(){
