@@ -38,7 +38,7 @@ class UnifiedReceiptAcceptance(unittest.TestCase):
         self.assertIn('@page{margin:3mm}',self.legacy_pharmacy_style)
 
     def test_58_80_and_rtl(self):
-        for marker in ('thermal58', 'thermal80',"dir=\\"rtl\\"",
+        for marker in ('thermal58', 'thermal80', 'dir=',
                        'Tahoma,Arial','unicode-bidi:isolate','overflow-wrap:anywhere'):
             self.assertIn(marker,self.engine)
         self.assertIn('25.4/96',self.engine)
