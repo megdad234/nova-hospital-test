@@ -200,3 +200,86 @@ extension=r"""
 if 'NOVA_BATCH10_THERMAL' in style:raise RuntimeError('NOVA10 CSS already applied')
 css.write_text(style+'\n'+extension,encoding='utf-8')
 print("NOVA_BATCH10_THERMAL_RECEIPTS_APPLIED without editing pharmacy or A4 lab/invoice")
+
+
+# NOVA10_PHARMACY_ISOLATED_80MM — isolate the proven pharmacy SALE receipt
+# from the surrounding application page and its @page/A4 rules. Purchase invoices
+# still use the original A4-capable handler, and Windows printer selection is untouched.
+pharmacy_path=ROOT/'pharmacy/static/app.js'
+pharmacy=pharmacy_path.read_text(encoding='utf-8')
+pharmacy_fn=r"""async function printReceipt(){
+  const source=document.getElementById('printable');
+  if(!source){toast('لا توجد فاتورة قابلة للطباعة',true);return}
+  const b=nativeBridge();let paper=window.MADAR_PRINT_PAPER||'thermal80';
+  if(b){try{const devices=await b.get_devices();paper=devices?.settings?.paper||paper}catch(e){/* use saved/default paper */}}
+  // Preserve the original behavior for A4 purchase invoices and explicit A4 mode.
+  if(paper==='a4'||(!source.classList.contains('thermal-receipt')&&!source.classList.contains('receipt-test'))){
+    document.body.classList.remove('paper-thermal80','paper-thermal58','paper-a4');
+    document.body.classList.add('paper-'+paper);
+    document.body.classList.add('printing-receipt');
+    const clean=()=>document.body.classList.remove('printing-receipt');
+    window.addEventListener('afterprint',clean,{once:true});
+    window.print();setTimeout(clean,120000);
+    return;
+  }
+  novaPrintPharmacyThermalDocument(source.outerHTML,paper==='thermal58'?58:80);
+}
+function novaPrintPharmacyThermalDocument(receiptHTML,paperWidth){
+  const old=document.getElementById('nova-pharmacy-print-frame');
+  if(old)old.remove();
+  const width=paperWidth===58?58:80;
+  const inside=width===58?48:72;
+  const frame=document.createElement('iframe');
+  frame.id='nova-pharmacy-print-frame';
+  frame.title='إيصال الصيدلية الحراري';
+  frame.setAttribute('aria-hidden','true');
+  frame.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+  const css=[
+    '*{box-sizing:border-box}',
+    'html,body{margin:0!important;padding:0!important;color:#101010!important;background:white!important}',
+    'body{width:'+width+'mm!important;max-width:'+width+'mm!important;padding:0 '+((width-inside)/2)+'mm!important;font:10pt/1.5 Tahoma,Arial,sans-serif!important;direction:rtl}',
+    '#printable{display:block!important;position:static!important;width:'+inside+'mm!important;max-width:'+inside+'mm!important;min-width:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;direction:rtl!important;overflow-wrap:anywhere;color:#101010!important;font:10pt/1.5 Tahoma,Arial,sans-serif!important}',
+    '#printable .receipt-center{text-align:center}',
+    '#printable h2{font-size:16pt;line-height:1.3;margin:0 0 1mm;font-weight:800}',
+    '#printable p{margin:1mm 0 2mm}',
+    '#printable .receipt-divider{border:0;border-bottom:1px dashed #444;margin:2.5mm 0}',
+    '#printable .receipt-line{padding:1mm 0;border-bottom:1px dotted #bbb;break-inside:avoid}',
+    '#printable .receipt-line-name{font-weight:700;overflow-wrap:anywhere}',
+    '#printable .receipt-line-nums,#printable .receipt-sum{display:flex;justify-content:space-between;align-items:start;gap:2mm;break-inside:avoid}',
+    '#printable .receipt-grand{font-size:12pt;font-weight:800;border-top:1px solid #888;padding-top:1mm;margin-top:1mm}',
+    '#printable table{width:100%;border-collapse:collapse}',
+    '#printable th,#printable td{border:1px solid #ccc;padding:1mm;overflow-wrap:anywhere}',
+    '@media print{html,body{width:'+width+'mm!important}#printable{width:'+inside+'mm!important}}'
+  ].join('\\n');
+  frame.srcdoc='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>NOVA — إيصال الصيدلية</title><style>'+css+'</style></head><body>'+receiptHTML+'</body></html>';
+  let invoked=false,released=false;
+  const cleanup=()=>{if(released)return;released=true;frame.remove()};
+  frame.onload=async()=>{
+    if(invoked)return;invoked=true;
+    try{
+      const doc=frame.contentDocument;
+      if(!doc)throw Error('مستند الطباعة غير متاح');
+      if(doc.fonts?.ready)await doc.fonts.ready;
+      const ticket=doc.getElementById('printable');
+      if(!ticket)throw Error('الإيصال غير موجود');
+      // Size only this document; do not affect A4 reports or printer defaults.
+      const px=Math.max(ticket.scrollHeight,ticket.getBoundingClientRect().height);
+      const heightMM=Math.max(85,Math.min(2000,Math.ceil(px*25.4/96+17)));
+      const page=doc.createElement('style');
+      page.textContent='@page{size:'+width+'mm '+heightMM+'mm;margin:0}';
+      doc.head.appendChild(page);
+      const win=frame.contentWindow;
+      win.addEventListener('afterprint',cleanup,{once:true});
+      win.focus();win.print();
+      setTimeout(cleanup,120000);
+    }catch(e){cleanup();toast('تعذر طباعة إيصال الصيدلية: '+e.message,true)}
+  };
+  document.body.appendChild(frame);
+}
+"""
+pharmacy,n=re.subn(r'async function printReceipt\(\)\{.*?\n\}\n(?=function printPurchase\()',lambda _:pharmacy_fn+'\n',pharmacy,count=1,flags=re.S)
+if n!=1:raise RuntimeError('NOVA10 pharmacy printReceipt source anchor has changed')
+if 'class="thermal-receipt"' not in pharmacy:
+    raise RuntimeError('NOVA10 proven pharmacy receipt HTML is missing')
+pharmacy_path.write_text(pharmacy,encoding='utf-8')
+print('NOVA10_PHARMACY_ISOLATED_80MM: pharmacy sale/test thermal only; purchases keep original print')
