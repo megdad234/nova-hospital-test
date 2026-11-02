@@ -105,6 +105,23 @@ class NovaPharmacyInsuranceAcceptance(unittest.TestCase):
                'patient_id':other['id'],'card_no':'abc0001','eligibility_confirmed':True},self.uid)
         self.assertEqual(app.one(self.c,'SELECT COUNT(*) n FROM nova_pharmacy_insured_cards')['n'],1)
 
+    def test_suspended_membership_cannot_be_reactivated_by_pharmacist(self):
+        card=self.enroll('SUSPEND-001')
+        self.c.execute('UPDATE insurance_members SET active=0 WHERE id=?',(card['member_id'],))
+        with self.assertRaises(ValueError):
+            self.enroll('SUSPEND-NEW')
+        row=app.one(self.c,'SELECT active FROM insurance_members WHERE id=?',(card['member_id'],))
+        self.assertEqual(row['active'],0)
+        saved=app.one(self.c,'SELECT card_no FROM nova_pharmacy_insured_cards WHERE member_id=?',(card['member_id'],))
+        self.assertEqual(saved['card_no'],'SUSPEND-001')
+
+    def test_sale_ui_clears_prior_patient_on_success_only(self):
+        js=(Path(__file__).resolve().parents[1]/'static'/'nova_pharmacy_batch08.js').read_text(encoding='utf-8')
+        self.assertIn('beforeSaleToken!==state.idempotency',js)
+        self.assertIn('state.novaInsuredMember=null;',js)
+        self.assertIn('state.novaInsuranceVerified=false;',js)
+        self.assertIn("state.authorityId='';",js)
+
     def test_new_patient_created_in_same_hospital_database(self):
         row=app.nova_insured_enroll(self.c,{
              'contract_id':self.contract,'full_name':'New Synthetic Insured Person',
