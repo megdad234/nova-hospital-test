@@ -27,15 +27,16 @@ class ThermalPrintAcceptance(unittest.TestCase):
         self.assertIn('function financePrintInvoice(inv)',self.finance)
         self.assertIn("document.body.classList.add('printing-lab')",self.finance)
 
-    def test_payment_receipt_contains_actual_last_payment_and_all_methods(self):
-        self.assertIn('function novaPrintReceipt(inv)',self.finance)
-        self.assertIn('last[last.length-1]',self.finance)
-        self.assertIn('if(financeState.invoice?.payments?.length)novaPrintReceipt(financeState.invoice)',self.finance)
-        self.assertIn("if(receipt.status==='settled')financePrintInvoice", "if(receipt.status==='settled')financePrintInvoice" ) if False else None
+    def test_payment_receipt_contains_exact_installment_and_all_methods(self):
+        self.assertIn('function novaPrintReceipt(inv,index)',self.finance)
+        self.assertIn('selected=index??(last.length-1)',self.finance)
+        self.assertIn('novaPrintReceipt(financeState.invoice);',self.finance)
+        self.assertIn('remainAtReceipt',self.finance)
+        self.assertIn('row(\'الكاشير\',p.cashier_name)',self.finance)
         self.assertNotIn("if(receipt.status==='settled')financePrintInvoice(financeState.invoice)",self.finance)
-        for text in ('p.cash_amount','p.bank_amount','p.bank_reference','p.bank_name',
-                     'p.payment_no','inv.invoice_no','inv.remaining','inv.patient_name'):
-            self.assertIn(text,self.finance)
+        for fragment in ('p.cash_amount','p.bank_amount','p.bank_reference','p.bank_name',
+                         'p.payment_no','inv.invoice_no','inv.patient_name'):
+            self.assertIn(fragment,self.finance)
 
     def test_iso_dates_are_not_reordered_by_rtl(self):
         self.assertIn("replace('T',' ').slice(0,16)",self.finance)
