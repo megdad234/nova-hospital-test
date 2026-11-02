@@ -109,9 +109,12 @@ def nova_insured_enroll(c,p,uid):
         existing=one(c,'SELECT * FROM insurance_members WHERE contract_id=? AND partner_id=?',
                      (contract_id,partner_id))
         if existing:
+            # A pharmacist cannot re-enable a membership suspended by the insurer/admin.
+            # Explicit authorised reactivation is a separate administrative workflow.
+            if not existing['active']:
+                raise ValueError('عضوية المستفيد موقوفة؛ راجع مسؤول التأمين قبل الصرف')
             member_id=existing['id']
-            c.execute('UPDATE insurance_members SET active=1,relation=? WHERE id=?',
-                      (relation,member_id))
+            # Do not silently reset coverage overrides or the existing relationship.
         else:
             member_id=c.execute("""INSERT INTO insurance_members(
                contract_id,partner_id,relation,active,created_at) VALUES(?,?,?,1,?)""",
