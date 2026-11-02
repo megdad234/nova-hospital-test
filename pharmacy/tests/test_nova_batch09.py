@@ -5,7 +5,13 @@ import io
 import unittest
 import zipfile
 from pathlib import Path
+import sys
 
+# The Windows builder discovers pharmacy/tests directly; add the source root
+# explicitly so the hospital fixtures resolve the same way as on Linux.
+ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0,str(ROOT))
+sys.path.insert(0,str(ROOT/'pharmacy'))
 from tests.test_hospital_gateway import HospitalServerFixture
 
 class NovaCollectionReportAcceptance(HospitalServerFixture,unittest.TestCase):
