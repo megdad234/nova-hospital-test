@@ -12,20 +12,22 @@ class ThermalPrintAcceptance(unittest.TestCase):
         cls.lab=(ROOT/'hospital/static/app.js').read_text(encoding='utf-8')
         cls.pharmacy=(ROOT/'pharmacy/static/app.js').read_text(encoding='utf-8')
 
-    def test_receipt_paper_width_matches_proven_pharmacy(self):
-        self.assertIn('width:72mm!important',self.css)
-        self.assertIn('max-width:72mm!important',self.css)
-        self.assertIn('font-family:Tahoma,Arial,sans-serif!important',self.css)
-        self.assertIn('@page novaReceiptPaper{size:auto;margin:3mm}',self.css)
+    def test_thermal_receipt_uses_separate_80mm_print_document(self):
+        self.assertIn("function novaPrintThermalDocument(receiptHTML)",self.finance)
+        self.assertIn("frame.srcdoc=",self.finance)
+        self.assertIn("'body{width:80mm!important",self.finance)
+        self.assertIn("'.nova-thermal-v2{width:72mm!important",self.finance)
+        self.assertIn("const heightMM=Math.max(85,Math.min(900,",self.finance)
+        self.assertIn("page.textContent='@page{size:80mm '+heightMM+'mm;margin:0}'",self.finance)
+        self.assertIn("win.focus();win.print()",self.finance)
+        self.assertNotIn("document.body.classList.add('printing-nova-thermal')",self.finance)
 
-    def test_named_thermal_page_is_isolated_from_a4(self):
-        self.assertIn('page:novaReceiptPaper;',self.css)
-        self.assertIn('body.printing-nova-thermal > *:not(#print-area)',self.css)
-        self.assertIn('body.printing-nova-thermal #print-area{display:block!important',self.css)
-        self.assertIn('body.printing-lab',self.css)
-        self.assertIn('@page{size:A4;margin:13mm}',self.css)
-        self.assertIn('function financePrintInvoice(inv)',self.finance)
+    def test_hospital_a4_and_lab_printing_remain_separate(self):
+        self.assertIn("function financePrintInvoice(inv)",self.finance)
         self.assertIn("document.body.classList.add('printing-lab')",self.finance)
+        self.assertIn("body.printing-lab",self.css)
+        self.assertIn("@page{size:A4;margin:13mm}",self.css)
+        self.assertIn("class=\"lab-print nova-clinical-print\"",self.lab)
 
     def test_payment_receipt_contains_exact_installment_and_all_methods(self):
         self.assertIn('function novaPrintReceipt(inv,index)',self.finance)
@@ -45,8 +47,8 @@ class ThermalPrintAcceptance(unittest.TestCase):
 
     def test_receipt_content_is_safely_escaped_and_cleanup_restored(self):
         self.assertIn("const text=x=>esc(String(x??'—'))",self.finance)
-        self.assertIn("window.addEventListener('afterprint',clear,{once:true})",self.finance)
-        self.assertIn("document.body.classList.add('printing-nova-thermal')",self.finance)
+        self.assertIn("win.addEventListener('afterprint',cleanup,{once:true})",self.finance)
+        self.assertIn("frame.remove()",self.finance)
 
     def test_pharmacy_and_lab_report_layouts_remain(self):
         self.assertIn('class="thermal-receipt"',self.pharmacy)
