@@ -183,7 +183,9 @@ def nova_insurance_monthly_detail(c,authority,period):
       JOIN products pr ON pr.id=pk.product_id
       LEFT JOIN claim_sales cs ON cs.sale_id=s.id
       WHERE s.authority_id=? AND substr(s.created_at,1,7)=? AND s.covered>0
-      ORDER BY s.id,sl.id LIMIT 20000""",(aid,period))
+      ORDER BY s.id,sl.id LIMIT 20001""",(aid,period))
+    if len(rows)>20000:
+        raise ValueError('كشف التأمين أكبر من حد العرض؛ قسّم الفترة أو استخدم تصديراً مرحلياً')
     seen=set()
     for row in rows:
         first=row['sale_id'] not in seen
