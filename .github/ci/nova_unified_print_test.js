@@ -6,6 +6,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const engine=fs.readFileSync('.github/ci/nova_unified_thermal_engine.js','utf8');
 const pharmacy=fs.readFileSync('pharmacy/static/nova_pharmacy_batch08.js','utf8');
+const pharmacyMain=fs.readFileSync('pharmacy/static/app.js','utf8');
 const hospital=fs.readFileSync('hospital/static/finance-ui.js','utf8');
 assert(pharmacy.includes("printReceipt=async function()"));
 assert(pharmacy.includes("printable.classList.contains('thermal-receipt')"));
@@ -15,7 +16,7 @@ assert(hospital.includes("novaUnifiedThermalPrint(markup,'thermal80')"));
 assert(pharmacy.includes(engine.trim()));
 assert(hospital.includes(engine.trim()));
 assert(hospital.includes("function financePrintInvoice(inv)"));
-assert(pharmacy.includes("function printPurchase(id)"));
+assert(pharmacyMain.includes("function printPurchase(id)"));
 vm.runInThisContext(engine,{filename:'nova_unified_thermal_engine.js'});
 
 async function check(paper,height,expectedWidth){
