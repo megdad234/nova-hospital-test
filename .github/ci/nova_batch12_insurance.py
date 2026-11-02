@@ -25,7 +25,7 @@ def patch_backend(s):
     for x in rows:"""
     validation="""    nova_insured_schema(c)
     insured_member=None
-    if contract_id or (authority_id and coverage>0):
+    if contract_id or p.get('insurance_sale') is True:
         if not contract:raise ValueError('بيع التأمين يتطلب اختيار عقد فعّال')
         if not partner_id:raise ValueError('حدد المستفيد التأميني أولاً')
         selected=p.get('insurance_member_id')
@@ -83,7 +83,7 @@ edit('pharmacy/app.py',patch_backend)
 
 def patch_pos(s):
     s=one(s,"insurance_contract_id:state.insuranceContractId||null,payments",
-      "insurance_contract_id:state.insuranceContractId||null,insurance_member_id:state.novaInsuredMember?.member_id||null,insurance_verified:state.novaInsuranceVerified===true,payments",
+      "insurance_contract_id:state.insuranceContractId||null,insurance_sale:!!state.authorityId,insurance_member_id:state.novaInsuredMember?.member_id||null,insurance_verified:state.novaInsuranceVerified===true,payments",
       'attach selected member to sale request')
     return s
 edit('pharmacy/static/app.js',patch_pos)
