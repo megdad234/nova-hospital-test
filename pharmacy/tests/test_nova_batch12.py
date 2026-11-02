@@ -54,7 +54,7 @@ class NovaPharmacyInsuranceAcceptance(unittest.TestCase):
                  'items':[{'package_id':self.pack,'qty':1}],
                  'partner_id':member['partner_id'],'authority_id':self.insurer,
                  'insurance_contract_id':self.contract,
-                 'insurance_member_id':member['member_id'],
+                 'insurance_member_id':member['member_id'],'insurance_sale':True,
                  'coverage':coverage,'insurance_verified':verified,
                  'payments':[{'method':'cash','amount':1000-round(1000*coverage/100)}]}
         if extra:payload.update(extra)
