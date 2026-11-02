@@ -94,4 +94,30 @@ edit('pharmacy/static/nova_pharmacy_batch08.js',patch_ui)
 def patch_css(s):
     return s+'\n'+(ROOT/'pharmacy/static/nova_batch12_insurance.css').read_text(encoding='utf-8')+'\n'
 edit('pharmacy/static/style.css',patch_css)
+# A v05 integration test previously approved insurance checkout without an
+# identifiable member card and with arbitrary coverage (75 instead of override
+# 90). That behavior is deliberately prohibited in Batch12. Keep its legacy
+# stock/import tests, but update just this scenario to assert denial.
+def patch_legacy_insurance_test(source):
+    start=source.find(" def test_contract_member_and_coverage_unrestricted(self):\n")
+    end=source.find(" def test_unregistered_beneficiary_rejected_when_contract_selected(self):\n",start)
+    if start<0 or end<0 or source.count(" def test_contract_member_and_coverage_unrestricted(self):")!=1:
+        raise RuntimeError("NOVA12_OLD_INSURANCE_TEST_DRIFT")
+    test=""" def test_contract_member_requires_verified_card_and_matching_coverage(self):
+  cid=self.create_contract()
+  mid=app.insurance_member_create(self.c,{'contract_id':cid,'partner_id':self.member,'relation':'الأصل','coverage_override':90},self.uid)['id']
+  self.assertEqual(app.insurance_list(self.c)[0]['members'][0]['coverage_override'],90)
+  self.add_stock()
+  with self.assertRaisesRegex(ValueError,'بطاقة'):
+   app.sell(self.c,{'idempotency':uuid.uuid4().hex,
+       'items':[{'package_id':self.pkg,'qty':2}],
+       'partner_id':self.member,'authority_id':self.insurer,
+       'insurance_contract_id':cid,'coverage':75,
+       'payments':[{'method':'cash','amount':1000}]},self.uid)
+  self.assertEqual(app.one(self.c,'SELECT COUNT(*) n FROM sales')['n'],0)
+  self.assertTrue(app.integrity_review(self.c)['passed'])
+"""
+    return source[:start]+test+source[end:]
+edit('pharmacy/tests/test_insurance_import_integrity_v05.py',patch_legacy_insurance_test)
+
 print('NOVA_BATCH12_APPLIED: insured member/card, hospital patient link, sale snapshot, monthly claims')
