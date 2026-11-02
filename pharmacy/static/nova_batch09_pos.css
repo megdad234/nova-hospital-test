@@ -1,0 +1,23 @@
+
+/* NOVA Batch09: Batch05 inserted a holdbar as the FIRST grid child.
+   Old :nth-child(2) rules inadvertently stretched the SEARCH panel to 100vh.
+   Target semantic panels to correct it, regardless of child order. */
+.salearea{display:grid!important;grid-template-columns:minmax(260px,.75fr) minmax(0,1.5fr)!important;align-items:start!important;gap:12px!important}
+.salearea>.nova-holdbar{grid-column:1/-1!important;grid-row:1!important;align-items:center!important;min-height:0!important;margin:0!important}
+.salearea .nova-holdbar-compact{padding:8px 12px!important}
+.salearea .nova-holdbar #nova-holdlist{display:none!important}
+.salearea .nova-held-count{background:#e4f4eb;padding:5px 10px;border-radius:999px;color:#10634e;font-size:12px}
+.salearea>.panel.nova-pos-search{grid-column:1!important;grid-row:2!important;min-width:0!important;min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important;display:flex!important;flex-direction:column!important;align-self:start!important}
+.salearea>.panel.nova-pos-checkout{grid-column:2!important;grid-row:2!important;min-width:0!important;min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important;display:block!important;align-self:start!important;padding:14px!important}
+.salearea>.nova-pos-search .sale-catalog{display:grid!important;align-content:start!important;flex:none!important;min-height:0!important;height:auto!important;max-height:min(52vh,440px)!important;overflow:auto!important;grid-template-columns:1fr!important;padding:0 3px!important}
+.salearea>.nova-pos-checkout .sale-cart-list{min-height:0!important;max-height:clamp(105px,27vh,210px)!important;overflow-y:auto!important;flex:none!important;margin:0!important}
+.salearea>.nova-pos-checkout .divider{margin:7px 0!important}
+.salearea>.nova-pos-checkout .section{margin-top:8px!important}
+.salearea>.nova-pos-checkout .field{margin:0!important}
+.salearea>.nova-pos-checkout .pay-buttons{margin:5px 0!important}
+.salearea>.nova-pos-checkout>div.section:has(button[onclick="confirmSale()"]){position:sticky;bottom:0;z-index:2;background:white;padding:8px 0 4px;box-shadow:0 -6px 16px -12px #0003}
+.nova-hold-entry{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;border-bottom:1px solid #dce8e3;padding:12px 4px}
+.nova-hold-entry>div:first-child{display:grid;gap:5px}.nova-hold-entry small{font-size:12px;color:#657c72}
+.nova-hold-entry .actions{display:flex;gap:8px}
+@media(max-width:950px){.salearea{grid-template-columns:minmax(0,1fr)!important}.salearea>.nova-holdbar{grid-column:1!important}.salearea>.panel.nova-pos-search{grid-column:1!important;grid-row:2!important}.salearea>.panel.nova-pos-checkout{grid-column:1!important;grid-row:3!important}.salearea>.nova-pos-search .sale-catalog{max-height:230px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media print{.salearea>.panel.nova-pos-checkout,.salearea>.panel.nova-pos-search{max-height:none!important;overflow:visible!important}}

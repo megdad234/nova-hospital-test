@@ -1,0 +1,223 @@
+# NOVA Batch09 — an event ledger, not accrual accounting.
+import io as _nova_io
+import zipfile as _nova_zipfile
+import base64 as _nova_base64
+from xml.sax.saxutils import escape as _nova_xml
+
+_NOVA_COLLECTION_SOURCE = """
+ SELECT 'patient' source,'payment' event,p.id event_id,p.payment_no document_no,
+ i.invoice_no invoice_no,COALESCE(h.full_name,'') person,p.created_at created_at,
+ COALESCE(u.full_name,u.username,'') employee,p.created_by staff_id,
+ NULL bank_id,'نقدي' bank_name,'' bank_reference,
+ 'cash' method,p.cash_amount amount,
+ COALESCE((SELECT GROUP_CONCAT(DISTINCT il.category_code)
+ FROM nova_invoice_lines il WHERE il.invoice_id=i.id),'') department
+ FROM nova_payments p JOIN nova_invoices i ON i.id=p.invoice_id
+ JOIN hospital_patients h ON h.id=i.patient_id JOIN users u ON u.id=p.created_by
+ WHERE p.cash_amount>0
+ UNION ALL
+ SELECT 'patient','payment',p.id,p.payment_no,i.invoice_no,COALESCE(h.full_name,''),
+ p.created_at,COALESCE(u.full_name,u.username,''),p.created_by,
+ p.bank_id,p.bank_name,p.bank_reference,'bank',p.bank_amount,
+ COALESCE((SELECT GROUP_CONCAT(DISTINCT il.category_code)
+ FROM nova_invoice_lines il WHERE il.invoice_id=i.id),'')
+ FROM nova_payments p JOIN nova_invoices i ON i.id=p.invoice_id
+ JOIN hospital_patients h ON h.id=i.patient_id JOIN users u ON u.id=p.created_by
+ WHERE p.bank_amount>0
+ UNION ALL
+ SELECT 'patient','refund',r.id,r.refund_no,i.invoice_no,COALESCE(h.full_name,''),
+ r.created_at,COALESCE(u.full_name,u.username,''),r.created_by,
+ NULL,'نقدي','', 'cash',-r.cash_amount,
+ COALESCE((SELECT GROUP_CONCAT(DISTINCT il.category_code)
+ FROM nova_invoice_lines il WHERE il.invoice_id=i.id),'')
+ FROM nova_refunds r JOIN nova_invoices i ON i.id=r.invoice_id
+ JOIN hospital_patients h ON h.id=i.patient_id JOIN users u ON u.id=r.created_by
+ WHERE r.cash_amount>0
+ UNION ALL
+ SELECT 'patient','refund',r.id,r.refund_no,i.invoice_no,COALESCE(h.full_name,''),
+ r.created_at,COALESCE(u.full_name,u.username,''),r.created_by,
+ r.bank_id,r.bank_name,r.bank_reference,'bank',-r.bank_amount,
+ COALESCE((SELECT GROUP_CONCAT(DISTINCT il.category_code)
+ FROM nova_invoice_lines il WHERE il.invoice_id=i.id),'')
+ FROM nova_refunds r JOIN nova_invoices i ON i.id=r.invoice_id
+ JOIN hospital_patients h ON h.id=i.patient_id JOIN users u ON u.id=r.created_by
+ WHERE r.bank_amount>0
+ UNION ALL
+ SELECT 'insurance','settlement',s.id,s.settlement_no,'',ins.name,s.created_at,
+ COALESCE(u.full_name,u.username,''),s.created_by,
+ NULL,'نقدي','', 'cash',s.cash_amount,'تسويات شركات التأمين'
+ FROM nova_insurance_settlements s JOIN nova_insurers ins ON ins.id=s.insurer_id
+ JOIN users u ON u.id=s.created_by WHERE s.cash_amount>0
+ UNION ALL
+ SELECT 'insurance','settlement',s.id,s.settlement_no,'',ins.name,s.created_at,
+ COALESCE(u.full_name,u.username,''),s.created_by,
+ s.bank_id,s.bank_name,s.bank_reference,'bank',s.bank_amount,'تسويات شركات التأمين'
+ FROM nova_insurance_settlements s JOIN nova_insurers ins ON ins.id=s.insurer_id
+ JOIN users u ON u.id=s.created_by WHERE s.bank_amount>0
+"""
+
+def _nova_col_params(c, params):
+    start,end=period(params)
+    method=(params.get('method') or ['all'])[0]
+    scope=(params.get('scope') or ['patient'])[0]
+    if method not in ('all','cash','bank'):
+        raise ValueError('طريقة الدفع غير صحيحة')
+    if scope not in ('patient','insurance','all'):
+        raise ValueError('نطاق التقرير غير صحيح')
+    try:
+        bank=int((params.get('bank_id') or ['0'])[0] or 0)
+        staff=int((params.get('staff_id') or ['0'])[0] or 0)
+        page=int((params.get('page') or ['0'])[0] or 0)
+    except (ValueError,TypeError):
+        raise ValueError('أحد فلاتر التقرير غير صحيح')
+    if bank<0 or staff<0 or page<0 or page>100000:raise ValueError('فلتر غير صحيح')
+    if bank and not pharmacy.one(c,'SELECT id FROM nova_banks WHERE id=?',(bank,)):
+        raise ValueError('البنك المحدد غير موجود')
+    where=['e.created_at >= ?','e.created_at < ?']
+    args=[start+'T00:00:00',(date.fromisoformat(end)+timedelta(days=1)).isoformat()+'T00:00:00']
+    if method!='all':
+        where.append('e.method=?');args.append(method)
+    if scope!='all':
+        where.append('e.source=?');args.append(scope)
+    if bank:
+        where.append('e.bank_id=?');args.append(bank)
+    if staff:
+        where.append('e.staff_id=?');args.append(staff)
+    query_sql='SELECT * FROM ('+_NOVA_COLLECTION_SOURCE+') e WHERE '+' AND '.join(where)
+    return query_sql,tuple(args),{'from':start,'to':end,'method':method,'scope':scope,
+                                  'bank_id':bank,'staff_id':staff,'page':page}
+
+def _nova_col_summary(c,sql,args):
+    record=c.execute("""SELECT COUNT(*) count,
+     COALESCE(SUM(CASE WHEN method='cash' AND amount>0 THEN amount ELSE 0 END),0) cash_gross,
+     COALESCE(SUM(CASE WHEN method='bank' AND amount>0 THEN amount ELSE 0 END),0) bank_gross,
+     COALESCE(SUM(CASE WHEN method='cash' AND amount<0 THEN -amount ELSE 0 END),0) cash_refunds,
+     COALESCE(SUM(CASE WHEN method='bank' AND amount<0 THEN -amount ELSE 0 END),0) bank_refunds,
+     COALESCE(SUM(amount),0) net FROM ("""+sql+""")""",args).fetchone()
+    summary=dict(record)
+    summary['cash_net']=summary['cash_gross']-summary['cash_refunds']
+    summary['bank_net']=summary['bank_gross']-summary['bank_refunds']
+    return summary
+
+def nova_collection_details(c,params,export_all=False):
+    sql,args,filters=_nova_col_params(c,params)
+    summary=_nova_col_summary(c,sql,args)
+    per_page=80
+    statement=sql+' ORDER BY created_at DESC,event_id DESC,method ASC'
+    if not export_all:
+        statement+=' LIMIT ? OFFSET ?'
+        args=args+(per_page,filters['page']*per_page)
+    rows=pharmacy.query(c,statement,args)
+    return {
+       'filters':filters,'rows':rows,'page_size':per_page,
+       'total_rows':summary['count'],'summary':summary,
+       'banks':pharmacy.query(c,"SELECT id,name,account_label FROM nova_banks ORDER BY name"),
+       'staff':pharmacy.query(c,"SELECT id,full_name FROM users ORDER BY full_name"),
+       'note':'تحصيل المرضى الافتراضي مطابق لمصدر ملخص الكاش والبنك. تسويات شركات التأمين مصدر منفصل؛ مستحقات التأمين ليست تحصيلاً حتى تسدد. المقبوضات التاريخية غير المصنفة لا تُنسب لبنك بغير مرجع.',
+       'has_more':not export_all and (filters['page']+1)*per_page<summary['count']
+    }
+
+def _nova_col_letter(index):
+    result=''
+    while index:
+        index,rem=divmod(index-1,26)
+        result=chr(65+rem)+result
+    return result
+
+def _nova_col_xlsx(data):
+    summary=data['summary']
+    f=data['filters']
+    title='NOVA Hospital - Detailed Collections'
+    metadata=[
+       ['تقرير التحصيل التفصيلي','NOVA HOSPITAL'],
+       ['الفترة',f['from']+' إلى '+f['to']],
+       ['النطاق',{'patient':'تحصيلات المرضى','insurance':'تسويات شركات التأمين','all':'جميع المصادر'}[f['scope']]],
+       ['النقدي الصافي',summary['cash_net'],'البنكي الصافي',summary['bank_net'],'صافي الفترة',summary['net']],
+       ['التاريخ والوقت','نوع الحركة','رقم الإيصال أو التسوية','رقم الفاتورة','المريض أو الشركة',
+        'القسم','الموظف','طريقة الدفع','البنك','رقم العملية البنكية','المبلغ (ج.س)']
+    ]
+    values=metadata+[
+       [r['created_at'],{'payment':'تحصيل','refund':'استرداد','settlement':'تسوية تأمين'}[r['event']],
+        r['document_no'],r['invoice_no'],r['person'],r['department'],r['employee'],
+        'بنكي' if r['method']=='bank' else 'نقدي',
+        r['bank_name'],str(r['bank_reference'] or ''),r['amount']] for r in data['rows']
+    ]
+    rows_xml=[]
+    for ri,row in enumerate(values,1):
+        cells=[]
+        for ci,v in enumerate(row,1):
+            name=_nova_col_letter(ci)+str(ri)
+            if isinstance(v,int) and not isinstance(v,bool):
+                style=' s="2"' if ri>=6 or ri==4 else ''
+                cells.append('<c r="'+name+'"'+style+'><v>'+str(v)+'</v></c>')
+            else:
+                clean=''.join(x for x in str(v or '') if ord(x)>=32 or x in '\n\t')
+                cells.append('<c r="'+name+'" t="inlineStr"'+(' s="1"' if ri==5 else '')+
+                    '><is><t xml:space="preserve">'+_nova_xml(clean)+'</t></is></c>')
+        rows_xml.append('<row r="'+str(ri)+'">'+''.join(cells)+'</row>')
+    last=5+len(data['rows'])
+    worksheet=('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      '<sheetViews><sheetView workbookViewId="0" rightToLeft="1">'
+      '<pane ySplit="5" topLeftCell="A6" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+      '<sheetFormatPr defaultRowHeight="17"/><cols>'+
+      ''.join('<col min="'+str(i)+'" max="'+str(i)+'" width="'+str(w)+'" customWidth="1"/>'
+              for i,w in enumerate([23,18,25,23,27,23,22,16,23,25,20],1))+
+      '</cols><sheetData>'+''.join(rows_xml)+'</sheetData>'
+      '<autoFilter ref="A5:K'+str(max(5,last))+'"/>'
+      '<pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/>'
+      '<pageSetup orientation="landscape" paperSize="9"/></worksheet>')
+    types=('<?xml version="1.0" encoding="UTF-8"?>'
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+      '<Default Extension="xml" ContentType="application/xml"/>'
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+      '</Types>')
+    rels=('<?xml version="1.0" encoding="UTF-8"?>'
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+      '</Relationships>')
+    workbook=('<?xml version="1.0" encoding="UTF-8"?>'
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+      '<sheets><sheet name="Collections" sheetId="1" r:id="rId1"/></sheets></workbook>')
+    bookrels=('<?xml version="1.0" encoding="UTF-8"?>'
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+      '</Relationships>')
+    styles=('<?xml version="1.0" encoding="UTF-8"?>'
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font>'
+      '<font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts>'
+      '<fills count="2"><fill><patternFill patternType="none"/></fill>'
+      '<fill><patternFill patternType="solid"><fgColor rgb="FF14624F"/><bgColor indexed="64"/></patternFill></fill></fills>'
+      '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+      '<cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+      '<xf numFmtId="0" fontId="1" fillId="1" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
+      '<xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>'
+      '</styleSheet>')
+    data_map={
+      '[Content_Types].xml':types,'_rels/.rels':rels,
+      'xl/workbook.xml':workbook,'xl/_rels/workbook.xml.rels':bookrels,
+      'xl/worksheets/sheet1.xml':worksheet,'xl/styles.xml':styles
+    }
+    result=_nova_io.BytesIO()
+    with _nova_zipfile.ZipFile(result,'w',compression=_nova_zipfile.ZIP_DEFLATED) as z:
+        for name,content in data_map.items():z.writestr(name,content.encode('utf-8'))
+    return result.getvalue()
+
+def nova_collection_export(c,params):
+    # Export ALL matching transactions, never only the visible UI page.
+    result=nova_collection_details(c,params,export_all=True)
+    output=_nova_col_xlsx(result)
+    return {
+       'filename':'NOVA_Collections_'+result['filters']['from']+'_'+result['filters']['to']+'.xlsx',
+       'content_type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+       'base64':_nova_base64.b64encode(output).decode('ascii'),
+       'row_count':len(result['rows']),
+       'summary':result['summary']
+    }

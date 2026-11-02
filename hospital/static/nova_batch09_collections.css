@@ -1,0 +1,25 @@
+
+.nova-collections{margin-top:18px;min-width:0}
+.nova-collections-controls{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.nova-collections-controls label{display:grid;gap:5px;font-size:12px;min-width:150px;flex:1}
+.nova-collections-controls select{width:100%;padding:10px 8px;border:1px solid #cdded6;border-radius:9px;background:#fff}
+.nova-col-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:10px 0 15px}
+.nova-col-kpis>div{padding:12px;border-radius:12px;background:#f2f9f5;border:1px solid #dcece4;min-width:0;display:grid;gap:6px}
+.nova-col-kpis small{color:#5c8071}.nova-col-kpis strong{font-size:1.1rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.nova-col-table{max-width:100%;overflow-x:auto;border:1px solid #deebe3;border-radius:11px}
+.nova-col-table table{width:100%;border-collapse:collapse;min-width:1050px;font-size:12px}
+.nova-col-table th{background:#e6f5ed;color:#205d46;text-align:right;padding:11px;white-space:nowrap}
+.nova-col-table td{padding:9px;border-bottom:1px solid #e5eee9;vertical-align:top}
+.nova-col-table tr.nova-col-refund{background:#fff4ee}
+.nova-col-money{white-space:nowrap;font-weight:700;direction:ltr;text-align:left}
+.nova-col-footer{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:13px}
+.nova-col-footer span{margin-inline-end:auto;color:#496f5b}
+@media(max-width:900px){.nova-col-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media print{body.nova-collection-printing .nova-collections-print .nova-col-table{overflow:visible;border:0}
+body.nova-collection-printing .nova-collections-print .nova-col-table table{min-width:0!important;width:100%;font-size:7pt}
+body.nova-collection-printing .nova-collections-print .nova-col-table th,
+body.nova-collection-printing .nova-collections-print .nova-col-table td{padding:3px;border:1px solid #bbb;overflow-wrap:anywhere}
+body.nova-collection-printing .nova-collections-print .nova-col-kpis{grid-template-columns:repeat(4,1fr)}
+body.nova-collection-printing .nova-collections-print .nova-col-kpis>div{padding:5px;break-inside:avoid}
+body.nova-collection-printing .nova-collections-print tr{break-inside:avoid}
+@page{size:A4 landscape;margin:9mm}}
