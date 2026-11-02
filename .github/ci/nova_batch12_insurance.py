@@ -56,7 +56,7 @@ def patch_backend(s):
       'sales schema')
     s=one(s,
       "    for s in r:\n        s['lines']=query(c,",
-      "    for s in r:\n        s['insurance_details']=one(c,'SELECT patient_name,patient_no,card_no,insurer_name,coverage FROM nova_pharmacy_insured_sales WHERE sale_id=?',(s['id'],))\n        s['lines']=query(c,",
+      "    for s in r:\n        details=one(c,'SELECT patient_name,patient_no,card_no,insurer_name,coverage FROM nova_pharmacy_insured_sales WHERE sale_id=?',(s['id'],))\n        s['insurance_details']=dict(details) if details else None\n        s['lines']=query(c,",
       'sale snapshot read')
     # All three GET endpoints are role-gated. No patient list is returned in
     # normal POS load, searches require an intentional staff query.
