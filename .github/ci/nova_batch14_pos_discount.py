@@ -38,7 +38,7 @@ def backend(s):
      raise RuntimeError('NOVA14_REFUND_CANDIDATES '+str(len(candidates)))
  original=candidates[0]
  indentation=original[:len(original)-len(original.lstrip())]
- replacement=indentation+"before=(row['total']*earlier)//row['qty']\\n"+indentation+"after=(row['total']*(earlier+qty))//row['qty']\\n"+indentation+"amount=after-before;cv=(amount*s['coverage']+50)//100"
+ replacement=indentation+"before=(row['total']*earlier)//row['qty']\n"+indentation+"after=(row['total']*(earlier+qty))//row['qty']\n"+indentation+"amount=after-before;cv=(amount*s['coverage']+50)//100"
  s=s[:start]+block.replace(original,replacement,1)+s[end:]
  return s
 edit('pharmacy/app.py',backend)
