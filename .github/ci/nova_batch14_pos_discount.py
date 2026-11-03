@@ -68,7 +68,7 @@ function novaSetSaleDiscount(value){state.novaSaleDiscount=value;redraw()}""",'t
  block=s[start:end]
  first=block.index("case'cash':return")
  next_case=block.index("case'bank':return",first)
- block=block[:first]+"""case'cash':return \`<div class="help">المطلوب كاش: <strong>\\${fmt(due)}</strong>. السداد كامل تلقائياً.</div>\`;"""+block[next_case:]
+ block=block[:first]+"""case'cash':return \`<div class="help">المطلوب كاش: <strong>\${fmt(due)}</strong>. السداد كامل تلقائياً.</div>\`;""".replace('\\`','`').replace('\\${','${')+block[next_case:]
  s=s[:start]+block+s[end:]
  s=replace(s,"modal('تم إصدار فاتورة '+data.ref,receipt(actual)+", "modal('تم إصدار فاتورة '+data.ref,(data.net_profit===null||data.net_profit===undefined?'':'<div class=\\\"help\\\">صافي ربح الفاتورة: '+fmt(data.net_profit)+' ج.س</div>')+receipt(actual)+",'profit display')
  return s
