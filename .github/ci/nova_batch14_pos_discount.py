@@ -26,10 +26,20 @@ def backend(s):
  s=replace(s,"        audit(c,uid,'sale',{'ref':ref,'total':total,'covered':covered,'cost':cost_total})",
  """        audit(c,uid,'sale',{'ref':ref,'gross':gross,'discount':discount,'total':total,'covered':covered,'cost':cost_total})""",'audit')
  s=replace(s,"    return {'id':saleid,'ref':ref,'total':total,'covered':covered,", "    return {'id':saleid,'ref':ref,'total':total,'discount':discount,'covered':covered,",'response')
- s=replace(s,"            amount=qty*row['unit_price'];cv=(amount*s['coverage']+50)//100",
- """            before=(row['total']*earlier)//row['qty']
-            after=(row['total']*(earlier+qty))//row['qty']
-            amount=after-before;cv=(amount*s['coverage']+50)//100""",'refund net')
+ # The preceding insurance patches may alter the return expression.
+ # Anchor on the return block rather than the exact original expression.
+ start=s.index('def sale_return(c,p,uid):')
+ end=s.find('\\ndef ',start+1)
+ if end<0:end=len(s)
+ block=s[start:end]
+ candidates=[line for line in block.splitlines() if "amount=qty*row['unit_price']" in line]
+ if len(candidates)!=1:
+     print('NOVA14_REFUND_CONTEXT',[(i+1,line[:500]) for i,line in enumerate(block.splitlines()) if 'amount=' in line or 'coverage' in line])
+     raise RuntimeError('NOVA14_REFUND_CANDIDATES '+str(len(candidates)))
+ original=candidates[0]
+ indentation=original[:len(original)-len(original.lstrip())]
+ replacement=indentation+"before=(row['total']*earlier)//row['qty']\\n"+indentation+"after=(row['total']*(earlier+qty))//row['qty']\\n"+indentation+"amount=after-before;cv=(amount*s['coverage']+50)//100"
+ s=s[:start]+block.replace(original,replacement,1)+s[end:]
  return s
 edit('pharmacy/app.py',backend)
 def ui(s):
