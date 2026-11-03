@@ -101,7 +101,7 @@
      '</section></div>'+
      '<div class="panel nova13-footer"><div class="nova13-footer-actions">'+
        '<button type="button" class="btn" id="madar-purchase-submit" onclick="confirmPurchase()">✓ اعتماد واستلام الفاتورة</button>'+
-       '<button type="button" class="btn outline" onclick="novaSavePurchaseDraft()">حفظ كمسودة</button>'+
+       '<button type="button" class="btn outline" onclick="document.getElementById('nova-save-purchase-draft')?.click()">حفظ كمسودة</button>'+
        '<button type="button" class="btn outline" onclick="importDialog()">استيراد Excel</button>'+
        '<button type="button" class="btn outline" onclick="nav(\'purchases\')">سجل المشتريات</button>'+
        '<button type="button" class="btn outline" onclick="nav(\'purchase-returns\')">مرتجع مشتريات</button>'+
@@ -171,7 +171,7 @@
    sel.replaceChildren(new Option('اختر الصنف',''));
    matches.forEach(({product:p,pk})=>sel.add(new Option(p.name,String(pk.id))));
    $('buy-count').textContent=matches.length?matches.length+' نتيجة — الأولوية لأصناف المخزون':'لم يتم العثور على الصنف؛ يمكنك إضافته هنا.';
-   if(!matches.length)$('nova13-quick-form').hidden=false,nova13ShowQuickAdd(false);
+   if(!matches.length)nova13ShowQuickAdd();
  };
  window.nova13AddSelected=function(){
    const pk=foundPack(current());
