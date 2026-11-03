@@ -104,7 +104,7 @@
        '<button type="button" class="btn outline" onclick="nova13SaveDraft()">حفظ كمسودة</button>'+
        '<button type="button" class="btn outline" onclick="importDialog()">استيراد Excel</button>'+
        '<button type="button" class="btn outline" onclick="nav(\'purchases\')">سجل المشتريات</button>'+
-       '<button type="button" class="btn outline" onclick="nav(\'purchase-returns\')">مرتجع مشتريات</button>'+
+       '<button type="button" class="btn outline" onclick="nav(\'purchases\')">مرتجع مشتريات</button>'+
        '</div></div></div>';
  };
  window.nova13SaveDraft=function(){document.getElementById('nova-save-purchase-draft')?.click()};
