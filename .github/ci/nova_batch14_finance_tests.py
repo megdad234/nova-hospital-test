@@ -35,4 +35,16 @@ class FinancialRegression(unittest.TestCase):
         self.assertIn("amount=after-before",app)
         self.assertIn("discount:saleDiscount()",js)
         self.assertIn('id="nova-sale-discount"',js)
+    def test_profit_permission_and_receipt_isolation(self):
+        app=(ROOT/'pharmacy/app.py').read_text(encoding='utf-8')
+        js=(ROOT/'pharmacy/static/app.js').read_text(encoding='utf-8')
+        self.assertIn("can_profit=bool(permissions.intersection(",app)
+        self.assertIn("'net_profit':total-cost_total if can_profit else None",app)
+        self.assertIn("data.net_profit===null||data.net_profit===undefined",js)
+        self.assertIn("receipt(actual)",js)
+        self.assertNotIn("cash-tender",js[js.index('function payFields(due)'):js.index('function mixedBalance()')])
+    def test_invalid_discount_rejected_by_server(self):
+        app=(ROOT/'pharmacy/app.py').read_text(encoding='utf-8')
+        self.assertIn("if discount>gross:raise ValueError(",app)
+        self.assertIn("total=gross-discount",app)
 if __name__=='__main__':unittest.main()
