@@ -26,16 +26,10 @@ def backend(s):
  s=replace(s,"        audit(c,uid,'sale',{'ref':ref,'total':total,'covered':covered,'cost':cost_total})",
  """        audit(c,uid,'sale',{'ref':ref,'gross':gross,'discount':discount,'total':total,'covered':covered,'cost':cost_total})""",'audit')
  s=replace(s,"    return {'id':saleid,'ref':ref,'total':total,'covered':covered,", "    return {'id':saleid,'ref':ref,'total':total,'discount':discount,'covered':covered,",'response')
- import re
- pattern=r"(?m)^(\\s*)amount=qty\\*row\\['unit_price'\\];cv=\\(amount\\*s\\['coverage'\\]\\+50\\)//100.*$"
- matches=list(re.finditer(pattern,s))
- if len(matches)!=1:raise RuntimeError('NOVA14_REFUND_ANCHOR '+str(len(matches)))
- s=s[:matches[0].start()]+"""            before=(row['total']*earlier)//row['qty']
+ s=replace(s,"            amount=qty*row['unit_price'];cv=(amount*s['coverage']+50)//100",
+ """            before=(row['total']*earlier)//row['qty']
             after=(row['total']*(earlier+qty))//row['qty']
-            amount=after-before;cv=(amount*s['coverage']+50)//100"""+s[matches[0].end():]
- # previous static replacement disabled
- # s=replace(s,"            amount=qty*row['unit_price'];cv=(amount*s['coverage']+50)//100",
- # already replaced by regex above
+            amount=after-before;cv=(amount*s['coverage']+50)//100""",'refund net')
  return s
 edit('pharmacy/app.py',backend)
 def ui(s):
