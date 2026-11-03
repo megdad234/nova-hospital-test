@@ -16,3 +16,17 @@ for filename in ('pharmacy/static/app.js','pharmacy/static/ux_v14.js','pharmacy/
         seen.update(range(a,b))
         print('NOVA_POS_AUDIT_SNIPPET',filename,a+1,b)
         for j in range(a,b):print(f'{j+1}: {lines[j][:240]}')
+
+# Focused full source blocks for follow-up financial patch design.
+for filename, start_token, end_token in (
+    ('pharmacy/app.py','def sell(c,p,uid):','def sales(c):'),
+    ('pharmacy/app.py','def sale_return(c,p,uid):','def '),
+    ('pharmacy/static/app.js','function pos(){','function filterCards(){'),
+    ('pharmacy/static/app.js','async function confirmSale(){','function '),
+):
+    lines=(root/filename).read_text(encoding='utf-8').splitlines()
+    start=next((i for i,x in enumerate(lines) if x.startswith(start_token)),None)
+    if start is None:continue
+    end=next((i for i in range(start+1,len(lines)) if lines[i].startswith(end_token)),min(len(lines),start+100))
+    print('NOVA_POS_FOCUSED_START',filename,start+1,end)
+    for i in range(start,min(end,start+105)):print('NOVA_POS_FOCUSED',filename,i+1,lines[i][:1500])
