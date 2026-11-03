@@ -57,6 +57,8 @@
 .nova13-wide{grid-column:1/-1}
 .nova13-unit-toggle{display:flex;gap:8px;flex-wrap:wrap}
 .nova13-unit-toggle label{background:#fff;border:1px solid #caddd3;padding:7px;border-radius:8px;flex:1;white-space:nowrap;font-weight:600;font-size:11px}
+.nova13-unit-toggle label{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:130px;cursor:pointer}
+.nova13-unit-toggle input[type="radio"]{width:16px!important;height:16px!important;min-width:16px!important;min-height:16px!important;padding:0!important;margin:0;flex:none;accent-color:#078b80}
 .nova13-entry-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .nova13-add{flex:1;min-width:140px}
 .nova13-quick{border:1px solid #b7dacd;border-radius:12px;padding:12px;margin-top:10px;background:#f1faf5}
