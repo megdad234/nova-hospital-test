@@ -16,7 +16,7 @@ const state={products:[master,stocked],suppliers:[{id:10,name:'Test Supplier'}],
   purchaseDate:'2026-11-03',purchaseRef:'',purchaseNote:'',purchasePay:'credit',
   purchasePaid:'',purchaseBankRef:'',purchaseSupplier:10,madarPartialPurchase:false};
 const env={
-  window:{},state,document:{querySelector(){return null}},
+  window:{},state,document:{querySelector(){return null}},$(id){return els[id]||null},
   purchase(){return 'old'},nav(){},filterBuyChoices(){},
   skuPack(id){const p=state.products.find(x=>x.packages.some(pk=>pk.id===id));
     return p?{...p.packages.find(pk=>pk.id===id),product:p}:null},
@@ -37,7 +37,9 @@ assert.match(html,/nova13-columns/);
 assert.match(html,/nova13-invoice/);
 assert.match(html,/nova13-finder/);
 assert.match(html,/nova13-table-scroll/);
-assert.match(html,/nova13-barcode/); // placeholder right-side barcode is rendered after product selection
+state.nova13Selected=11;
+state.nova13Entry={};
+assert.match(env.purchase(),/nova13-barcode/);
 assert.match(html,/nova13SaveDraft/);
 env.filterBuyChoices();
 assert.equal(count.textContent.startsWith('2 نتيجة'),true);
