@@ -46,6 +46,7 @@ on:
       - 'pharmacy/tests/test_nova_batch12.py'
       - 'docs/NOVA_BATCH12_INSURANCE_PATIENT_LINK_AR.md'
       - '.github/ci/nova_batch14_pos_discount.py'
+      - '.github/ci/nova_batch14_finance_tests.py'
       - '.github/ci/nova_pos_source_audit.py'
       - '.github/ci/nova_batch13_purchase.py'
       - '.github/ci/nova_batch13_ui_smoke.js'
