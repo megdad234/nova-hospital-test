@@ -46,6 +46,9 @@ function novaSetSaleDiscount(value){state.novaSaleDiscount=value;redraw()}""",'t
  """if(!Number.isSafeInteger(Number(state.novaSaleDiscount||0))||saleDiscount()>saleGross())throw Error('الخصم غير صحيح أو أكبر من الفاتورة');""",'tender validation')
  s=replace(s,"prescription,items:state.saleRows,partner_id:", "prescription,items:state.saleRows,discount:saleDiscount(),partner_id:",'request')
  s=replace(s,"state.saleRows=[];state.idempotency=token();await refresh();", "state.saleRows=[];state.novaSaleDiscount=0;state.idempotency=token();await refresh();",'reset')
+ s=replace(s,'</div><div class="sale-cart-list" aria-label="أصناف الفاتورة">',"""</div><div class="field"><label for="nova-sale-discount">خصم الفاتورة (جنيه سوداني)</label><input id="nova-sale-discount" type="number" min="0" step="1" value="${saleDiscount()}" onchange="novaSetSaleDiscount(this.value)"><small>الإجمالي بعد الخصم: ${fmt(saleTotal())} ج.س</small></div><div class="sale-cart-list" aria-label="أصناف الفاتورة">""",'discount input')
+ # Cash sale is settled automatically; keep tender field out of the daily workflow.
+ s=replace(s,"function payFields(due){switch(state.payMode){case'cash':return", "function payFields(due){switch(state.payMode){case'cash':return",'noop') if False else s
  return s
 edit('pharmacy/static/app.js',ui)
 print('NOVA14_DISCOUNT_APPLIED')
