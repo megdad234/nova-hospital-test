@@ -37,6 +37,11 @@ on:
       - 'pharmacy/static/nova_batch12_insurance.css'
       - 'pharmacy/tests/test_nova_batch12.py'
       - 'docs/NOVA_BATCH12_INSURANCE_PATIENT_LINK_AR.md'
+      - '.github/ci/nova_batch13_purchase.py'
+      - 'pharmacy/static/nova_batch13_purchase.js'
+      - 'pharmacy/static/nova_batch13_purchase.css'
+      - 'pharmacy/tests/test_nova_batch13.py'
+      - 'docs/NOVA_BATCH13_PURCHASE_APPROVED_AR.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -64,6 +69,7 @@ jobs:
           python .github/ci/nova_batch10_receipt_print.py
           python .github/ci/nova_batch11_unified_print.py
           python .github/ci/nova_batch12_insurance.py
+          python .github/ci/nova_batch13_purchase.py
           python -m compileall -q pharmacy hospital
       - name: Display laboratory printer context
         run: sed -n '82,98p' hospital/static/app.js
@@ -77,9 +83,13 @@ jobs:
           node .github/ci/nova_unified_print_test.js
           node --check pharmacy/static/nova_pharmacy_batch08.js
           node --check hospital/static/admin-ui.js
+          node --check pharmacy/static/nova_pharmacy_batch08.js
           node --check pharmacy/static/app.js
           node --check hospital/static/app.js
           node --check hospital/static/finance-ui.js
+      - name: Verify approved purchases and batch pricing
+        run: |
+          PYTHONPATH=pharmacy:. python -m unittest -q pharmacy.tests.test_nova_batch13 pharmacy.tests.test_nova_batch08
       - name: Check synthetic cashier queue and held-cart operations
         run: |
           PYTHONPATH=pharmacy:. python - <<'PY'
