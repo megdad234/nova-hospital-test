@@ -40,6 +40,11 @@ def backend(s):
  indentation=original[:len(original)-len(original.lstrip())]
  replacement=indentation+"before=(row['total']*earlier)//row['qty']\n"+indentation+"after=(row['total']*(earlier+qty))//row['qty']\n"+indentation+"amount=after-before;cv=(amount*s['coverage']+50)//100"
  s=s[:start]+block.replace(original,replacement,1)+s[end:]
+ s=replace(s,"    return {'id':saleid,'ref':ref,'total':total,'discount':discount,'covered':covered,",
+ """    actor=one(c,'SELECT permissions FROM users WHERE id=? AND active=1',(uid,))
+    permissions=set(json.loads(actor['permissions'])) if actor else set()
+    can_profit=bool(permissions.intersection({'reports','reports_view','view_reports','admin','manage_users','profit_view'}))
+    return {'net_profit':total-cost_total if can_profit else None,'id':saleid,'ref':ref,'total':total,'discount':discount,'covered':covered,""",'profit access')
  return s
 edit('pharmacy/app.py',backend)
 def ui(s):
@@ -56,6 +61,16 @@ function novaSetSaleDiscount(value){state.novaSaleDiscount=value;redraw()}""",'t
  s=replace(s,'</div><div class="sale-cart-list" aria-label="أصناف الفاتورة">',"""</div><div class="field"><label for="nova-sale-discount">خصم الفاتورة (جنيه سوداني)</label><input id="nova-sale-discount" type="number" min="0" step="1" value="${saleDiscount()}" onchange="novaSetSaleDiscount(this.value)"><small>الإجمالي بعد الخصم: ${fmt(saleTotal())} ج.س</small></div><div class="sale-cart-list" aria-label="أصناف الفاتورة">""",'discount input')
  # Cash sale is settled automatically; keep tender field out of the daily workflow.
  s=replace(s,"function payFields(due){switch(state.payMode){case'cash':return", "function payFields(due){switch(state.payMode){case'cash':return",'noop') if False else s
+ s=replace(s,"function payFields(due){switch(state.payMode){case'cash':return", "function payFields(due){switch(state.payMode){case'cash':return",'noop') if False else s
+ # Remove optional cash tender from cash mode; paid amount is always due.
+ start=s.index("function payFields(due)")
+ end=s.index("function mixedBalance()",start)
+ block=s[start:end]
+ first=block.index("case'cash':return")
+ next_case=block.index("case'bank':return",first)
+ block=block[:first]+"""case'cash':return \`<div class="help">المطلوب كاش: <strong>\\${fmt(due)}</strong>. السداد كامل تلقائياً.</div>\`;"""+block[next_case:]
+ s=s[:start]+block+s[end:]
+ s=replace(s,"modal('تم إصدار فاتورة '+data.ref,receipt(actual)+", "modal('تم إصدار فاتورة '+data.ref,(data.net_profit===null||data.net_profit===undefined?'':'<div class=\\\"help\\\">صافي ربح الفاتورة: '+fmt(data.net_profit)+' ج.س</div>')+receipt(actual)+",'profit display')
  return s
 edit('pharmacy/static/app.js',ui)
 print('NOVA14_DISCOUNT_APPLIED')
