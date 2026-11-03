@@ -38,6 +38,7 @@ on:
       - 'pharmacy/tests/test_nova_batch12.py'
       - 'docs/NOVA_BATCH12_INSURANCE_PATIENT_LINK_AR.md'
       - '.github/ci/nova_batch13_purchase.py'
+      - '.github/ci/nova_batch13_ui_smoke.js'
       - 'pharmacy/static/nova_batch13_purchase.js'
       - 'pharmacy/static/nova_batch13_purchase.css'
       - 'pharmacy/tests/test_nova_batch13.py'
@@ -82,6 +83,7 @@ jobs:
           node --check .github/ci/nova_unified_thermal_engine.js
           node .github/ci/nova_unified_print_test.js
           node --check pharmacy/static/nova_pharmacy_batch08.js
+          node .github/ci/nova_batch13_ui_smoke.js
           node --check hospital/static/admin-ui.js
           node --check pharmacy/static/nova_pharmacy_batch08.js
           node --check pharmacy/static/app.js
