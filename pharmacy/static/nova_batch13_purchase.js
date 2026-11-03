@@ -101,12 +101,13 @@
      '</section></div>'+
      '<div class="panel nova13-footer"><div class="nova13-footer-actions">'+
        '<button type="button" class="btn" id="madar-purchase-submit" onclick="confirmPurchase()">✓ اعتماد واستلام الفاتورة</button>'+
-       '<button type="button" class="btn outline" onclick="document.getElementById('nova-save-purchase-draft')?.click()">حفظ كمسودة</button>'+
+       '<button type="button" class="btn outline" onclick="nova13SaveDraft()">حفظ كمسودة</button>'+
        '<button type="button" class="btn outline" onclick="importDialog()">استيراد Excel</button>'+
        '<button type="button" class="btn outline" onclick="nav(\'purchases\')">سجل المشتريات</button>'+
        '<button type="button" class="btn outline" onclick="nav(\'purchase-returns\')">مرتجع مشتريات</button>'+
        '</div></div></div>';
  };
+ window.nova13SaveDraft=function(){document.getElementById('nova-save-purchase-draft')?.click()};
  window.nova13SetPrice=function(i,value){
    const row=state.purchaseRows[i],n=Number(value);
    if(!row||!Number.isSafeInteger(n)||n<=0)return toast('سعر البيع يجب أن يكون موجباً بالجنيه الصحيح',true);
