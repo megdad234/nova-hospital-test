@@ -45,6 +45,11 @@ on:
       - 'pharmacy/static/nova_batch12_insurance.css'
       - 'pharmacy/tests/test_nova_batch12.py'
       - 'docs/NOVA_BATCH12_INSURANCE_PATIENT_LINK_AR.md'
+      - '.github/ci/nova_batch13_purchase.py'
+      - 'pharmacy/static/nova_batch13_purchase.js'
+      - 'pharmacy/static/nova_batch13_purchase.css'
+      - 'pharmacy/tests/test_nova_batch13.py'
+      - 'docs/NOVA_BATCH13_PURCHASE_APPROVED_AR.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -182,12 +187,22 @@ jobs:
           $env:PYTHONPATH = 'pharmacy;.'
           python -m unittest -q pharmacy.tests.test_nova_batch12
           if ($LASTEXITCODE -ne 0) { throw 'NOVA12 insurance tests failed; installer blocked' }
+      - name: Apply approved NOVA Batch13 split purchasing and pricing
+        shell: pwsh
+        run: |
+          python .github/ci/nova_batch13_purchase.py
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA13 patch failed; installer blocked' }
+          node --check pharmacy/static/nova_pharmacy_batch08.js
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA13 JS syntax invalid; installer blocked' }
+          $env:PYTHONPATH = 'pharmacy;.'
+          python -m unittest -q pharmacy.tests.test_nova_batch13 pharmacy.tests.test_nova_batch08
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA13 purchase regression failed; installer blocked' }
       - name: Restore previously verified development Windows build
         id: setup_cache
         uses: actions/cache/restore@v4
         with:
           path: windows/output/NOVA-Hospital-Setup-DEV.exe
-          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py', '.github/ci/nova_batch02_patch.py', '.github/ci/nova_batch03_patch.py', '.github/ci/nova_batch04_lab_reception.py', '.github/ci/nova_batch05_cashier_pharmacy.py', '.github/ci/nova_batch05_ui.py', '.github/ci/nova_batch05_free_policy.py', '.github/ci/nova_batch05_test_expectations.py', '.github/ci/nova_batch06_insurance.py', '.github/ci/nova_batch07_reference_ui.py', '.github/ci/nova_batch08_pharmacy_recovery.py', 'pharmacy/static/nova_pharmacy_batch08.js', 'pharmacy/static/nova_pharmacy_batch08.css', 'pharmacy/tests/test_nova_batch08.py', '.github/ci/nova_batch09_pos_admin.py', 'pharmacy/static/nova_batch09_pos.js', 'pharmacy/static/nova_batch09_pos.css', 'hospital/static/nova_batch09_collections.pyfrag', 'hospital/static/nova_batch09_collections.js', 'hospital/static/nova_batch09_collections.css', 'pharmacy/tests/test_nova_batch09.py', '.github/ci/nova_batch10_receipt_print.py', 'pharmacy/tests/test_nova_batch10.py', '.github/ci/nova_batch11_unified_print.py', '.github/ci/nova_unified_thermal_engine.js', '.github/ci/nova_unified_print_test.js', 'pharmacy/tests/test_nova_batch11.py', '.github/ci/nova_batch12_insurance.py', '.github/ci/nova_batch12_insurance_backend.pyfrag', 'pharmacy/static/nova_batch12_insurance.js', 'pharmacy/static/nova_batch12_insurance.css', 'pharmacy/tests/test_nova_batch12.py') }}
+          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py', '.github/ci/nova_batch02_patch.py', '.github/ci/nova_batch03_patch.py', '.github/ci/nova_batch04_lab_reception.py', '.github/ci/nova_batch05_cashier_pharmacy.py', '.github/ci/nova_batch05_ui.py', '.github/ci/nova_batch05_free_policy.py', '.github/ci/nova_batch05_test_expectations.py', '.github/ci/nova_batch06_insurance.py', '.github/ci/nova_batch07_reference_ui.py', '.github/ci/nova_batch08_pharmacy_recovery.py', 'pharmacy/static/nova_pharmacy_batch08.js', 'pharmacy/static/nova_pharmacy_batch08.css', 'pharmacy/tests/test_nova_batch08.py', '.github/ci/nova_batch09_pos_admin.py', 'pharmacy/static/nova_batch09_pos.js', 'pharmacy/static/nova_batch09_pos.css', 'hospital/static/nova_batch09_collections.pyfrag', 'hospital/static/nova_batch09_collections.js', 'hospital/static/nova_batch09_collections.css', 'pharmacy/tests/test_nova_batch09.py', '.github/ci/nova_batch10_receipt_print.py', 'pharmacy/tests/test_nova_batch10.py', '.github/ci/nova_batch11_unified_print.py', '.github/ci/nova_unified_thermal_engine.js', '.github/ci/nova_unified_print_test.js', 'pharmacy/tests/test_nova_batch11.py', '.github/ci/nova_batch12_insurance.py', '.github/ci/nova_batch12_insurance_backend.pyfrag', 'pharmacy/static/nova_batch12_insurance.js', 'pharmacy/static/nova_batch12_insurance.css', 'pharmacy/tests/test_nova_batch12.py', '.github/ci/nova_batch13_purchase.py', 'pharmacy/static/nova_batch13_purchase.js', 'pharmacy/static/nova_batch13_purchase.css', 'pharmacy/tests/test_nova_batch13.py') }}
       - name: Run source tests and build Windows installer
         if: steps.setup_cache.outputs.cache-hit != 'true'
         shell: pwsh
@@ -197,7 +212,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: windows/output/NOVA-Hospital-Setup-DEV.exe
-          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py', '.github/ci/nova_batch02_patch.py', '.github/ci/nova_batch03_patch.py', '.github/ci/nova_batch04_lab_reception.py', '.github/ci/nova_batch05_cashier_pharmacy.py', '.github/ci/nova_batch05_ui.py', '.github/ci/nova_batch05_free_policy.py', '.github/ci/nova_batch05_test_expectations.py', '.github/ci/nova_batch08_pharmacy_recovery.py', 'pharmacy/static/nova_pharmacy_batch08.js', 'pharmacy/static/nova_pharmacy_batch08.css', 'pharmacy/tests/test_nova_batch08.py', '.github/ci/nova_batch09_pos_admin.py', 'pharmacy/static/nova_batch09_pos.js', 'pharmacy/static/nova_batch09_pos.css', 'hospital/static/nova_batch09_collections.pyfrag', 'hospital/static/nova_batch09_collections.js', 'hospital/static/nova_batch09_collections.css', 'pharmacy/tests/test_nova_batch09.py', '.github/ci/nova_batch10_receipt_print.py', 'pharmacy/tests/test_nova_batch10.py', '.github/ci/nova_batch11_unified_print.py', '.github/ci/nova_unified_thermal_engine.js', '.github/ci/nova_unified_print_test.js', 'pharmacy/tests/test_nova_batch11.py', '.github/ci/nova_batch12_insurance.py', '.github/ci/nova_batch12_insurance_backend.pyfrag', 'pharmacy/static/nova_batch12_insurance.js', 'pharmacy/static/nova_batch12_insurance.css', 'pharmacy/tests/test_nova_batch12.py') }}
+          key: nova-windows-setup-dev-v2-${{ hashFiles('NOVA_Hospital_GitHub_Ready_Source.zip', '.github/ci/patch_upgrade_hash.py', '.github/ci/windows_sqlite_test_cleanup.py', '.github/ci/nova_batch01_patch.py', '.github/ci/nova_batch02_patch.py', '.github/ci/nova_batch03_patch.py', '.github/ci/nova_batch04_lab_reception.py', '.github/ci/nova_batch05_cashier_pharmacy.py', '.github/ci/nova_batch05_ui.py', '.github/ci/nova_batch05_free_policy.py', '.github/ci/nova_batch05_test_expectations.py', '.github/ci/nova_batch08_pharmacy_recovery.py', 'pharmacy/static/nova_pharmacy_batch08.js', 'pharmacy/static/nova_pharmacy_batch08.css', 'pharmacy/tests/test_nova_batch08.py', '.github/ci/nova_batch09_pos_admin.py', 'pharmacy/static/nova_batch09_pos.js', 'pharmacy/static/nova_batch09_pos.css', 'hospital/static/nova_batch09_collections.pyfrag', 'hospital/static/nova_batch09_collections.js', 'hospital/static/nova_batch09_collections.css', 'pharmacy/tests/test_nova_batch09.py', '.github/ci/nova_batch10_receipt_print.py', 'pharmacy/tests/test_nova_batch10.py', '.github/ci/nova_batch11_unified_print.py', '.github/ci/nova_unified_thermal_engine.js', '.github/ci/nova_unified_print_test.js', 'pharmacy/tests/test_nova_batch11.py', '.github/ci/nova_batch12_insurance.py', '.github/ci/nova_batch12_insurance_backend.pyfrag', 'pharmacy/static/nova_batch12_insurance.js', 'pharmacy/static/nova_batch12_insurance.css', 'pharmacy/tests/test_nova_batch12.py', '.github/ci/nova_batch13_purchase.py', 'pharmacy/static/nova_batch13_purchase.js', 'pharmacy/static/nova_batch13_purchase.css', 'pharmacy/tests/test_nova_batch13.py') }}
       - name: Verify installer exists before acceptance
         shell: pwsh
         run: |
