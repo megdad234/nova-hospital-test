@@ -1,0 +1,85 @@
+/* NOVA Batch13 — approved premium purchases: invoice left, search right, RTL inside each pane */
+.nova13-purchase{display:grid;gap:12px;color:#173c38}
+.nova13-purchase .panel{margin:0;padding:14px;border:1px solid #d6e8e4;border-radius:15px;box-shadow:0 3px 12px rgba(0,61,65,.06)}
+.nova13-header{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.nova13-header .madar-buy-header{display:grid;grid-template-columns:minmax(200px,1.5fr) minmax(145px,.9fr) minmax(170px,1.1fr);gap:12px;flex:1}
+.nova13-header .field{min-width:0}
+.nova13-columns{display:grid;direction:ltr;grid-template-columns:minmax(0,1.35fr) minmax(345px,.94fr);gap:12px;align-items:stretch}
+.nova13-columns>.panel{min-width:0;direction:rtl}
+.nova13-purchase .panel-head{margin-bottom:12px;gap:8px}
+.nova13-purchase .panel-head h2{font-size:17px;color:#113f3c}
+.nova13-table-scroll{overflow:auto;max-height:395px;min-height:170px;overscroll-behavior:contain;border:1px solid #e0ebe8;border-radius:12px;scrollbar-width:thin}
+.nova13-table-scroll table{min-width:690px;margin:0}
+.nova13-table-scroll thead{position:sticky;top:0;z-index:2}
+.nova13-table-scroll th{background:#edf5f3;color:#365e56;font-size:12px}
+.nova13-table-scroll td{padding:7px 8px;vertical-align:middle;border-bottom:1px solid #edf1ef}
+.nova13-row strong{font-size:12px;display:block}
+.nova13-row small{font-size:10px;color:#698079;display:block}
+.nova13-row input{width:100%;max-width:105px;min-width:62px;min-height:34px;border:1px solid #cfdfd9;border-radius:7px;padding:5px 6px;font-size:12px;background:white}
+.nova13-detail-button{display:inline-flex;border:0;background:none;padding:3px 0;font-size:11px;color:#068779;text-decoration:underline;cursor:pointer}
+.nova13-money{font-weight:800;color:#126e62;white-space:nowrap}
+.nova13-delete{border:1px solid #f4ced2;background:#fff4f4;color:#b12745;border-radius:6px;min-width:29px;min-height:29px;font-size:19px;line-height:1}
+.nova13-subrow td{padding:0 8px 6px}
+.nova13-row-details{display:flex;flex-wrap:wrap;gap:9px;align-items:center;background:#f7fbf9;border-radius:6px;padding:6px 9px}
+.nova13-row-details label{font-size:11px;color:#58736a;display:inline-flex;align-items:center;gap:5px}
+.nova13-row-details input{width:115px;min-height:30px;border:1px solid #d2e4dc;border-radius:5px;padding:4px 7px}
+.nova13-subprice{display:grid;gap:2px;border-top:1px dashed #cee1da;margin-top:5px;padding-top:4px;font-size:10px;color:#116e64}
+.nova13-subprice label{font-size:10px;color:#527b6b}
+.nova13-subprice input{width:95px;margin-top:3px}
+.nova13-options-slot .nova-purchase-controls{margin:11px 0!important;padding:9px!important}
+.nova13-options-slot .nova-purchase-controls .field{min-width:150px}
+.nova13-more{border:1px solid #d9e9e4;border-radius:10px;margin-top:11px;padding:9px;background:#f8fbfa}
+.nova13-more summary{font-weight:700;font-size:12px;color:#1a6962;cursor:pointer;list-style:revert}
+.nova13-more-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:10px}
+.nova13-more-fields>.field{min-width:0}
+.nova13-check{display:flex;align-items:center;gap:8px;font-size:12px}
+.nova13-totals{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:12px;padding:13px;border-radius:10px;background:#e8f7f0;color:#14534a;font-size:13px}
+.nova13-totals b{font-size:17px;color:#066752}
+.nova13-search{display:flex;align-items:center;gap:7px;border:1px solid #b9dad0;border-radius:10px;padding:6px 9px}
+.nova13-search input{border:0!important;min-width:0;outline:0;flex:1;padding:7px;min-height:34px}
+.nova13-search span{font-size:23px;color:#087d73}
+.nova13-results{display:grid;gap:5px;max-height:175px;overflow-y:auto;overscroll-behavior:contain;margin-top:8px;scrollbar-width:thin}
+.nova13-hit{display:flex;width:100%;justify-content:space-between;align-items:center;gap:9px;text-align:right;padding:8px 10px;border:1px solid #e2eae7;border-radius:8px;background:#fff;cursor:pointer}
+.nova13-hit:hover,.nova13-hit:focus-visible{border-color:#0a9b88;background:#f1faf6}
+.nova13-hit strong{display:block;font-size:12px}
+.nova13-hit small{display:block;font-size:10px;color:#748d82}
+.nova13-hit .tag{flex:none}
+.nova13-selected{background:#f7fcfa;border:1px solid #d4e9de;border-radius:12px;padding:12px;margin-top:10px}
+.nova13-selection-empty{color:#658379;text-align:center;padding:18px}
+.nova13-selected-head{display:flex;justify-content:space-between;gap:8px;align-items:start}
+.nova13-selected-head b{font-size:15px}
+.nova13-selected-head small{display:block;color:#607b6d;font-size:11px}
+.nova13-stockline{font-size:11px;margin:10px 0;color:#43695f}
+.nova13-stockline strong{color:#087562}
+.nova13-entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px}
+.nova13-field{display:grid;gap:5px;font-size:11px;color:#56746b;font-weight:650;min-width:0}
+.nova13-field input{min-width:0;width:100%;border:1px solid #cddfd8;border-radius:8px;padding:7px;min-height:36px;background:#fff;font-size:13px;color:#1f4d47}
+.nova13-wide{grid-column:1/-1}
+.nova13-unit-toggle{display:flex;gap:8px;flex-wrap:wrap}
+.nova13-unit-toggle label{background:#fff;border:1px solid #caddd3;padding:7px;border-radius:8px;flex:1;white-space:nowrap;font-weight:600;font-size:11px}
+.nova13-entry-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.nova13-add{flex:1;min-width:140px}
+.nova13-quick{border:1px solid #b7dacd;border-radius:12px;padding:12px;margin-top:10px;background:#f1faf5}
+.nova13-quick-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.nova13-quick .section{margin-top:12px}
+.nova13-footer{padding:11px!important}
+.nova13-footer-actions{display:flex;flex-wrap:wrap;gap:8px}
+.nova13-footer-actions>.btn:first-child{flex:1;min-width:185px}
+.nova13-purchase input:focus-visible,.nova13-purchase button:focus-visible{outline:2px solid #11988b;outline-offset:1px}
+@media(max-width:1150px){
+ .nova13-columns{grid-template-columns:minmax(0,1.1fr) minmax(330px,.9fr)}
+ .nova13-header .madar-buy-header{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:930px){
+ .nova13-columns{grid-template-columns:minmax(0,1fr)}
+ .nova13-columns>.nova13-finder{grid-row:1}
+ .nova13-columns>.nova13-invoice{grid-row:2}
+ .nova13-header .madar-buy-header{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:580px){
+ .nova13-header .madar-buy-header,.nova13-more-fields{grid-template-columns:1fr}
+ .nova13-entry-grid{grid-template-columns:1fr}
+ .nova13-totals{flex-wrap:wrap}
+ .nova13-table-scroll{max-height:330px}
+}
+@media print{.nova13-columns{display:block}.nova13-table-scroll{max-height:none;overflow:visible}.nova13-finder,.nova13-footer{display:none!important}}
