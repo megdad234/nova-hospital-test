@@ -93,6 +93,18 @@
         area.querySelectorAll(':scope > .panel').forEach((panel,i)=>panel.classList.add(i===0?'nova-pos-search':'nova-pos-checkout'));
         holdBarStatus();
         refreshHoldCount();
+        // Keep the sale basket usable on short screens and assist keyboard/barcode users.
+        const basket=area.querySelector('.sale-cart-list');
+        if(basket){
+          basket.setAttribute('role','region');
+          basket.setAttribute('aria-label','أصناف فاتورة البيع — قائمة قابلة للتمرير');
+          basket.setAttribute('tabindex','0');
+        }
+        const scan=area.querySelector('#pos-scan');
+        if(scan){
+          scan.setAttribute('autocomplete','off');
+          scan.setAttribute('aria-label','البحث عن الدواء بالاسم أو الباركود');
+        }
       }
     }
   };
