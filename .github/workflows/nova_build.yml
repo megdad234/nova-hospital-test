@@ -45,6 +45,7 @@ on:
       - 'pharmacy/static/nova_batch12_insurance.css'
       - 'pharmacy/tests/test_nova_batch12.py'
       - 'docs/NOVA_BATCH12_INSURANCE_PATIENT_LINK_AR.md'
+      - '.github/ci/nova_pos_source_audit.py'
       - '.github/ci/nova_batch13_purchase.py'
       - '.github/ci/nova_batch13_ui_smoke.js'
       - 'pharmacy/static/nova_batch13_purchase.js'
@@ -79,6 +80,9 @@ jobs:
           if(!(Test-Path 'windows/build-windows.ps1')){throw 'Windows build script missing'}
           if(!(Test-Path 'windows/ci-acceptance.ps1')){throw 'Windows acceptance script missing'}
           Write-Host 'NOVA_SOURCE_EXTRACTED'
+      - name: Inspect original NOVA POS source before financial modifications
+        shell: pwsh
+        run: python .github/ci/nova_pos_source_audit.py
       - name: Set up Python on temporary Windows build runner only
         uses: actions/setup-python@v5
         with:
