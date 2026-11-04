@@ -1,0 +1,101 @@
+"""Integrate guarded bulk price preview and approval into patched NOVA pharmacy."""
+from pathlib import Path
+p=Path("pharmacy/app.py")
+s=p.read_text(encoding="utf-8")
+anchor="def nova_bulk_unpriced(c,p,uid):"
+assert s.count(anchor)==1
+helpers=r'''
+def nova_price_list_preview(c,p):
+    """Read-only, exact-match preview. Never creates purchases or stock movements."""
+    from decimal import Decimal, ROUND_HALF_UP
+    rows=p.get('rows')
+    if not isinstance(rows,list) or not 0<len(rows)<=20000:
+        raise ValueError('قائمة الأسعار فارغة أو كبيرة')
+    pct=p.get('markup_percent')
+    if pct is not None:
+        pct=Decimal(str(pct))
+        if not pct.is_finite() or pct<0 or pct>1000:raise ValueError('نسبة الربح غير صحيحة')
+    def norm(x):
+        return ''.join(str(x or '').casefold().split())
+    catalog_rows=c.execute("""SELECT pk.id,pk.factor,pk.sale_price,pk.barcode,
+        pr.name,pr.strength,pr.form,pr.manufacturer,pk.unit_name
+        FROM packages pk JOIN products pr ON pr.id=pk.product_id
+        WHERE pr.active=1""").fetchall()
+    result=[]
+    for i,row in enumerate(rows):
+        if not isinstance(row,dict):raise ValueError('صف غير صالح')
+        name=str(row.get('name') or '').strip()
+        price=Decimal(str(row.get('purchase_price') or 0))
+        if not price.is_finite() or price<=0 or price>1000000000000:raise ValueError('سعر شراء غير صالح')
+        strength=norm(row.get('strength'));pack=norm(row.get('pack'))
+        barcode=str(row.get('barcode') or '').strip()
+        hits=[]
+        for pk in catalog_rows:
+            if barcode and pk['barcode'] and barcode==str(pk['barcode']):
+                hits.append(pk);continue
+            if norm(pk['name'])!=norm(name):continue
+            if strength and norm(pk['strength'])!=strength:continue
+            if pack and norm(pk['unit_name'])!=pack:continue
+            hits.append(pk)
+        record={'line':row.get('line',i+1),'name':name,'purchase_price':str(price),
+                'status':'review','selected':False,'candidates':[int(x['id']) for x in hits[:10]]}
+        if len(hits)==1 and (barcode or (strength and pack)):
+            pk=hits[0]
+            # Actual purchase history, never previously imported price lists.
+            last=c.execute("""SELECT pl.id,pl.amount,pl.qty,pl.bonus,pl.received,src.factor
+                FROM purchase_lines pl JOIN packages src ON src.id=pl.package_id
+                WHERE src.product_id=(SELECT product_id FROM packages WHERE id=?)
+                AND (pl.received+pl.bonus)>0 ORDER BY pl.id DESC LIMIT 1""",(pk['id'],)).fetchone()
+            if last and (last['qty']+last['bonus'])>0:
+                old_cost=Decimal(last['amount'])*Decimal(pk['factor'])/(Decimal(last['qty']+last['bonus'])*Decimal(last['factor']))
+                # Uploaded price is explicitly per matched target package.
+                if pct is None:
+                    if old_cost<=0:
+                        record['status']='missing_cost'
+                        result.append(record);continue
+                    multiplier=Decimal(pk['sale_price'])/old_cost
+                else:multiplier=1+pct/100
+                proposed=int((price*multiplier).quantize(Decimal('1'),rounding=ROUND_HALF_UP))
+                if 0<proposed<=1000000000000:
+                    record.update(status='matched',package_id=int(pk['id']),
+                        'old_sale_price':int(pk['sale_price']),'old_purchase_cost':str(old_cost),
+                        'last_purchase_line_id':int(last['id']),
+                        'proposed_sale_price':proposed,
+                        'selected':proposed!=int(pk['sale_price']))
+        result.append(record)
+    counts={x:sum(r['status']==x for r in result) for x in ('matched','review','missing_cost')}
+    return {'rows':result,'counts':counts,'saved':False}
+
+def nova_price_list_approve(c,p,uid):
+    """Optimistic conditional update; entire approval is one transaction."""
+    items=p.get('items')
+    if not isinstance(items,list) or not items or len(items)>20000:
+        raise ValueError('لا توجد أسعار للاعتماد')
+    if len({str(x.get('package_id')) for x in items if isinstance(x,dict)})!=len(items):
+        raise ValueError('عبوة مكررة في الاعتماد')
+    begin(c)
+    try:
+        updates=[]
+        for item in items:
+            if not isinstance(item,dict):raise ValueError('صف غير صالح')
+            pid=int(item['package_id']);old=int(item['old_sale_price'])
+            new=int(item['proposed_sale_price'])
+            if new<=0 or new>1000000000000:raise ValueError('سعر بيع غير صالح')
+            changed=c.execute('UPDATE packages SET sale_price=? WHERE id=? AND sale_price=?',
+                (new,pid,old)).rowcount
+            if changed!=1:raise ValueError('السعر تغير بعد المراجعة؛ أعد المعاينة')
+            updates.append({'package_id':pid,'old':old,'new':new})
+        audit(c,uid,'bulk_supplier_price_list_approved',{'updates':updates})
+        finish(c)
+        return {'updated':len(updates),'saved':True}
+    except Exception:
+        rollback(c)
+        raise
+
+'''
+s=s.replace(anchor,helpers+anchor)
+anchor2="'/api/v1/nova-reprice-unpriced':('prices',lambda:nova_bulk_unpriced(c,data,u['id'])),"
+assert s.count(anchor2)==1
+s=s.replace(anchor2,"'/api/v1/nova-price-list-preview':('prices',lambda:nova_price_list_preview(c,data)),\n                     '/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),\n                     "+anchor2)
+p.write_text(s,encoding="utf-8")
+print("NOVA_PRICE_LIST_BACKEND_INTEGRATED")
