@@ -17,6 +17,8 @@ with tempfile.TemporaryDirectory() as temp:
     (runtime / "python.exe").write_bytes(b"synthetic-test-runtime")
     (stage / "EXTRACTION_MANIFEST.json").write_text(
         json.dumps({"status": "SOURCE_SNAPSHOT_ONLY_NOT_INSTALLABLE"}))
+    (stage / "HOSPITAL_COUPLING_BLOCKERS.json").write_text(
+        json.dumps({"standalone_network_and_schema_clear": True, "unresolved": []}))
     for relative in module.REQUIRED:
         file = stage / relative
         file.parent.mkdir(parents=True, exist_ok=True)
