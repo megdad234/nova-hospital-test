@@ -60,7 +60,7 @@ def run_service():
         def SvcDoRun(self):
             root = Path(os.environ.get("NOVA_COMMERCIAL_SOURCE_ROOT", Path(sys.executable).parent)).resolve()
             command = pharmacy_command(root)
-            _, env, _ = prepare(root)
+            _, env, _ = prepare(root, port=selected_port)
             self.process = subprocess.Popen(command, cwd=str(root), env=env)
             try:
                 self.process.wait()
