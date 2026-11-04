@@ -26,4 +26,7 @@ with tempfile.TemporaryDirectory() as tmp:
     (source / "hospital.db").unlink()
     (source / "commercial_pharmacy.sqlite3-wal").write_bytes(b"test")
     assert module.verify_snapshot(root)
+    manifest["sha256"]["../outside.py"] = "0" * 64
+    (root / "EXTRACTION_MANIFEST.json").write_text(json.dumps(manifest), encoding="utf-8")
+    assert any("unsafe manifest path" in issue for issue in module.verify_snapshot(root))
 print("COMMERCIAL_SNAPSHOT_INTEGRITY_TESTS_PASSED")
