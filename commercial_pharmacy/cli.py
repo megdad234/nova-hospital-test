@@ -9,6 +9,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import sqlite3
 from .backup import create_backup, inspect_backup
 from .database import open_pharmacy_database
 from .restore import restore_offline
@@ -56,9 +57,7 @@ def run(argv=None):
                   "hospital_database_enabled": False,
                   "hospital_service_enabled": False}
         if config.database.is_file():
-            from .database import verify_pharmacy_database
-            with closing(open_pharmacy_database(config, protected_hospital_paths=args.protect_hospital_dir)) as conn:
-                verify_pharmacy_database(conn, config)
+            with closing(sqlite3.connect(config.database.resolve().as_uri() + "?mode=ro", uri=True)) as conn:
                 result["database_integrity"] = conn.execute("PRAGMA integrity_check").fetchone()[0]
     elif args.command == "initialize":
         result = write_runtime_config(config)
