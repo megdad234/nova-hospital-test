@@ -5,9 +5,13 @@
 param(
   [Parameter(Mandatory=$true)][string]$ExecutablePath,
   [int]$Port = 18763,
-  [switch]$OpenLanFirewall
+  [switch]$OpenLanFirewall,
+  [switch]$ServiceAwareExecutableConfirmed
 )
 $ErrorActionPreference = 'Stop'
+if (-not $ServiceAwareExecutableConfirmed) {
+  throw 'A Windows Service Control Manager-aware executable must be built and tested before registration; generic Python/EXE cannot be registered with sc.exe'
+}
 $serviceName = 'NOVACommercialPharmacyServer'
 $displayName = 'NOVA Commercial Pharmacy Server'
 if (-not (Test-Path -LiteralPath $ExecutablePath -PathType Leaf)) {
