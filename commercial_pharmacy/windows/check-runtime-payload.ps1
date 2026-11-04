@@ -25,5 +25,8 @@ Push-Location $InstallRoot
 try {
   & $python -m commercial_pharmacy.launch --source-root $InstallRoot --preflight-only
   if ($LASTEXITCODE -ne 0) { throw 'Commercial source preflight failed' }
+  & $python -c 'import importlib.util,sys; required=("flask",); missing=[m for m in required if importlib.util.find_spec(m) is None]; print("MISSING_RUNTIME_IMPORTS="+",".join(missing)); sys.exit(2 if missing else 0)'
+  if ($LASTEXITCODE -ne 0) { throw 'Commercial bundled runtime missing required Flask dependency' }
+
 } finally { Pop-Location }
 Write-Host 'COMMERCIAL_RUNTIME_PAYLOAD_PREFLIGHT_PASSED_NOT_ACCEPTANCE'
