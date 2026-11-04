@@ -29,7 +29,7 @@ $binaryPath = ('"{0}" --service --port {1}' -f $fullExe, $Port)
 & sc.exe create $serviceName binPath= $binaryPath start= auto DisplayName= $displayName
 if ($LASTEXITCODE -ne 0) { throw 'Windows service registration failed' }
 & sc.exe description $serviceName 'Independent NOVA Commercial Pharmacy server; no NOVA Hospital service dependency.'
-if ($LASTEXITCODE -ne 0) { throw 'Windows service description failed' }
+if ($LASTEXITCODE -ne 0) { & sc.exe delete $serviceName | Out-Null; throw 'Windows service description failed' }
 if ($OpenLanFirewall) {
   $ruleName = 'NOVA Commercial Pharmacy LAN'
   if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
