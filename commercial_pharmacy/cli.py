@@ -66,7 +66,8 @@ def run(argv=None):
         if not config.database.is_file():
             raise FileNotFoundError("Commercial database does not exist")
         with closing(sqlite3.connect(config.database.resolve().as_uri() + "?mode=ro", uri=True)) as conn:
-            result = {"integrity": conn.execute("PRAGMA integrity_check").fetchone()[0]}
+            result = {"integrity": conn.execute("PRAGMA integrity_check").fetchone()[0],
+                      "database": str(config.database), "read_only": True}
     elif args.command == "list-backups":
         result = {"backups": [
             {"name": item.name, "bytes": item.stat().st_size}
