@@ -87,6 +87,7 @@ jobs:
         run: |
           python .github/ci/test_nova_price_list_preview.py
           python .github/ci/test_nova_price_list_matching.py
+          python .github/ci/test_nova_price_list_candidates.py
           if ($LASTEXITCODE -ne 0) { throw 'NOVA price-list preview regression failed' }
       - name: Inspect original NOVA POS source before financial modifications
         shell: pwsh
