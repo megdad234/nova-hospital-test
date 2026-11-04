@@ -25,6 +25,11 @@ if missing:
     raise SystemExit("MISSING_REQUIRED: " + ", ".join(missing))
 shutil.copytree(ROOT / "pharmacy", OUT / "pharmacy",
                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.db", "*.sqlite", "*.sqlite3"))
+# Include isolated runtime code alongside the extracted source. The application
+# is not standalone until its actual server entrypoint adopts these primitives.
+if (ROOT / "commercial_pharmacy").is_dir():
+    shutil.copytree(ROOT / "commercial_pharmacy", OUT / "commercial_pharmacy",
+                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
 # Preserve shared components as references until their use is audited.
 shutil.copytree(ROOT / "hospital", OUT / "hospital_reference",
                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.db", "*.sqlite", "*.sqlite3"))
