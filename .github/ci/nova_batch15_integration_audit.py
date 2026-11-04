@@ -16,6 +16,9 @@ patterns=[
  r"INSERT INTO (?:purchase_lines|audit)",
  r"FROM purchase_lines",
  r"UPDATE packages SET sale_price",
+ r"CREATE TABLE.*(?:products|lots|users|permissions)",
+ r"def (?:nova_price|nova_purchase|products|purchase)",
+ r"last_purchase|unit_cost|qty_base|pack_factor",
 ]
 for pattern in patterns:
  print("\n=== ",pattern," ===")
