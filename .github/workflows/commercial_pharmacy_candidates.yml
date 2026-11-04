@@ -20,6 +20,9 @@ jobs:
       - run: python -m pip install pyinstaller pywin32
       - shell: pwsh
         run: ./commercial_pharmacy/windows/build-commercial-executables.ps1 -SourceRoot .
+      - name: Verify frozen executables are Windows PE images
+        shell: pwsh
+        run: ./commercial_pharmacy/windows/validate-installer-inputs.ps1 -SourceRoot .
       - name: Smoke test frozen pharmacy LAN client
         shell: pwsh
         run: |
