@@ -28,6 +28,7 @@ def parser():
     commands.add_parser("diagnose")
     commands.add_parser("initialize")
     commands.add_parser("check-database")
+    commands.add_parser("list-backups")
     backup = commands.add_parser("backup")
     backup.add_argument("filename")
     check = commands.add_parser("verify-backup")
@@ -68,6 +69,13 @@ def run(argv=None):
         with closing(open_pharmacy_database(config, protected_hospital_paths=args.protect_hospital_dir)) as conn:
             verify_pharmacy_database(conn, config)
             result = {"integrity": conn.execute("PRAGMA integrity_check").fetchone()[0]}
+    elif args.command == "list-backups":
+        result = {"backups": [
+            {"name": item.name, "bytes": item.stat().st_size}
+            for item in sorted(config.backups.iterdir())
+            if item.is_file() and not item.is_symlink()
+            and item.suffix.lower() in (".sqlite3", ".sqlite", ".db")
+        ] if config.backups.is_dir() else []}
     elif args.command == "backup":
         if not config.database.is_file():
             raise FileNotFoundError("Commercial database does not exist")
