@@ -31,6 +31,12 @@ class InstallerContractTests(unittest.TestCase):
         self.assertIn("NOVA_COMMERCIAL_PYTHON", source)
         self.assertIn("Machine", source)
 
+    def test_installer_includes_isolated_runtime_payload(self):
+        source = (WINDOWS / "commercial-pharmacy-installer.iss").read_text(encoding="utf-8")
+        for required in ("dist\\commercial\\runtime\\*", "dist\\commercial\\pharmacy\\*",
+                         "dist\\commercial\\commercial_pharmacy\\*"):
+            self.assertIn(required, source)
+
     def test_runtime_payload_gate_requires_actual_pharmacy_and_python(self):
         script = (WINDOWS / "check-runtime-payload.ps1").read_text(encoding="utf-8")
         builder = (WINDOWS / "build-installer-candidate.ps1").read_text(encoding="utf-8")
