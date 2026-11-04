@@ -32,7 +32,7 @@ if (ROOT / "commercial_pharmacy").is_dir():
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
 # Preserve shared components as references until their use is audited.
 shutil.copytree(ROOT / "hospital", OUT / "hospital_reference",
-                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.db", "*.sqlite", "*.sqlite3"))
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.db", "*.sqlite", "*.sqlite3", "*.db-wal", "*.db-shm", "*.sqlite-wal", "*.sqlite-shm", "*.sqlite3-wal", "*.sqlite3-shm"))
 shutil.copytree(ROOT / "windows", OUT / "windows_reference",
                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
 for p in ("nova_server.py", "README_START_HERE_AR.md"):
