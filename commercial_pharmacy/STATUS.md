@@ -34,3 +34,7 @@ The `diagnose` command reports configured port availability, data directories an
 ## Windows installer blueprint
 
 `commercial_pharmacy/windows/commercial-pharmacy-installer.iss` defines a separate Inno Setup product, desktop shortcut, private-LAN firewall rule and service registration/removal. It references commercial EXEs that have **not been produced or verified**. Its output filename explicitly includes `UNVERIFIED`; do not publish or install as a finished product. Clean install, upgrades, service behavior, printer, LAN and coexistence still require Windows acceptance evidence.
+
+## Packaging tools (candidate only)
+
+`commercial_pharmacy/windows/validate-installer-inputs.ps1` verifies that both distinct commercial Windows executables exist and have PE signatures. `build-installer-candidate.ps1` invokes Inno Setup only after this check. `check-commercial-service.ps1` reads the independent service status and TCP listener without touching hospital services. These are preparatory tools: the actual executables, live integration, signed acceptance logs and tested Setup.exe remain outstanding.
