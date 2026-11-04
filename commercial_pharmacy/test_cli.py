@@ -25,6 +25,9 @@ class CliTests(unittest.TestCase):
             marker.write_text("unchanged")
             commercial = root / "pharmacy"
             args = ("--data-dir", str(commercial), "--protect-hospital-dir", str(protected))
+            diagnosis = self.invoke(*args, "diagnose")
+            self.assertFalse(diagnosis["database_exists"])
+            self.assertFalse(diagnosis["hospital_service_enabled"])
             before = self.invoke(*args, "inspect")
             self.assertFalse(before["initialized"])
             result = self.invoke(*args, "initialize")
@@ -34,6 +37,7 @@ class CliTests(unittest.TestCase):
             self.assertTrue(after["initialized"])
             self.assertFalse(after["database_exists"])
             self.assertEqual(marker.read_text(), "unchanged")
+            self.assertFalse((commercial / "commercial_pharmacy.sqlite3").exists())
             with self.assertRaises(ValueError):
                 self.invoke("--data-dir", str(protected), "--protect-hospital-dir",
                             str(protected), "initialize")
