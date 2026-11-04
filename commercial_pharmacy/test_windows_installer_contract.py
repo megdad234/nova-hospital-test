@@ -17,8 +17,8 @@ class InstallerContractTests(unittest.TestCase):
 
     def test_installer_includes_actual_standalone_runtime_payload(self):
         source = (WINDOWS / "commercial-pharmacy-installer.iss").read_text(encoding="utf-8")
-        for directory in ("commercial\\runtime\\*", "commercial\\pharmacy\\*",
-                          "commercial\\commercial_pharmacy\\*"):
+        for directory in (r"commercial\\runtime\\*", r"commercial\\pharmacy\\*",
+                          r"commercial\\commercial_pharmacy\\*"):
             self.assertIn(directory, source)
         self.assertIn("recursesubdirs", source)
 
