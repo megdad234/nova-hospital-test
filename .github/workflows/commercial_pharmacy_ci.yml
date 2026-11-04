@@ -1,0 +1,96 @@
+name: Commercial Pharmacy - Isolated Source and Runtime Tests
+on:
+  push:
+    branches:
+      - commercial-pharmacy-extraction-2026-11-04
+    paths:
+      - 'commercial_pharmacy/**'
+      - '.github/ci/stage_commercial_pharmacy.py'
+      - '.github/ci/audit_commercial_pharmacy.py'
+      - '.github/ci/audit_commercial_windows_identity.py'
+      - '.github/ci/commercial_pharmacy_identity.py'
+      - '.github/ci/commercial_pharmacy_release_gate.py'
+      - '.github/ci/test_*commercial_pharmacy*.py'
+      - '.github/workflows/commercial_pharmacy_ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: commercial-pharmacy-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  isolated-runtime:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate syntax and isolation primitives
+        shell: bash
+        run: |
+          python -m compileall -q commercial_pharmacy .github/ci
+          python -m unittest -v commercial_pharmacy.test_runtime_isolation commercial_pharmacy.test_database commercial_pharmacy.test_backup commercial_pharmacy.test_insurance_registry
+      - name: Verify extraction and release-gate negative tests
+        shell: bash
+        run: |
+          python .github/ci/test_stage_commercial_pharmacy.py
+          python .github/ci/test_commercial_pharmacy_contract.py
+          python .github/ci/test_commercial_pharmacy_release_gate.py
+  snapshot:
+    runs-on: windows-2025
+    needs: isolated-runtime
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Extract NOVA reference source without building hospital
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Expand-Archive -LiteralPath 'NOVA_Hospital_GitHub_Ready_Source.zip' -DestinationPath '.' -Force
+          if (!(Test-Path 'pharmacy/app.py')) { throw 'NOVA pharmacy source missing' }
+      - name: Apply NOVA source patches in canonical order
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $patches = @(
+            'nova_batch01_patch.py','nova_batch02_patch.py','nova_batch03_patch.py',
+            'nova_batch04_lab_reception.py','nova_batch05_cashier_pharmacy.py',
+            'nova_batch05_ui.py','nova_batch05_free_policy.py',
+            'nova_batch05_test_expectations.py','nova_batch06_insurance.py',
+            'nova_batch07_reference_ui.py','nova_batch08_pharmacy_recovery.py',
+            'nova_batch09_pos_admin.py','nova_batch10_receipt_print.py',
+            'nova_batch11_unified_print.py','nova_batch12_insurance.py',
+            'nova_batch13_purchase.py','nova_batch14_pos_discount.py',
+            'nova_batch15_bulk_prices.py'
+          )
+          foreach ($patch in $patches) {
+            python ".github/ci/$patch"
+            if ($LASTEXITCODE -ne 0) { throw "Failed to apply $patch" }
+          }
+      - name: Create audited source snapshot
+        shell: pwsh
+        run: |
+          python .github/ci/stage_commercial_pharmacy.py
+          if ($LASTEXITCODE -ne 0) { throw 'Staging failed' }
+          python .github/ci/audit_commercial_pharmacy.py
+          if ($LASTEXITCODE -ne 0) { throw 'Audit failed' }
+          python .github/ci/commercial_pharmacy_identity.py
+          if ($LASTEXITCODE -ne 0) { throw 'Identity contract failed' }
+          python .github/ci/audit_commercial_windows_identity.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows identity audit failed' }
+      - name: Upload source snapshot, NOT a commercial installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Commercial-Pharmacy-Audited-Source-NOT-INSTALLABLE
+          path: commercial_pharmacy_stage/
+          retention-days: 7
+          if-no-files-found: error
