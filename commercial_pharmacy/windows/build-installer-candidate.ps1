@@ -5,6 +5,7 @@ param(
   [Parameter(Mandatory=$true)][string]$InnoCompiler
 )
 $ErrorActionPreference = 'Stop'
+if ($env:NOVA_COMMERCIAL_ALLOW_UNVERIFIED_INSTALLER -ne 'YES') { throw 'Unverified installer build requires explicit acknowledgement' }
 if (!(Test-Path -LiteralPath $InnoCompiler -PathType Leaf)) { throw 'Inno Setup compiler missing' }
 & (Join-Path $PSScriptRoot 'validate-installer-inputs.ps1') -SourceRoot $SourceRoot
 
