@@ -4,10 +4,11 @@ Any unresolved hospital network call blocks the standalone installer. The
 source snapshot remains available for diagnosis and is NOT an installable app.
 """
 from pathlib import Path
+import os
 import json
 import re
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(os.environ.get('NOVA_EXTRACTION_ROOT', str(Path(__file__).resolve().parents[2]))).resolve()
 STAGE = ROOT / "commercial_pharmacy_stage"
 pharmacy = STAGE / "pharmacy"
 if not pharmacy.is_dir():
