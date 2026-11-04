@@ -59,10 +59,9 @@ if updated == source:
     raise SystemExit("COMMERCIAL_INSURANCE_NO_CHANGE")
 old_endpoint = "/api/v1/nova-hospital-patient-search"
 new_endpoint = "/api/v1/nova-pharmacy-customer-search"
-if updated.count(old_endpoint) < 2:
+if updated.count(old_endpoint) != 2:
     raise SystemExit("COMMERCIAL_INSURANCE_HOSPITAL_ROUTE_ANCHOR_CHANGED")
 updated = updated.replace(old_endpoint, new_endpoint)
-TARGET.write_text(updated, encoding="utf-8")
 ui_path = ROOT / "pharmacy" / "static" / "nova_pharmacy_batch08.js"
 if not ui_path.is_file():
     raise SystemExit("COMMERCIAL_INSURANCE_MISSING_POS_UI")
@@ -72,6 +71,7 @@ if "nova-hospital-patient-search" not in ui:
 ui = ui.replace("nova-hospital-patient-search", "nova-pharmacy-customer-search")
 ui = ui.replace("قاعدة المستشفى المركزية", "قاعدة بيانات الصيدلية المستقلة")
 ui = ui.replace("مرتبط بملف المريض", "مرتبط بملف عميل الصيدلية")
+TARGET.write_text(updated, encoding="utf-8")
 ui_path.write_text(ui, encoding="utf-8")
 assert "REFERENCES commercial_pharmacy_patients(id)" in updated
 print("COMMERCIAL_INSURANCE_DECOUPLED_FROM_HOSPITAL_PATIENT_TABLE")
