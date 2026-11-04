@@ -48,6 +48,7 @@ on:
       - 'pharmacy/tests/test_nova_batch12.py'
       - 'docs/NOVA_BATCH12_INSURANCE_PATIENT_LINK_AR.md'
       - '.github/ci/nova_batch15_integration_audit.py'
+      - '.github/ci/nova_batch15_bulk_prices.py'
       - '.github/ci/nova_batch14_pos_discount.py'
       - '.github/ci/nova_batch14_finance_tests.py'
       - '.github/ci/nova_pos_source_audit.py'
@@ -240,6 +241,13 @@ jobs:
         run: |
           python .github/ci/nova_batch15_integration_audit.py
           if ($LASTEXITCODE -ne 0) { throw 'NOVA price integration audit failed' }
+      - name: Integrate guarded bulk supplier price API
+        shell: pwsh
+        run: |
+          python .github/ci/nova_batch15_bulk_prices.py
+          if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration failed' }
+          python -m compileall -q pharmacy
+          if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration syntax failed' }
       - name: Restore previously verified development Windows build
         id: setup_cache
         uses: actions/cache/restore@v4
