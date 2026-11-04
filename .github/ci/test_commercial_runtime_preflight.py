@@ -31,4 +31,7 @@ with tempfile.TemporaryDirectory() as tmp:
         json.dumps({"unresolved": [], "standalone_network_and_schema_clear": False}), encoding="utf-8")
     result = module.inspect(root)
     assert "hospital coupling audit not cleared" in result["errors"]
+    (pharmacy / "server_host.py").write_text("PORT = 8763\n", encoding="utf-8")
+    result = module.inspect(root)
+    assert "commercial server port override missing" in result["errors"]
 print("COMMERCIAL_PREFLIGHT_NEGATIVE_TEST_PASSED")
