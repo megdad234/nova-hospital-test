@@ -19,6 +19,8 @@ def restore_offline(backup: Path, config: CommercialPaths, *, service_stopped: b
         raise RuntimeError("Stop commercial pharmacy service before restoring")
     if not backup.is_file():
         raise FileNotFoundError(str(backup))
+    if backup.is_symlink() or backup.resolve().parent != config.backups.resolve():
+        raise ValueError("Restore input must be a pharmacy-owned backup file")
     db = config.database.resolve()
     if db.parent != config.data.resolve():
         raise ValueError("Refusing to restore outside commercial pharmacy directory")
