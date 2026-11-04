@@ -9,6 +9,7 @@ on:
       - '.github/ci/audit_commercial_pharmacy.py'
       - '.github/ci/audit_commercial_pharmacy_assets.py'
       - '.github/ci/locate_commercial_integration_points.py'
+      - '.github/ci/patch_commercial_insurance.py'
       - '.github/ci/audit_commercial_windows_identity.py'
       - '.github/ci/commercial_pharmacy_identity.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
@@ -96,6 +97,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "NOVA Batch15 integration preflight failed" }
           python .github/ci/nova_batch15_bulk_prices.py
           if ($LASTEXITCODE -ne 0) { throw "NOVA Batch15 bulk prices failed" }
+      - name: Decouple pharmacy insurance from hospital patient records
+        shell: pwsh
+        run: |
+          python .github/ci/patch_commercial_insurance.py
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy insurance decoupling failed' }
+          python -m compileall -q pharmacy
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy syntax failed' }
       - name: Create audited source snapshot
         shell: pwsh
         run: |
