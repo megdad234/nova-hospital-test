@@ -19,7 +19,7 @@ with tempfile.TemporaryDirectory() as tmp:
                         ("pass\n" if path.suffix == ".py" else "fixture\n"), encoding="utf-8")
     env = dict(os.environ, NOVA_EXTRACTION_ROOT=str(root))
     for name in ("stage_commercial_pharmacy.py", "audit_commercial_pharmacy.py",
-                 "commercial_pharmacy_identity.py"):
+                 "commercial_pharmacy_identity.py", "audit_commercial_windows_identity.py"):
         result = subprocess.run([sys.executable, str(HERE / name)], env=env,
                                 text=True, capture_output=True)
         assert result.returncode == 0, f"{name}: {result.stdout} {result.stderr}"
@@ -35,6 +35,10 @@ with tempfile.TemporaryDirectory() as tmp:
     assert identity["printer_setup_during_install"] is False
     assert identity["employees_setup_during_install"] is False
     assert identity["default_port"] != 10080
+    windows = json.loads((stage / "WINDOWS_COEXISTENCE_AUDIT.json").read_text(encoding="utf-8"))
+    assert windows["runtime_verified"] is False
+    assert windows["release_allowed"] is False
+    assert windows["conflicts"] == []
     assert (stage / "pharmacy" / "app.py").read_text(encoding="utf-8") == "import hospital.core\n"
     assert (root / "pharmacy" / "app.py").read_text(encoding="utf-8") == "import hospital.core\n"
 print("COMMERCIAL_PHARMACY_ISOLATION_CONTRACT_TESTS_PASSED")
