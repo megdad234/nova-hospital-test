@@ -19,7 +19,6 @@ def pharmacy_command(root: Path):
 
 def run_service():
     try:
-        import servicemanager
         import win32event
         import win32service
         import win32serviceutil
@@ -54,7 +53,13 @@ def run_service():
             finally:
                 self.process = None
 
-    win32serviceutil.HandleCommandLine(CommercialPharmacyService)
+    if "--service" in sys.argv:
+        import servicemanager
+        servicemanager.Initialize()
+        servicemanager.PrepareToHostSingle(CommercialPharmacyService)
+        servicemanager.StartServiceCtrlDispatcher()
+    else:
+        win32serviceutil.HandleCommandLine(CommercialPharmacyService)
 
 if __name__ == "__main__":
     run_service()
