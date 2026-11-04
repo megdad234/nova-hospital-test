@@ -22,6 +22,11 @@ def inspect(stage: Path):
             errors.append(f"missing source: {file.relative_to(stage)}")
     if errors:
         return {"preflight_passed": False, "errors": errors}
+    server = pharmacy / "server_host.py"
+    if not server.is_file():
+        errors.append("commercial server entrypoint missing")
+    elif "NOVA_COMMERCIAL_PORT" not in server.read_text(encoding="utf-8"):
+        errors.append("commercial server port override missing")
     source = app.read_text(encoding="utf-8")
     ast.parse(source)
     tree = ast.parse(source)
