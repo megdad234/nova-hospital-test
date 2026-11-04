@@ -63,5 +63,26 @@ class CliTests(unittest.TestCase):
             with sqlite3.connect(database) as conn:
                 self.assertEqual(conn.execute("SELECT COUNT(*) FROM inventory").fetchone()[0], 1)
 
+    def test_automatic_backup_retention_keeps_manual_backups(self):
+        import sqlite3
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = root / "commercial"
+            self.invoke("--data-dir", str(data), "initialize")
+            with sqlite3.connect(data / "commercial_pharmacy.sqlite3") as db:
+                db.execute("CREATE TABLE items (id INTEGER)")
+                db.execute("INSERT INTO items VALUES (7)")
+            first = self.invoke("--data-dir", str(data), "backup-auto", "--retain", "1")
+            self.assertTrue(Path(first["backup"]).exists())
+            manual = self.invoke("--data-dir", str(data), "backup", "manual.sqlite3")
+            second = self.invoke("--data-dir", str(data), "backup-auto", "--retain", "1")
+            self.assertTrue(Path(second["backup"]).exists())
+            self.assertFalse(Path(first["backup"]).exists())
+            self.assertTrue(Path(manual["backup"]).exists())
+            inventory = self.invoke("--data-dir", str(data), "list-backups")["backups"]
+            self.assertEqual(len(inventory), 2)
+            with self.assertRaises(ValueError):
+                self.invoke("--data-dir", str(data), "backup-auto", "--retain", "0")
+
 if __name__ == "__main__":
     unittest.main()
