@@ -8,9 +8,12 @@ import ast
 import json
 import shutil
 import hashlib
+import os
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(os.environ.get("NOVA_EXTRACTION_ROOT", str(Path(__file__).resolve().parents[2]))).resolve()
 OUT = ROOT / "commercial_pharmacy_stage"
+if OUT.is_symlink():
+    raise SystemExit("REFUSE_SYMLINK_OUTPUT")
 if OUT.exists():
     shutil.rmtree(OUT)
 OUT.mkdir()
@@ -46,6 +49,8 @@ for f in (OUT / "pharmacy").rglob("*"):
     if lines:
         references.append({"file": str(f.relative_to(OUT)), "references": lines[:100]})
 files = sorted(p for p in (OUT / "pharmacy").rglob("*") if p.is_file())
+if any(p.suffix.lower() in {".db", ".sqlite", ".sqlite3"} for p in files):
+    raise SystemExit("DATABASE_COPIED_INTO_SNAPSHOT")
 manifest = {"status": "SOURCE_SNAPSHOT_ONLY_NOT_INSTALLABLE",
             "pharmacy_files": len(files), "hospital_dependencies": references,
             "sha256": {str(p.relative_to(OUT)): hashlib.sha256(p.read_bytes()).hexdigest()
