@@ -30,3 +30,7 @@ The `diagnose` command reports configured port availability, data directories an
 ## Automatic backup
 
 `python -m commercial_pharmacy.cli backup-auto --retain 30` creates a timestamped online SQLite backup and retains the latest 30 automatic backups without deleting manual backups. `list-backups` inventories available files. On Windows, `commercial_pharmacy/windows/install-backup-task.ps1` can register an opt-in daily schedule against a verified Python source installation; `uninstall-backup-task.ps1` removes only that task. These scripts do not build or validate a standalone installer.
+
+## Windows installer blueprint
+
+`commercial_pharmacy/windows/commercial-pharmacy-installer.iss` defines a separate Inno Setup product, desktop shortcut, private-LAN firewall rule and service registration/removal. It references commercial EXEs that have **not been produced or verified**. Its output filename explicitly includes `UNVERIFIED`; do not publish or install as a finished product. Clean install, upgrades, service behavior, printer, LAN and coexistence still require Windows acceptance evidence.
