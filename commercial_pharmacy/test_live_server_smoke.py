@@ -20,6 +20,21 @@ class LiveServerSmokeTests(unittest.TestCase):
     @patch("commercial_pharmacy.live_server_smoke.urlopen")
     @patch("commercial_pharmacy.live_server_smoke.subprocess.Popen")
     @patch("commercial_pharmacy.live_server_smoke.prepare")
+    def test_non_success_http_does_not_pass(self, prepare, popen, urlopen, free):
+        prepare.return_value = (["python", "server.py"], {}, ".")
+        popen.return_value.poll.return_value = None
+        response = MagicMock()
+        response.status = 302
+        urlopen.return_value.__enter__.return_value = response
+        result = run(".", ".", timeout=1)
+        self.assertFalse(result["http_responded"])
+        self.assertEqual(result["error"], "unexpected_http_status")
+        popen.return_value.terminate.assert_called_once()
+
+    @patch("commercial_pharmacy.live_server_smoke.check_port_free", return_value=True)
+    @patch("commercial_pharmacy.live_server_smoke.urlopen")
+    @patch("commercial_pharmacy.live_server_smoke.subprocess.Popen")
+    @patch("commercial_pharmacy.live_server_smoke.prepare")
     def test_http_success_is_not_database_acceptance(self, prepare, popen, urlopen, free):
         prepare.return_value = (["python", "server.py"], {}, ".")
         process = popen.return_value
