@@ -42,5 +42,21 @@ class CliTests(unittest.TestCase):
                 self.invoke("--data-dir", str(protected), "--protect-hospital-dir",
                             str(protected), "initialize")
 
+    def test_diagnose_existing_database_read_only(self):
+        import sqlite3
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = root / "commercial"
+            self.invoke("--data-dir", str(data), "initialize")
+            database = data / "commercial_pharmacy.sqlite3"
+            with sqlite3.connect(database) as conn:
+                conn.execute("CREATE TABLE inventory (id INTEGER)")
+                conn.execute("INSERT INTO inventory VALUES (1)")
+            result = self.invoke("--data-dir", str(data), "diagnose")
+            self.assertEqual(result["database_integrity"], "ok")
+            self.assertTrue(result["database_exists"])
+            with sqlite3.connect(database) as conn:
+                self.assertEqual(conn.execute("SELECT COUNT(*) FROM inventory").fetchone()[0], 1)
+
 if __name__ == "__main__":
     unittest.main()
