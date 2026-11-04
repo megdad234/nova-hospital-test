@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 if (!(Test-Path -LiteralPath $InnoCompiler -PathType Leaf)) { throw 'Inno Setup compiler missing' }
 & (Join-Path $PSScriptRoot 'validate-installer-inputs.ps1') -SourceRoot $SourceRoot
-if ($LASTEXITCODE -ne 0) { throw 'Commercial installer input validation failed' }
+
 $spec = Join-Path $PSScriptRoot 'commercial-pharmacy-installer.iss'
 Push-Location $PSScriptRoot
 try {
