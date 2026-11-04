@@ -1,9 +1,24 @@
 import unittest
+import json
+import tempfile
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 from commercial_pharmacy.live_server_smoke import run
 
 
 class LiveServerSmokeTests(unittest.TestCase):
+    @patch("commercial_pharmacy.live_server_smoke.run", side_effect=FileNotFoundError("server source missing"))
+    def test_cli_writes_diagnostic_when_launch_fails(self, mocked_run):
+        from commercial_pharmacy.live_server_smoke import main
+        with tempfile.TemporaryDirectory() as folder:
+            report = Path(folder) / "smoke.json"
+            code = main(["--source-root", folder, "--data-dir", folder,
+                         "--output", str(report)])
+            self.assertEqual(code, 2)
+            result = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(result["error"], "FileNotFoundError")
+            self.assertFalse(result["http_responded"])
+
     def test_rejects_invalid_port_before_start(self):
         with self.assertRaises(ValueError):
             run(".", ".", port=0)
