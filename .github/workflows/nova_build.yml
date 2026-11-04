@@ -82,6 +82,11 @@ jobs:
           if(!(Test-Path 'windows/build-windows.ps1')){throw 'Windows build script missing'}
           if(!(Test-Path 'windows/ci-acceptance.ps1')){throw 'Windows acceptance script missing'}
           Write-Host 'NOVA_SOURCE_EXTRACTED'
+      - name: Verify read-only price-list calculations before modifying pharmacy
+        shell: pwsh
+        run: |
+          python .github/ci/test_nova_price_list_preview.py
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA price-list preview regression failed' }
       - name: Inspect original NOVA POS source before financial modifications
         shell: pwsh
         run: python .github/ci/nova_pos_source_audit.py
