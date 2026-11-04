@@ -39,6 +39,13 @@ def verify(stage: Path, evidence: Path) -> list[str]:
         errors.append("hospital database access forbidden")
     if identity.get("use_hospital_windows_service") is not False:
         errors.append("hospital Windows service reuse forbidden")
+    blockers_path = stage / "HOSPITAL_COUPLING_BLOCKERS.json"
+    if not blockers_path.is_file():
+        errors.append("hospital coupling audit absent")
+    else:
+        blockers = json.loads(blockers_path.read_text(encoding="utf-8"))
+        if blockers.get("standalone_network_and_schema_clear") is not True:
+            errors.append("hospital API/schema/import coupling remains")
     if not evidence.is_file():
         errors.append("Windows acceptance evidence absent")
         return errors
