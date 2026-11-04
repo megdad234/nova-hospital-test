@@ -27,8 +27,8 @@ foreach ($name in @('NOVACommercialPharmacy.exe','NOVACommercialPharmacyServer.e
 }
 $destinationFull = [System.IO.Path]::GetFullPath($Destination)
 foreach ($protected in @($source, $runtime, (Resolve-Path -LiteralPath $LaunchersDirectory).Path)) {
-  $protectedFull = [System.IO.Path]::GetFullPath($protected).TrimEnd('\\')
-  if ($destinationFull.Equals($protectedFull, [System.StringComparison]::OrdinalIgnoreCase) -or $destinationFull.StartsWith($protectedFull + '\\', [System.StringComparison]::OrdinalIgnoreCase)) {
+  $protectedFull = [System.IO.Path]::GetFullPath($protected).TrimEnd('\')
+  if ($destinationFull.Equals($protectedFull, [System.StringComparison]::OrdinalIgnoreCase) -or $destinationFull.StartsWith($protectedFull + '\', [System.StringComparison]::OrdinalIgnoreCase)) {
     throw 'Destination must not be inside source, runtime or launcher directories'
   }
 }
