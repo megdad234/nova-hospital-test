@@ -1,5 +1,11 @@
 name: Commercial Windows EXE Candidates
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches: [commercial-pharmacy-extraction-2026-11-04]
+    paths:
+      - "commercial_pharmacy/**"
+      - ".github/workflows/commercial_pharmacy_candidates.yml"
 permissions:
   contents: read
 jobs:
