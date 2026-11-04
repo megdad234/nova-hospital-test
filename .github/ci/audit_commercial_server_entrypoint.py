@@ -1,6 +1,7 @@
 """Audit extracted pharmacy server configuration before packaging."""
 from pathlib import Path
 import json
+import ast
 import os
 
 ROOT = Path(os.environ.get("NOVA_EXTRACTION_ROOT", Path(__file__).resolve().parents[2])).resolve()
@@ -13,8 +14,14 @@ def inspect(root=ROOT):
             findings[name] = {"present": False}
             continue
         source = file.read_text(encoding="utf-8")
+        try:
+            ast.parse(source, filename=str(file))
+            syntax_valid = True
+        except SyntaxError:
+            syntax_valid = False
         findings[name] = {
             "present": True,
+            "syntax_valid": syntax_valid,
             "commercial_port_override": "NOVA_COMMERCIAL_PORT" in source,
             "commercial_database_override": "NOVA_COMMERCIAL_DATA_DIR" in source,
         }
