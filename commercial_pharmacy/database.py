@@ -21,6 +21,7 @@ def open_pharmacy_database(config: CommercialPaths, *, protected_hospital_paths=
     connection.execute("PRAGMA foreign_keys = ON")
     connection.execute("PRAGMA busy_timeout = 30000")
     connection.execute("PRAGMA journal_mode = WAL")
+    verify_pharmacy_database(connection, config)
     return connection
 
 def verify_pharmacy_database(connection, config: CommercialPaths):
