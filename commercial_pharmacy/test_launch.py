@@ -14,8 +14,8 @@ class LaunchTests(unittest.TestCase):
             (pharmacy / "server_host.py").write_text("NOVA_COMMERCIAL_PORT = 18763\n")
             data = root / "commercial_data"
             command, env, cwd = prepare(root, data, 18763)
-            self.assertEqual(cwd, root)
-            self.assertEqual(command[-1], str(pharmacy / "server_host.py"))
+            self.assertEqual(cwd.resolve(), root.resolve())
+            self.assertEqual(Path(command[-1]).resolve(), (pharmacy / "server_host.py").resolve())
             self.assertEqual(env["NOVA_COMMERCIAL_PORT"], "18763")
             self.assertEqual(env["NOVA_COMMERCIAL_DATA_DIR"], str(data))
             self.assertTrue(data.is_dir())
