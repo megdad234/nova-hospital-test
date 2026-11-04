@@ -16,6 +16,8 @@ on:
       - '.github/ci/commercial_runtime_preflight.py'
       - '.github/ci/assemble_commercial_windows_payload.py'
       - '.github/ci/audit_commercial_server_entrypoint.py'
+      - '.github/ci/audit_commercial_runtime_dependencies.py'
+      - '.github/ci/test_audit_commercial_runtime_dependencies.py'
       - '.github/ci/test_audit_commercial_server_entrypoint.py'
       - '.github/ci/verify_commercial_snapshot.py'
       - '.github/ci/audit_commercial_windows_identity.py'
@@ -74,6 +76,7 @@ jobs:
           python .github/ci/test_patch_commercial_database.py
           python .github/ci/test_assemble_commercial_windows_payload.py
           python .github/ci/test_audit_commercial_server_entrypoint.py
+          python .github/ci/test_audit_commercial_runtime_dependencies.py
           python .github/ci/test_commercial_runtime_preflight.py
           python .github/ci/test_verify_commercial_snapshot.py
   snapshot:
@@ -156,6 +159,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Audit failed' }
           python .github/ci/audit_commercial_pharmacy_assets.py
           if ($LASTEXITCODE -ne 0) { throw 'Asset audit failed' }
+          python .github/ci/audit_commercial_runtime_dependencies.py
+          if ($LASTEXITCODE -ne 0) { throw "Pharmacy dependency inventory failed" }
           python .github/ci/audit_commercial_server_entrypoint.py
           if ($LASTEXITCODE -ne 0) { throw "Server entrypoint audit failed" }
           python .github/ci/locate_commercial_integration_points.py
