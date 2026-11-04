@@ -33,6 +33,16 @@ with tempfile.TemporaryDirectory() as temp:
         pass
     else:
         raise AssertionError("Overwriting an existing payload must be refused")
+    (stage / "HOSPITAL_COUPLING_BLOCKERS.json").write_text(
+        json.dumps({"standalone_network_and_schema_clear": False, "unresolved": ["hospital dependency"]}))
+    try:
+        module.assemble(stage, runtime, root / "coupled-output")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Unresolved hospital coupling must block assembly")
+    (stage / "HOSPITAL_COUPLING_BLOCKERS.json").write_text(
+        json.dumps({"standalone_network_and_schema_clear": True, "unresolved": []}))
     (stage / "pharmacy" / "hospital.sqlite3").write_bytes(b"synthetic-test-database")
     try:
         module.assemble(stage, runtime, root / "second-output")
