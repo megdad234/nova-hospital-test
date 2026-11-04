@@ -31,5 +31,18 @@ class BackupTests(unittest.TestCase):
                 self.assertEqual(conn.execute("SELECT count(*) FROM items").fetchone()[0], 2)
             self.assertEqual(marker.read_bytes(), b"unchanged")
 
+    def test_reject_unsafe_backup_names_and_overwrite(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config = paths({"NOVA_COMMERCIAL_DATA_DIR": str(Path(tmp) / "commercial")})
+            initialize_directories(config)
+            with closing(open_pharmacy_database(config)) as conn:
+                for name in (".", "..", "../hospital.db", "folder/name.sqlite3", "bad name.sqlite3"):
+                    with self.subTest(name=name), self.assertRaises(ValueError):
+                        create_backup(conn, config, name)
+                created = create_backup(conn, config, "first.sqlite3")
+                with self.assertRaises(FileExistsError):
+                    create_backup(conn, config, "first.sqlite3")
+                self.assertTrue(created.is_file())
+
 if __name__ == "__main__":
     unittest.main()
