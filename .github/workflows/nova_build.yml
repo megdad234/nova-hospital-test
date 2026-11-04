@@ -1,12 +1,14 @@
 name: NOVA Hospital - Build and Test Windows Setup
 on:
   push:
-    branches: [main]
+    branches: [main, commercial-pharmacy-extraction-2026-11-04]
     paths:
       - 'NOVA_Hospital_GitHub_Ready_Source.zip'
       - '.github/workflows/nova_build.yml'
       - '.github/ci/windows_sqlite_test_cleanup.py'
       - '.github/ci/patch_upgrade_hash.py'
+      - '.github/ci/stage_commercial_pharmacy.py'
+      - '.github/ci/test_stage_commercial_pharmacy.py'
       - '.github/ci/nova_price_list_*.py'
       - '.github/ci/test_nova_price_list_*.py'
       - '.github/ci/nova_batch01_patch.py'
@@ -72,7 +74,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: nova-windows-build
+  group: nova-windows-build-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   build-install-and-test:
