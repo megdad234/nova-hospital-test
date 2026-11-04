@@ -31,6 +31,13 @@ class InstallerContractTests(unittest.TestCase):
         self.assertIn("NOVA_COMMERCIAL_PYTHON", source)
         self.assertIn("Machine", source)
 
+    def test_runtime_payload_gate_requires_actual_pharmacy_and_python(self):
+        script = (WINDOWS / "check-runtime-payload.ps1").read_text(encoding="utf-8")
+        for required in ("runtime/python.exe", "pharmacy/app.py", "pharmacy/server_host.py",
+                         "pharmacy/static/app.js", "commercial_pharmacy/launch.py",
+                         "--preflight-only", "PYTHONNOUSERSITE"):
+            self.assertIn(required, script)
+
     def test_scheduled_backup_scripts_are_commercial_only(self):
         install = (WINDOWS / "install-backup-task.ps1").read_text(encoding="utf-8")
         uninstall = (WINDOWS / "uninstall-backup-task.ps1").read_text(encoding="utf-8")
