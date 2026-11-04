@@ -34,6 +34,8 @@ foreach ($protected in @($source, $runtime, (Resolve-Path -LiteralPath $Launcher
   }
 }
 if (Test-Path -LiteralPath $Destination) { throw 'Destination must not already exist' }
+$preflight = Get-Content -LiteralPath (Join-Path $source 'COMMERCIAL_RUNTIME_PREFLIGHT.json') -Raw | ConvertFrom-Json
+if ($preflight.preflight_passed -ne $true) { throw 'Commercial runtime preflight did not pass' }
 $manifest = Get-Content -LiteralPath (Join-Path $source 'EXTRACTION_MANIFEST.json') -Raw | ConvertFrom-Json
 if ($manifest.status -ne 'SOURCE_SNAPSHOT_ONLY_NOT_INSTALLABLE') { throw 'Unexpected source extraction manifest status' }
 if (Test-Path -LiteralPath (Join-Path $source 'pharmacy/commercial_pharmacy.sqlite3')) { throw 'Source snapshot contains a database file' }
