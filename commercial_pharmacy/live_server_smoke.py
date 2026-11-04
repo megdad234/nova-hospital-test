@@ -47,9 +47,12 @@ def run(source_root, data_dir, port=18763, timeout=25.0):
                 break
             try:
                 with urlopen(f"http://127.0.0.1:{port}/", timeout=1.0) as response:
-                    result["server_started"] = True
-                    result["http_responded"] = True
                     result["http_status"] = response.status
+                    if 200 <= response.status < 300:
+                        result["server_started"] = True
+                        result["http_responded"] = True
+                    else:
+                        result["error"] = "unexpected_http_status"
                     break
             except (URLError, TimeoutError, OSError):
                 time.sleep(0.3)
