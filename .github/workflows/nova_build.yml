@@ -14,6 +14,7 @@ on:
       - '.github/ci/test_commercial_pharmacy_contract.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
       - '.github/ci/test_commercial_pharmacy_release_gate.py'
+      - 'commercial_pharmacy/**'
       - '.github/ci/test_stage_commercial_pharmacy.py'
       - '.github/ci/nova_price_list_*.py'
       - '.github/ci/test_nova_price_list_*.py'
@@ -262,6 +263,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price UI syntax failed' }
           python .github/ci/test_nova_bulk_price_integration.py
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration regression failed' }
+      - name: Test standalone pharmacy runtime and SQLite isolation
+        shell: pwsh
+        run: |
+          python -m unittest -v commercial_pharmacy.test_runtime_isolation commercial_pharmacy.test_database
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy runtime isolation failed' }
       - name: Verify standalone pharmacy staging safeguards
         shell: pwsh
         run: |
