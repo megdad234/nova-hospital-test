@@ -27,6 +27,8 @@ with tempfile.TemporaryDirectory() as d:
     assert not (out / "pharmacy" / "test_data.sqlite").exists()
     assert (out / "hospital_reference" / "core.py").exists()
     assert manifest["pharmacy_files"] >= len(required)
+    assert manifest["standalone_ready"] is False
+    assert manifest["hospital_python_imports"] == []
     # Missing essential source must block a snapshot.
     (root / "pharmacy" / "app.py").unlink()
     blocked = subprocess.run([sys.executable, str(SCRIPT)], env=env,
