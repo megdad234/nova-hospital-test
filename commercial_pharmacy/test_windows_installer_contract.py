@@ -15,6 +15,13 @@ class InstallerContractTests(unittest.TestCase):
         self.assertIn("-OpenLanFirewall", source)
         self.assertIn("-RemoveLanFirewallRule", source)
 
+    def test_installer_includes_actual_standalone_runtime_payload(self):
+        source = (WINDOWS / "commercial-pharmacy-installer.iss").read_text(encoding="utf-8")
+        for directory in ("commercial\\runtime\\*", "commercial\\pharmacy\\*",
+                          "commercial\\commercial_pharmacy\\*"):
+            self.assertIn(directory, source)
+        self.assertIn("recursesubdirs", source)
+
     def test_unverified_installer_does_not_autostart_service(self):
         source = (WINDOWS / "commercial-pharmacy-installer.iss").read_text(encoding="utf-8")
         self.assertNotIn("\n[Run]\n", source)
