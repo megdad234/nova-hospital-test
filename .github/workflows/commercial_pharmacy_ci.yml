@@ -146,6 +146,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Commercial POS JavaScript invalid' }
           node --check pharmacy/static/nova_pharmacy_batch08.js
           if ($LASTEXITCODE -ne 0) { throw 'Commercial insurance JavaScript invalid' }
+      - name: Inspect extracted server entrypoint for independent port wiring
+        shell: pwsh
+        run: |
+          python -c "from pathlib import Path; p=Path('pharmacy/server_host.py'); print('EXTRACTED_SERVER_HOST_BEGIN'); print(p.read_text(encoding='utf-8')[:14000]); print('EXTRACTED_SERVER_HOST_END')"
       - name: Verify commercial pharmacy source launch environment
         shell: pwsh
         run: |
