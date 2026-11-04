@@ -1,6 +1,7 @@
 """Guarded source launcher for extracted commercial pharmacy; not a Windows service."""
 from __future__ import annotations
 import argparse
+import ast
 import os
 from pathlib import Path
 import subprocess
@@ -14,6 +15,7 @@ def prepare(source_root, data_dir=None, port=None, protected_hospital_paths=()):
     if not app.is_file() or not entry.is_file():
         raise FileNotFoundError("Commercial pharmacy source entrypoint missing")
     source = app.read_text(encoding="utf-8")
+    ast.parse(source, filename=str(app))
     if "commercial_pharmacy.sqlite3" not in source or "NOVA_COMMERCIAL_DATA_DIR" not in source:
         raise RuntimeError("Commercial database patch not applied")
     env = dict(os.environ)
