@@ -20,6 +20,16 @@ class LaunchTests(unittest.TestCase):
             self.assertEqual(env["NOVA_COMMERCIAL_DATA_DIR"], str(data))
             self.assertTrue(data.is_dir())
 
+    def test_missing_port_override_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pharmacy = root / "pharmacy"
+            pharmacy.mkdir()
+            (pharmacy / "app.py").write_text("DATA = 'NOVA_COMMERCIAL_DATA_DIR'\nDB = 'commercial_pharmacy.sqlite3'\n")
+            (pharmacy / "server_host.py").write_text("PORT = 8763\n")
+            with self.assertRaises(RuntimeError):
+                prepare(root, root / "commercial_data")
+
     def test_unpatched_app_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
