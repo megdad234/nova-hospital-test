@@ -20,6 +20,10 @@ class InstallerContractTests(unittest.TestCase):
         self.assertNotIn("\n[Run]\n", source)
         self.assertIn("Automatic service registration disabled", source)
 
+    def test_unverified_candidate_build_requires_acknowledgement(self):
+        source = (WINDOWS / "build-installer-candidate.ps1").read_text(encoding="utf-8")
+        self.assertIn("NOVA_COMMERCIAL_ALLOW_UNVERIFIED_INSTALLER", source)
+
     def test_scheduled_backup_scripts_are_commercial_only(self):
         install = (WINDOWS / "install-backup-task.ps1").read_text(encoding="utf-8")
         uninstall = (WINDOWS / "uninstall-backup-task.ps1").read_text(encoding="utf-8")
