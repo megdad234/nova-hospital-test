@@ -29,6 +29,12 @@ jobs:
         run: |
           & ./commercial_pharmacy/windows/validate-installer-inputs.ps1 -SourceRoot .
           if ($LASTEXITCODE -ne 0) { throw "Windows candidate input validation failed" }
+      - name: Record candidate executable hashes
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem dist/commercial -Filter *.exe
+          if ($files.Count -ne 2) { throw "Expected two independent commercial executables" }
+          $files | Get-FileHash -Algorithm SHA256 | Select-Object Path, Hash | ConvertTo-Json | Set-Content -Path dist/commercial/CANDIDATE_SHA256.json -Encoding UTF8
       - uses: actions/upload-artifact@v4
         with:
           name: Commercial-EXE-CANDIDATES-NOT-INSTALLABLE
