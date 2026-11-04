@@ -103,6 +103,9 @@ def run(argv=None):
     elif args.command == "verify-backup":
         result = inspect_backup(args.file)
     elif args.command == "restore-offline":
+        if sys.platform == "win32" and args.confirm_service_stopped:
+            from .windows_service_state import require_stopped_service
+            require_stopped_service()
         result = restore_offline(args.file, config,
                                  service_stopped=args.confirm_service_stopped,
                                  protected_hospital_paths=args.protect_hospital_dir)
