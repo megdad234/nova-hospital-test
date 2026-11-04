@@ -34,13 +34,22 @@ for p in ("nova_server.py", "README_START_HERE_AR.md"):
     if (ROOT / p).exists():
         shutil.copy2(ROOT / p, OUT / p)
 references = []
+imports = []
 for f in (OUT / "pharmacy").rglob("*"):
     if not f.is_file() or f.suffix not in {".py", ".js", ".html", ".css", ".ps1", ".iss"}:
         continue
     text = f.read_text(encoding="utf-8", errors="replace")
     if f.suffix == ".py":
         try:
-            ast.parse(text, filename=str(f))
+            tree = ast.parse(text, filename=str(f))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        if alias.name == "hospital" or alias.name.startswith("hospital."):
+                            imports.append({"file": str(f.relative_to(OUT)), "module": alias.name})
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    if node.module == "hospital" or node.module.startswith("hospital."):
+                        imports.append({"file": str(f.relative_to(OUT)), "module": node.module})
         except SyntaxError as e:
             raise SystemExit(f"SYNTAX_ERROR {f}: {e}")
     lines = [(i, line.strip()[:220]) for i, line in enumerate(text.splitlines(), 1)
@@ -53,6 +62,9 @@ if any(p.suffix.lower() in {".db", ".sqlite", ".sqlite3"} for p in files):
     raise SystemExit("DATABASE_COPIED_INTO_SNAPSHOT")
 manifest = {"status": "SOURCE_SNAPSHOT_ONLY_NOT_INSTALLABLE",
             "pharmacy_files": len(files), "hospital_dependencies": references,
+            "hospital_python_imports": imports,
+            "standalone_ready": False,
+            "requires_manual_dependency_review": bool(references or imports),
             "sha256": {str(p.relative_to(OUT)): hashlib.sha256(p.read_bytes()).hexdigest()
                        for p in files},
             "required_acceptance": ["first-admin", "users-and-shifts", "pos",
