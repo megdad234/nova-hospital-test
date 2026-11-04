@@ -27,6 +27,9 @@ class OfflineRestoreTests(unittest.TestCase):
                 conn.commit()
                 with self.assertRaises(RuntimeError):
                     restore_offline(saved, config, service_stopped=False)
+            with self.assertRaises(ValueError):
+                restore_offline(hospital_marker, config, service_stopped=True,
+                                protected_hospital_paths=[protected])
             outcome = restore_offline(saved, config, service_stopped=True,
                                       protected_hospital_paths=[protected])
             with closing(sqlite3.connect(config.database)) as current:
