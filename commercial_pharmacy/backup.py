@@ -21,7 +21,7 @@ def create_backup(connection: sqlite3.Connection, config: CommercialPaths, filen
     target = backup_destination(config, filename)
     if target.suffix.lower() not in (".sqlite3", ".sqlite", ".db"):
         raise ValueError("Backup must be a SQLite database")
-    if target.exists():
+    if target.is_symlink() or target.exists():
         raise FileExistsError("Refusing to overwrite an existing backup")
     fd, temporary = tempfile.mkstemp(prefix=".backup-", suffix=".sqlite3", dir=config.backups)
     os.close(fd)
