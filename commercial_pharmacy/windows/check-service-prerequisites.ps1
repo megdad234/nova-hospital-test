@@ -1,6 +1,7 @@
 param([string]$SourceRoot, [string]$PythonExecutable)
 $ErrorActionPreference = 'Stop'
 if (!(Test-Path -LiteralPath $PythonExecutable -PathType Leaf)) { throw 'Python runtime missing' }
+if (!(Test-Path -LiteralPath $SourceRoot -PathType Container)) { throw 'Commercial source root missing' }
 if (!(Test-Path -LiteralPath (Join-Path $SourceRoot 'pharmacy/server_host.py') -PathType Leaf)) { throw 'Server source missing' }
 Push-Location $SourceRoot
 try {
