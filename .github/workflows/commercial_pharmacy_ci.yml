@@ -12,6 +12,7 @@ on:
       - '.github/ci/patch_commercial_insurance.py'
       - '.github/ci/patch_commercial_brand.py'
       - '.github/ci/patch_commercial_database.py'
+      - '.github/ci/patch_commercial_server_host.py'
       - '.github/ci/audit_commercial_hospital_coupling.py'
       - '.github/ci/commercial_runtime_preflight.py'
       - '.github/ci/assemble_commercial_windows_payload.py'
@@ -146,6 +147,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Commercial POS JavaScript invalid' }
           node --check pharmacy/static/nova_pharmacy_batch08.js
           if ($LASTEXITCODE -ne 0) { throw 'Commercial insurance JavaScript invalid' }
+      - name: Isolate extracted server port and database identity
+        shell: pwsh
+        run: |
+          python .github/ci/patch_commercial_server_host.py
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial server host isolation failed' }
       - name: Inspect extracted server entrypoint for independent port wiring
         shell: pwsh
         run: |
