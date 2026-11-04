@@ -8,6 +8,14 @@ class LiveServerSmokeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             run(".", ".", port=0)
 
+    @patch("commercial_pharmacy.live_server_smoke.check_port_free", return_value=False)
+    @patch("commercial_pharmacy.live_server_smoke.subprocess.Popen")
+    def test_occupied_port_never_starts_server(self, popen, free):
+        result = run(".", ".", timeout=1)
+        self.assertEqual(result["error"], "port_already_in_use")
+        self.assertFalse(result["http_responded"])
+        popen.assert_not_called()
+
     @patch("commercial_pharmacy.live_server_smoke.check_port_free", return_value=True)
     @patch("commercial_pharmacy.live_server_smoke.urlopen")
     @patch("commercial_pharmacy.live_server_smoke.subprocess.Popen")
