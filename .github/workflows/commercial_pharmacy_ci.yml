@@ -56,6 +56,7 @@ jobs:
           python .github/ci/test_stage_commercial_pharmacy.py
           python .github/ci/test_commercial_pharmacy_contract.py
           python .github/ci/test_commercial_pharmacy_release_gate.py
+          python .github/ci/test_patch_commercial_insurance.py
   snapshot:
     runs-on: windows-2025
     needs: isolated-runtime
