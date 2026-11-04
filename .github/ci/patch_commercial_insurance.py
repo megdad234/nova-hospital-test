@@ -6,10 +6,11 @@ and claims logic. This is not a replacement insurance engine.
 """
 from __future__ import annotations
 import ast
+import os
 from pathlib import Path
 import re
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(os.environ.get("NOVA_EXTRACTION_ROOT", str(Path(__file__).resolve().parents[2]))).resolve()
 TARGET = ROOT / "pharmacy" / "app.py"
 if not TARGET.is_file():
     raise SystemExit("COMMERCIAL_INSURANCE_MISSING_PHARMACY_SOURCE")
