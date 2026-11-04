@@ -4,11 +4,12 @@ This test deliberately does not modify or uninstall the hospital product.
 """
 from __future__ import annotations
 import json
+import os
 from pathlib import Path
 import re
 import sys
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(os.environ.get("NOVA_EXTRACTION_ROOT", str(Path(__file__).resolve().parents[2]))).resolve()
 STAGE = ROOT / "commercial_pharmacy_stage"
 config_path = STAGE / "COMMERCIAL_IDENTITY.json"
 if not config_path.exists():
