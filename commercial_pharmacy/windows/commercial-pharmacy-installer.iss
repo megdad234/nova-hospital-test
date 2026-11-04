@@ -23,6 +23,9 @@ UninstallDisplayName={#AppName}
 [Files]
 Source: "..\..\dist\commercial\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\dist\commercial\{#ServerExe}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\commercial\runtime\*"; DestDir: "{app}\runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\dist\commercial\pharmacy\*"; DestDir: "{app}\pharmacy"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\dist\commercial\commercial_pharmacy\*"; DestDir: "{app}\commercial_pharmacy"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "install-commercial-service.ps1"; DestDir: "{app}\maintenance"; Flags: ignoreversion
 Source: "uninstall-commercial-service.ps1"; DestDir: "{app}\maintenance"; Flags: ignoreversion
 Source: "configure-lan-client.ps1"; DestDir: "{app}\maintenance"; Flags: ignoreversion
