@@ -22,12 +22,18 @@ def pharmacy_command(root: Path):
         raise RuntimeError("Dedicated commercial Python runtime has not been configured")
     return [python, str(entry)]
 
+def parse_service_port(argv):
+    if "--port" not in argv:
+        return None
+    index = argv.index("--port")
+    if index + 1 >= len(argv):
+        raise ValueError("Missing commercial service port")
+    return choose_port({"NOVA_COMMERCIAL_PORT": argv[index + 1]})
+
 def run_service():
-    if "--port" in sys.argv:
-        index = sys.argv.index("--port")
-        if index + 1 >= len(sys.argv):
-            raise ValueError("Missing commercial service port")
-        os.environ["NOVA_COMMERCIAL_PORT"] = str(choose_port({"NOVA_COMMERCIAL_PORT": sys.argv[index + 1]}))
+    selected_port = parse_service_port(sys.argv)
+    if selected_port is not None:
+        os.environ["NOVA_COMMERCIAL_PORT"] = str(selected_port)
     try:
         import win32event
         import win32service
