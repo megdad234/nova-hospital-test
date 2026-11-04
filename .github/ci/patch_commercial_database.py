@@ -34,11 +34,15 @@ if data.lineno >= db.lineno:
 replacement = """# Independent NOVA Commercial Pharmacy storage. Never reuse hospital DATA.
 import os as _nova_commercial_os
 from pathlib import Path as _nova_commercial_Path
+_nova_commercial_base = (
+    _nova_commercial_Path(_nova_commercial_os.environ.get('PROGRAMDATA') or r'C:\\ProgramData')
+    if _nova_commercial_os.name == 'nt'
+    else _nova_commercial_Path(_nova_commercial_os.environ.get(
+        'XDG_DATA_HOME') or str(_nova_commercial_Path.home() / '.local' / 'share'))
+)
 DATA = _nova_commercial_Path(_nova_commercial_os.environ.get(
-    'NOVA_COMMERCIAL_DATA_DIR',
-    str(_nova_commercial_Path(_nova_commercial_os.environ.get('PROGRAMDATA') or
-         str(_nova_commercial_Path.home() / 'AppData' / 'Local')) /
-         'NOVACommercialPharmacy'))).expanduser().resolve()
+    'NOVA_COMMERCIAL_DATA_DIR') or str(_nova_commercial_base / 'NOVACommercialPharmacy')
+).expanduser().resolve()
 """
 patches.append((data.lineno - 1, data.end_lineno, replacement))
 patches.append((db.lineno - 1, db.end_lineno,
