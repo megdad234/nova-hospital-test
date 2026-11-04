@@ -31,6 +31,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Windows service registration failed' }
 & sc.exe description $serviceName 'Independent NOVA Commercial Pharmacy server; no NOVA Hospital service dependency.'
 if ($LASTEXITCODE -ne 0) { & sc.exe delete $serviceName | Out-Null; throw 'Windows service description failed' }
 $firewallRuleCreated = $false
+try {
 if ($OpenLanFirewall) {
   $ruleName = 'NOVA Commercial Pharmacy LAN'
   if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
@@ -38,7 +39,6 @@ if ($OpenLanFirewall) {
     $firewallRuleCreated = $true
   }
 }
-try {
   Start-Service -Name $serviceName -ErrorAction Stop
   $service = Get-Service -Name $serviceName -ErrorAction Stop
   $service.WaitForStatus("Running", [TimeSpan]::FromSeconds(30))
