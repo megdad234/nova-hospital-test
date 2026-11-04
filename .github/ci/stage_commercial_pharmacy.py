@@ -63,7 +63,7 @@ for f in (OUT / "pharmacy").rglob("*"):
     if lines:
         references.append({"file": str(f.relative_to(OUT)), "references": lines[:100]})
 files = sorted(p for p in (OUT / "pharmacy").rglob("*") if p.is_file())
-if any(p.suffix.lower() in {".db", ".sqlite", ".sqlite3"} for p in files):
+if any(p.suffix.lower() in {".db", ".sqlite", ".sqlite3"} or p.name.lower().endswith((".db-wal", ".db-shm", ".sqlite-wal", ".sqlite-shm", ".sqlite3-wal", ".sqlite3-shm")) for p in files):
     raise SystemExit("DATABASE_COPIED_INTO_SNAPSHOT")
 manifest = {"status": "SOURCE_SNAPSHOT_ONLY_NOT_INSTALLABLE",
             "pharmacy_files": len(files), "hospital_dependencies": references,
