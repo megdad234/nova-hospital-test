@@ -77,7 +77,13 @@ def main(argv=None):
     parser.add_argument("--timeout", type=float, default=25)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
-    result = run(args.source_root, args.data_dir, args.port, args.timeout)
+    try:
+        result = run(args.source_root, args.data_dir, args.port, args.timeout)
+    except (OSError, RuntimeError, ValueError, SyntaxError) as exc:
+        result = {"server_started": False, "http_responded": False,
+                  "database_verified": False, "pos_verified": False,
+                  "installer_verified": False, "port": args.port,
+                  "error": type(exc).__name__, "detail": str(exc)}
     payload = json.dumps(result, indent=2)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
