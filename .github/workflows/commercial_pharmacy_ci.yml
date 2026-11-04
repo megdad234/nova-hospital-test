@@ -13,6 +13,7 @@ on:
       - '.github/ci/patch_commercial_brand.py'
       - '.github/ci/patch_commercial_database.py'
       - '.github/ci/audit_commercial_hospital_coupling.py'
+      - '.github/ci/commercial_runtime_preflight.py'
       - '.github/ci/audit_commercial_windows_identity.py'
       - '.github/ci/commercial_pharmacy_identity.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
@@ -62,6 +63,7 @@ jobs:
           python .github/ci/test_patch_commercial_insurance.py
           python .github/ci/test_patch_commercial_brand.py
           python .github/ci/test_patch_commercial_database.py
+          python .github/ci/test_commercial_runtime_preflight.py
   snapshot:
     runs-on: windows-2025
     needs: isolated-runtime
@@ -137,6 +139,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Identity contract failed' }
           python .github/ci/audit_commercial_windows_identity.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows identity audit failed' }
+          python .github/ci/commercial_runtime_preflight.py
+          if ($LASTEXITCODE -ne 0) { Write-Host 'Standalone runtime preflight BLOCKED: see uploaded evidence' }
       - name: Upload source snapshot, NOT a commercial installer
         uses: actions/upload-artifact@v4
         with:
