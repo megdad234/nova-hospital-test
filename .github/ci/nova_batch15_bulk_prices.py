@@ -5,6 +5,15 @@ s=p.read_text(encoding="utf-8")
 anchor="def nova_bulk_unpriced(c,p,uid):"
 assert s.count(anchor)==1
 helpers=r'''
+import secrets as _nova_secrets
+import hmac as _nova_hmac
+import hashlib as _nova_hashlib
+_nova_price_preview_secret=_nova_secrets.token_bytes(32)
+
+def nova_price_signature(package_id,old,new):
+    message=f"{int(package_id)}:{int(old)}:{int(new)}".encode('ascii')
+    return _nova_hmac.new(_nova_price_preview_secret,message,_nova_hashlib.sha256).hexdigest()
+
 def nova_price_list_preview(c,p):
     """Read-only, exact-match preview. Never creates purchases or stock movements."""
     from decimal import Decimal, ROUND_HALF_UP
@@ -63,6 +72,7 @@ def nova_price_list_preview(c,p):
                         'old_sale_price':int(pk['sale_price']),'old_purchase_cost':str(old_cost),
                         'last_purchase_line_id':int(last['id']),
                         'proposed_sale_price':proposed,
+                        'approval_token':nova_price_signature(pk['id'],pk['sale_price'],proposed),
                         'selected':proposed!=int(pk['sale_price'])})
         result.append(record)
     counts={x:sum(r['status']==x for r in result) for x in ('matched','review','missing_cost')}
@@ -117,6 +127,10 @@ def nova_price_list_approve(c,p,uid):
             if not isinstance(item,dict):raise ValueError('صف غير صالح')
             pid=int(item['package_id']);old=int(item['old_sale_price'])
             new=int(item['proposed_sale_price'])
+            signature=str(item.get('approval_token',''))
+            expected=nova_price_signature(pid,old,new)
+            if not _nova_hmac.compare_digest(signature,expected):
+                raise ValueError('يجب معاينة الأسعار أولاً قبل اعتمادها')
             if new<=0 or new>1000000000000:raise ValueError('سعر بيع غير صالح')
             changed=c.execute('UPDATE packages SET sale_price=? WHERE id=? AND sale_price=?',
                 (new,pid,old)).rowcount
