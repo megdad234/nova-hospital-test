@@ -1,0 +1,20 @@
+name: Commercial Windows EXE Candidates
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pyinstaller pywin32
+      - shell: pwsh
+        run: ./commercial_pharmacy/windows/build-commercial-executables.ps1 -SourceRoot .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Commercial-EXE-CANDIDATES-NOT-INSTALLABLE
+          path: dist/commercial/*.exe
+          if-no-files-found: error
