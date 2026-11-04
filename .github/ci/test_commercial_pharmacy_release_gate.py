@@ -35,4 +35,5 @@ with tempfile.TemporaryDirectory() as d:
     assert any("first_admin" in p for p in problems)
     assert any("coexistence_with_hospital" in p for p in problems)
     assert any("installer artifact" in p for p in problems)
+    assert any("missing acceptance log path/hash" in p for p in problems)
 print("COMMERCIAL_PHARMACY_RELEASE_GATE_NEGATIVE_TESTS_PASSED")
