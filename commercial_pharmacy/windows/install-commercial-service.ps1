@@ -30,10 +30,12 @@ $binaryPath = ('"{0}" --service --port {1}' -f $fullExe, $Port)
 if ($LASTEXITCODE -ne 0) { throw 'Windows service registration failed' }
 & sc.exe description $serviceName 'Independent NOVA Commercial Pharmacy server; no NOVA Hospital service dependency.'
 if ($LASTEXITCODE -ne 0) { & sc.exe delete $serviceName | Out-Null; throw 'Windows service description failed' }
+$firewallRuleCreated = $false
 if ($OpenLanFirewall) {
   $ruleName = 'NOVA Commercial Pharmacy LAN'
   if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
     New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort $Port -Profile Private | Out-Null
+    $firewallRuleCreated = $true
   }
 }
 try {
@@ -41,6 +43,7 @@ try {
   $service = Get-Service -Name $serviceName -ErrorAction Stop
   $service.WaitForStatus("Running", [TimeSpan]::FromSeconds(30))
 } catch {
+  if ($firewallRuleCreated) { Remove-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue }
   & sc.exe delete $serviceName | Out-Null
   throw "Commercial pharmacy service failed to start; registration rolled back: $_"
 }
