@@ -15,6 +15,11 @@ class InstallerContractTests(unittest.TestCase):
         self.assertIn("-OpenLanFirewall", source)
         self.assertIn("-RemoveLanFirewallRule", source)
 
+    def test_unverified_installer_does_not_autostart_service(self):
+        source = (WINDOWS / "commercial-pharmacy-installer.iss").read_text(encoding="utf-8")
+        self.assertNotIn("\n[Run]\n", source)
+        self.assertIn("Automatic service registration disabled", source)
+
     def test_scheduled_backup_scripts_are_commercial_only(self):
         install = (WINDOWS / "install-backup-task.ps1").read_text(encoding="utf-8")
         uninstall = (WINDOWS / "uninstall-backup-task.ps1").read_text(encoding="utf-8")
