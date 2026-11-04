@@ -28,6 +28,7 @@ class CliTests(unittest.TestCase):
             diagnosis = self.invoke(*args, "diagnose")
             self.assertFalse(diagnosis["database_exists"])
             self.assertFalse(diagnosis["hospital_service_enabled"])
+            self.assertEqual(self.invoke(*args, "list-backups")["backups"], [])
             before = self.invoke(*args, "inspect")
             self.assertFalse(before["initialized"])
             result = self.invoke(*args, "initialize")
@@ -53,6 +54,7 @@ class CliTests(unittest.TestCase):
                 conn.execute("CREATE TABLE inventory (id INTEGER)")
                 conn.execute("INSERT INTO inventory VALUES (1)")
             result = self.invoke("--data-dir", str(data), "diagnose")
+            self.assertEqual(self.invoke("--data-dir", str(data), "list-backups")["backups"], [])
             self.assertEqual(result["database_integrity"], "ok")
             self.assertTrue(result["database_exists"])
             with sqlite3.connect(database) as conn:
