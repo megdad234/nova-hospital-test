@@ -162,9 +162,12 @@ jobs:
           python -m commercial_pharmacy.launch --source-root . --data-dir "$env:RUNNER_TEMP\NOVACommercialPharmacy" --preflight-only
           if ($LASTEXITCODE -ne 0) { throw "Commercial pharmacy source launcher preflight failed" }
       - name: Real server smoke on Windows
-        continue-on-error: true
         shell: pwsh
-        run: python -m commercial_pharmacy.live_server_smoke --source-root . --data-dir "$env:RUNNER_TEMP/NOVACommercialSmoke" --output commercial_live_smoke.json
+        run: |
+          python -m commercial_pharmacy.live_server_smoke --source-root . --data-dir "$env:RUNNER_TEMP/NOVACommercialSmoke" --output commercial_live_smoke.json
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial live server smoke failed' }
+          $result = Get-Content commercial_live_smoke.json -Raw | ConvertFrom-Json
+          if (!$result.database_verified) { throw 'Commercial database integrity check failed' }
       - name: Preserve live server result
         if: always()
         uses: actions/upload-artifact@v4
