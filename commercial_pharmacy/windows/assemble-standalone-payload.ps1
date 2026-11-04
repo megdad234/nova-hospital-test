@@ -21,6 +21,10 @@ if ($blockers.standalone_network_and_schema_clear -ne $true -or @($blockers.unre
   throw 'Hospital coupling blockers unresolved; refuse standalone packaging'
 }
 if (!(Test-Path (Join-Path $runtime 'python.exe') -PathType Leaf)) { throw 'Dedicated Python runtime missing' }
+if (!(Test-Path -LiteralPath $LaunchersDirectory -PathType Container)) { throw 'Commercial launcher directory missing' }
+foreach ($name in @('NOVACommercialPharmacy.exe','NOVACommercialPharmacyServer.exe')) {
+  if (!(Test-Path -LiteralPath (Join-Path $LaunchersDirectory $name) -PathType Leaf)) { throw "Commercial launcher missing: $name" }
+}
 if (Test-Path -LiteralPath $Destination) { throw 'Destination must not already exist' }
 New-Item -ItemType Directory -Path $Destination | Out-Null
 Copy-Item -LiteralPath (Join-Path $source 'pharmacy') -Destination (Join-Path $Destination 'pharmacy') -Recurse
