@@ -8,6 +8,8 @@ from .runtime_isolation import choose_port
 def pharmacy_url(host="127.0.0.1", port=18763):
     if not host or any(char in host for char in "/\\:@?# "):
         raise ValueError("Invalid pharmacy server address")
+    if host.replace(".", "").isdigit() and host.count(".") != 3:
+        raise ValueError("Malformed numeric server address")
     try:
         address = ipaddress.ip_address(host)
     except ValueError:
