@@ -9,6 +9,7 @@ on:
       - '.github/ci/patch_upgrade_hash.py'
       - '.github/ci/stage_commercial_pharmacy.py'
       - '.github/ci/audit_commercial_pharmacy.py'
+      - '.github/ci/audit_commercial_pharmacy_assets.py'
       - '.github/ci/commercial_pharmacy_identity.py'
       - '.github/ci/audit_commercial_windows_identity.py'
       - '.github/ci/test_commercial_pharmacy_contract.py'
@@ -266,12 +267,12 @@ jobs:
       - name: Test standalone pharmacy runtime and SQLite isolation
         shell: pwsh
         run: |
-          python -m unittest -v commercial_pharmacy.test_runtime_isolation commercial_pharmacy.test_database commercial_pharmacy.test_backup commercial_pharmacy.test_insurance_registry
+          python -m unittest -v commercial_pharmacy.test_runtime_isolation commercial_pharmacy.test_database commercial_pharmacy.test_backup commercial_pharmacy.test_restore commercial_pharmacy.test_insurance_registry
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy runtime isolation failed' }
       - name: Verify standalone pharmacy staging safeguards
         shell: pwsh
         run: |
-          python -m py_compile .github/ci/stage_commercial_pharmacy.py .github/ci/audit_commercial_pharmacy.py .github/ci/commercial_pharmacy_identity.py .github/ci/audit_commercial_windows_identity.py .github/ci/test_stage_commercial_pharmacy.py .github/ci/test_commercial_pharmacy_contract.py .github/ci/commercial_pharmacy_release_gate.py
+          python -m py_compile .github/ci/stage_commercial_pharmacy.py .github/ci/audit_commercial_pharmacy.py .github/ci/audit_commercial_pharmacy_assets.py .github/ci/commercial_pharmacy_identity.py .github/ci/audit_commercial_windows_identity.py .github/ci/test_stage_commercial_pharmacy.py .github/ci/test_commercial_pharmacy_contract.py .github/ci/commercial_pharmacy_release_gate.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy audit scripts invalid' }
           python .github/ci/test_stage_commercial_pharmacy.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy staging safeguards failed' }
@@ -286,6 +287,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy source staging failed' }
           python .github/ci/audit_commercial_pharmacy.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy dependency audit failed' }
+          python .github/ci/audit_commercial_pharmacy_assets.py
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy asset audit failed' }
           python .github/ci/commercial_pharmacy_identity.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy identity generation failed' }
           python .github/ci/audit_commercial_windows_identity.py
