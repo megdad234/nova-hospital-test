@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           python -m compileall -q commercial_pharmacy .github/ci
-          python -m unittest -v commercial_pharmacy.test_runtime_isolation commercial_pharmacy.test_database commercial_pharmacy.test_backup commercial_pharmacy.test_restore commercial_pharmacy.test_insurance_registry commercial_pharmacy.test_cli commercial_pharmacy.test_windows_installer_contract commercial_pharmacy.test_windows_service_state commercial_pharmacy.test_windows_service commercial_pharmacy.test_launch commercial_pharmacy.test_desktop_client
+          python -m unittest -v commercial_pharmacy.test_runtime_isolation commercial_pharmacy.test_database commercial_pharmacy.test_backup commercial_pharmacy.test_restore commercial_pharmacy.test_insurance_registry commercial_pharmacy.test_cli commercial_pharmacy.test_windows_installer_contract commercial_pharmacy.test_windows_service_state commercial_pharmacy.test_windows_service commercial_pharmacy.test_launch commercial_pharmacy.test_desktop_client commercial_pharmacy.test_service_launcher_integration
       - name: Verify extraction and release-gate negative tests
         shell: bash
         run: |
