@@ -12,6 +12,8 @@ class InstallerContractTests(unittest.TestCase):
                          "NOVA-Commercial-Pharmacy-UNVERIFIED"):
             self.assertIn(expected, source)
         self.assertNotIn("10080", source)
+        self.assertIn("-OpenLanFirewall", source)
+        self.assertIn("-RemoveLanFirewallRule", source)
 
     def test_scheduled_backup_scripts_are_commercial_only(self):
         install = (WINDOWS / "install-backup-task.ps1").read_text(encoding="utf-8")
