@@ -135,6 +135,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Commercial POS JavaScript invalid' }
           node --check pharmacy/static/nova_pharmacy_batch08.js
           if ($LASTEXITCODE -ne 0) { throw 'Commercial insurance JavaScript invalid' }
+      - name: Verify commercial pharmacy source launch environment
+        shell: pwsh
+        run: |
+          python -m commercial_pharmacy.launch --source-root . --preflight-only
+          if ($LASTEXITCODE -ne 0) { throw "Commercial pharmacy source launcher preflight failed" }
       - name: Create audited source snapshot
         shell: pwsh
         run: |
