@@ -41,6 +41,19 @@ class WindowsServiceTests(unittest.TestCase):
             with patch.dict(os.environ, {}, clear=True):
                 self.assertEqual(pharmacy_command(root), [str(python), str(root / "pharmacy" / "server_host.py")])
 
+    def test_detects_dedicated_bundled_runtime(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "pharmacy").mkdir()
+            server = root / "pharmacy" / "server_host.py"
+            server.write_text("pass\n")
+            runtime = root / "runtime"
+            runtime.mkdir()
+            python = runtime / "python.exe"
+            python.write_bytes(b"test runtime")
+            with patch.dict(os.environ, {}, clear=True):
+                self.assertEqual(pharmacy_command(root), [str(python), str(server)])
+
     def test_uses_explicit_commercial_python(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
