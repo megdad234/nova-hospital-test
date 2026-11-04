@@ -12,7 +12,7 @@ class ServiceLauncherIntegrationTests(unittest.TestCase):
             pharmacy = root / "pharmacy"
             pharmacy.mkdir()
             (pharmacy / "app.py").write_text("DATA = 'NOVA_COMMERCIAL_DATA_DIR'\nDB = 'commercial_pharmacy.sqlite3'\n")
-            (pharmacy / "server_host.py").write_text("pass\n")
+            (pharmacy / "server_host.py").write_text("NOVA_COMMERCIAL_PORT = 18763\n")
             hospital = root / "hospital"
             hospital.mkdir()
             with self.assertRaises(ValueError):
