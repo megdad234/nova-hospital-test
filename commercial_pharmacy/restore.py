@@ -28,7 +28,9 @@ def restore_offline(backup: Path, config: CommercialPaths, *, service_stopped: b
     inspect_backup(backup)
     if db.exists():
         with closing(sqlite3.connect(db.as_uri() + "?mode=ro", uri=True, timeout=0.1)) as conn:
-            conn.execute("PRAGMA quick_check").fetchone()
+            result = conn.execute("PRAGMA quick_check").fetchone()[0]
+            if result != "ok":
+                raise ValueError("Existing commercial database failed quick_check: " + str(result))
     # A stopped application can leave WAL sidecars. Checkpoint them only
     # after the caller confirms the service is stopped, then verify removal.
     if db.exists():
@@ -36,6 +38,8 @@ def restore_offline(backup: Path, config: CommercialPaths, *, service_stopped: b
             checkpoint.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     if any(Path(str(db) + suffix).exists() for suffix in ("-wal", "-shm")):
         raise RuntimeError("Database WAL sidecars remain; restore requires exclusive access")
+    # A successful SQLite connect/checkpoint does not prove the Windows service
+    # is stopped. The caller must separately verify that service state.
     staged = stage_restore(backup, config)
     rollback = config.backups / ("pre-restore-" + str(time.time_ns()) + ".sqlite3")
     if rollback.exists():
