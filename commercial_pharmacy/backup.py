@@ -6,6 +6,7 @@ separate destination; it does not overwrite a running pharmacy database.
 """
 from __future__ import annotations
 from pathlib import Path
+from contextlib import closing
 import os
 import sqlite3
 import tempfile
@@ -25,7 +26,7 @@ def create_backup(connection: sqlite3.Connection, config: CommercialPaths, filen
     fd, temporary = tempfile.mkstemp(prefix=".backup-", suffix=".sqlite3", dir=config.backups)
     os.close(fd)
     try:
-        with sqlite3.connect(temporary) as output:
+        with closing(sqlite3.connect(temporary)) as output:
             connection.backup(output)
             check = output.execute("PRAGMA integrity_check").fetchone()[0]
             if check != "ok":
@@ -40,7 +41,7 @@ def inspect_backup(path: Path):
     if not path.is_file():
         raise FileNotFoundError(str(path))
     uri = path.resolve().as_uri() + "?mode=ro"
-    with sqlite3.connect(uri, uri=True) as conn:
+    with closing(sqlite3.connect(uri, uri=True)) as conn:
         result = conn.execute("PRAGMA integrity_check").fetchone()[0]
         if result != "ok":
             raise ValueError("Invalid SQLite backup: " + str(result))
@@ -57,8 +58,8 @@ def stage_restore(backup: Path, config: CommercialPaths):
     os.close(fd)
     candidate = Path(name)
     try:
-        with sqlite3.connect(backup.resolve().as_uri() + "?mode=ro", uri=True) as src:
-            with sqlite3.connect(candidate) as dst:
+        with closing(sqlite3.connect(backup.resolve().as_uri() + "?mode=ro", uri=True)) as src:
+            with closing(sqlite3.connect(candidate)) as dst:
                 src.backup(dst)
         inspect_backup(candidate)
         return candidate
