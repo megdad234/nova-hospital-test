@@ -71,6 +71,7 @@ jobs:
           if [ $? -ne 0 ]; then exit 1; fi
           python .github/ci/test_patch_commercial_brand.py
           python .github/ci/test_patch_commercial_database.py
+          python .github/ci/test_assemble_commercial_windows_payload.py
           python .github/ci/test_audit_commercial_server_entrypoint.py
           python .github/ci/test_commercial_runtime_preflight.py
           python .github/ci/test_verify_commercial_snapshot.py
