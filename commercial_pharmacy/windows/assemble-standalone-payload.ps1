@@ -35,6 +35,7 @@ foreach ($protected in @($source, $runtime, (Resolve-Path -LiteralPath $Launcher
 if (Test-Path -LiteralPath $Destination) { throw 'Destination must not already exist' }
 $manifest = Get-Content -LiteralPath (Join-Path $source 'EXTRACTION_MANIFEST.json') -Raw | ConvertFrom-Json
 if ($manifest.status -ne 'SOURCE_SNAPSHOT_ONLY_NOT_INSTALLABLE') { throw 'Unexpected source extraction manifest status' }
+if (Test-Path -LiteralPath (Join-Path $source 'pharmacy/commercial_pharmacy.sqlite3')) { throw 'Source snapshot contains a database file' }
 New-Item -ItemType Directory -Path $Destination | Out-Null
 Copy-Item -LiteralPath (Join-Path $source 'pharmacy') -Destination (Join-Path $Destination 'pharmacy') -Recurse
 Copy-Item -LiteralPath (Join-Path $source 'commercial_pharmacy') -Destination (Join-Path $Destination 'commercial_pharmacy') -Recurse
