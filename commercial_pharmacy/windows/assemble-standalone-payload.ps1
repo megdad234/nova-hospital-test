@@ -1,0 +1,33 @@
+# Assemble a candidate only from an audited extracted source and an explicit Python runtime.
+# This does not install services or modify NOVA Hospital.
+[CmdletBinding()]
+param(
+  [Parameter(Mandatory=$true)][string]$SourceStage,
+  [Parameter(Mandatory=$true)][string]$PythonRuntimeDirectory,
+  [Parameter(Mandatory=$true)][string]$Destination
+)
+$ErrorActionPreference = 'Stop'
+$source = (Resolve-Path -LiteralPath $SourceStage).Path
+$runtime = (Resolve-Path -LiteralPath $PythonRuntimeDirectory).Path
+if (!(Test-Path (Join-Path $source 'pharmacy/app.py') -PathType Leaf)) { throw 'Audited pharmacy app missing' }
+if (!(Test-Path (Join-Path $source 'pharmacy/server_host.py') -PathType Leaf)) { throw 'Audited pharmacy server missing' }
+if (!(Test-Path (Join-Path $source 'EXTRACTION_MANIFEST.json') -PathType Leaf)) { throw 'Extraction evidence missing' }
+if (!(Test-Path (Join-Path $source 'HOSPITAL_COUPLING_BLOCKERS.json') -PathType Leaf)) { throw 'Hospital coupling evidence missing' }
+$blockers = Get-Content -LiteralPath (Join-Path $source 'HOSPITAL_COUPLING_BLOCKERS.json') -Raw | ConvertFrom-Json
+if ($blockers.standalone_network_and_schema_clear -ne $true -or @($blockers.unresolved).Count -gt 0) {
+  throw 'Hospital coupling blockers unresolved; refuse standalone packaging'
+}
+if (!(Test-Path (Join-Path $runtime 'python.exe') -PathType Leaf)) { throw 'Dedicated Python runtime missing' }
+if (Test-Path -LiteralPath $Destination) { throw 'Destination must not already exist' }
+New-Item -ItemType Directory -Path $Destination | Out-Null
+Copy-Item -LiteralPath (Join-Path $source 'pharmacy') -Destination (Join-Path $Destination 'pharmacy') -Recurse
+Copy-Item -LiteralPath (Join-Path $source 'commercial_pharmacy') -Destination (Join-Path $Destination 'commercial_pharmacy') -Recurse
+Copy-Item -LiteralPath $runtime -Destination (Join-Path $Destination 'runtime') -Recurse
+foreach ($name in @('NOVACommercialPharmacy.exe','NOVACommercialPharmacyServer.exe')) {
+  $exe = Join-Path (Join-Path (Split-Path $Destination -Parent) 'launchers') $name
+  if (!(Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Launcher missing: $name" }
+  Copy-Item -LiteralPath $exe -Destination (Join-Path $Destination $name)
+}
+& (Join-Path $PSScriptRoot 'check-runtime-payload.ps1') -InstallRoot $Destination
+if ($LASTEXITCODE -ne 0) { throw 'Runtime payload preflight failed' }
+Write-Host 'COMMERCIAL_PAYLOAD_ASSEMBLED_CANDIDATE_NOT_RELEASE_APPROVED'
