@@ -26,4 +26,8 @@ with tempfile.TemporaryDirectory() as tmp:
     assert result["preflight_passed"] is False
     assert result["windows_installer_verified"] is False
     assert any("hospital" in error for error in result["errors"])
+    (root / "HOSPITAL_COUPLING_BLOCKERS.json").write_text(
+        json.dumps({"unresolved": [], "standalone_network_and_schema_clear": False}), encoding="utf-8")
+    result = module.inspect(root)
+    assert "hospital coupling audit not cleared" in result["errors"]
 print("COMMERCIAL_PREFLIGHT_NEGATIVE_TEST_PASSED")
