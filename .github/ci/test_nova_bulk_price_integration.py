@@ -6,7 +6,7 @@ from pathlib import Path
 
 source=Path("pharmacy/app.py").read_text(encoding="utf-8")
 tree=ast.parse(source)
-names={"nova_price_list_preview","nova_price_list_approve","nova_price_list_history","nova_price_list_rollback","nova_price_signature"}
+names={"nova_price_list_preview","nova_price_list_approve","nova_price_list_history","nova_price_list_rollback","nova_price_signature","nova_price_list_file_rows"}
 functions=[node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name in names]
 assert {node.name for node in functions}==names
 # Extract functions so the test cannot start the pharmacy server or alter its production DB.
@@ -54,4 +54,22 @@ try:
  raise AssertionError("duplicate rollback was allowed")
 except ValueError:pass
 assert c.execute("SELECT COUNT(*) FROM purchase_lines").fetchone()[0]==1
+# Verify the actual integrated XLSX and CSV import entry point.
+import io,base64,csv
+from openpyxl import Workbook
+wb=Workbook();ws=wb.active
+ws.append(["الاسم التجاري","السعر","التركيز","العبوة","باركود"])
+ws.append(["Paracetamol",7000,"500mg","box","ABC"])
+stream=io.BytesIO();wb.save(stream)
+parse=namespace["nova_price_list_file_rows"]
+xlsx=parse({"filename":"supplier.xlsx","content_base64":base64.b64encode(stream.getvalue()).decode("ascii")})
+assert xlsx["count"]==1 and xlsx["rows"][0]["name"]=="Paracetamol",xlsx
+assert xlsx["rows"][0]["purchase_price"]=="7000"
+csv_bytes="name,purchase_price\\nParacetamol,7000\\n".encode("utf-8")
+csv_result=parse({"filename":"supplier.csv","content_base64":base64.b64encode(csv_bytes).decode("ascii")})
+assert csv_result["count"]==1
+try:
+ parse({"filename":"supplier.pdf","content_base64":base64.b64encode(b"fake").decode("ascii")})
+ raise AssertionError("unsupported PDF accepted")
+except ValueError:pass
 print("NOVA_BULK_PRICE_INTEGRATION_TEST_PASSED")
