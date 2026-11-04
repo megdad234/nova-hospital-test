@@ -69,7 +69,7 @@ def check_port_free(port, host="127.0.0.1"):
         return sock.connect_ex((host, port)) != 0
 
 def safe_backup_filename(name):
-    if not _SAFE_NAME.fullmatch(name):
+    if name in {".", ".."} or not _SAFE_NAME.fullmatch(name):
         raise ValueError("Unsafe backup filename")
     return name
 
