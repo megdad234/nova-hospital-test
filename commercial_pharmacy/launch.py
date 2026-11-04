@@ -18,6 +18,8 @@ def prepare(source_root, data_dir=None, port=None, protected_hospital_paths=()):
     ast.parse(source, filename=str(app))
     if "commercial_pharmacy.sqlite3" not in source or "NOVA_COMMERCIAL_DATA_DIR" not in source:
         raise RuntimeError("Commercial database patch not applied")
+    if "NOVA_COMMERCIAL_PORT" not in entry.read_text(encoding="utf-8"):
+        raise RuntimeError("Server does not honor commercial port override")
     env = dict(os.environ)
     if data_dir is not None:
         env["NOVA_COMMERCIAL_DATA_DIR"] = str(Path(data_dir).resolve())
