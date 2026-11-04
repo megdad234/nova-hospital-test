@@ -23,4 +23,7 @@ with tempfile.TemporaryDirectory() as tmp:
     app.write_text("print('pharmacy')", encoding="utf-8")
     (source / "hospital.db").write_bytes(b"DO NOT DISTRIBUTE")
     assert any("live database included" in x for x in module.verify_snapshot(root))
+    (source / "hospital.db").unlink()
+    (source / "commercial_pharmacy.sqlite3-wal").write_bytes(b"test")
+    assert module.verify_snapshot(root)
 print("COMMERCIAL_SNAPSHOT_INTEGRITY_TESTS_PASSED")
