@@ -148,6 +148,9 @@ jobs:
         run: |
           python -m commercial_pharmacy.launch --source-root . --data-dir "$env:RUNNER_TEMP\NOVACommercialPharmacy" --preflight-only
           if ($LASTEXITCODE -ne 0) { throw "Commercial pharmacy source launcher preflight failed" }
+      - name: Real server smoke on Windows
+        shell: pwsh
+        run: python -m commercial_pharmacy.live_server_smoke --source-root . --data-dir "$env:RUNNER_TEMP/NOVACommercialSmoke" --output commercial_live_smoke.json
       - name: Create audited source snapshot
         shell: pwsh
         run: |
