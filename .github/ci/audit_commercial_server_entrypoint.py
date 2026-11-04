@@ -38,3 +38,5 @@ if __name__ == "__main__":
     print(json.dumps(result))
     if not result["source_syntax_valid"]:
         raise SystemExit("COMMERCIAL_SOURCE_SYNTAX_INVALID")
+    if not result["port_override_present"] or not result["database_override_present"]:
+        raise SystemExit("COMMERCIAL_RUNTIME_OVERRIDES_MISSING")
