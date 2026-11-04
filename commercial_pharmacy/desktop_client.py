@@ -2,6 +2,7 @@
 from __future__ import annotations
 import argparse
 import ipaddress
+import os
 import webbrowser
 from .runtime_isolation import choose_port
 
@@ -26,8 +27,8 @@ def pharmacy_url(host="127.0.0.1", port=18763):
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=18763)
+    parser.add_argument("--host", default=os.environ.get("NOVA_COMMERCIAL_SERVER_HOST", "127.0.0.1"))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("NOVA_COMMERCIAL_PORT", "18763")))
     parser.add_argument("--print-url", action="store_true")
     args = parser.parse_args(argv)
     url = pharmacy_url(args.host, args.port)
