@@ -127,6 +127,10 @@ jobs:
           node --check pharmacy/static/app.js
           python .github/ci/patch_commercial_brand.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial branding decoupling failed' }
+          node --check pharmacy/static/app.js
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial POS JavaScript invalid' }
+          node --check pharmacy/static/nova_pharmacy_batch08.js
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial insurance JavaScript invalid' }
       - name: Create audited source snapshot
         shell: pwsh
         run: |
