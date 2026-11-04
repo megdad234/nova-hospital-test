@@ -7,6 +7,7 @@ on:
       - 'commercial_pharmacy/**'
       - '.github/ci/stage_commercial_pharmacy.py'
       - '.github/ci/audit_commercial_pharmacy.py'
+      - '.github/ci/audit_commercial_pharmacy_assets.py'
       - '.github/ci/audit_commercial_windows_identity.py'
       - '.github/ci/commercial_pharmacy_identity.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
@@ -35,7 +36,7 @@ jobs:
         shell: bash
         run: |
           python -m compileall -q commercial_pharmacy .github/ci
-          python -m unittest -v commercial_pharmacy.test_runtime_isolation commercial_pharmacy.test_database commercial_pharmacy.test_backup commercial_pharmacy.test_insurance_registry
+          python -m unittest -v commercial_pharmacy.test_runtime_isolation commercial_pharmacy.test_database commercial_pharmacy.test_backup commercial_pharmacy.test_restore commercial_pharmacy.test_insurance_registry
       - name: Verify extraction and release-gate negative tests
         shell: bash
         run: |
@@ -83,6 +84,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Staging failed' }
           python .github/ci/audit_commercial_pharmacy.py
           if ($LASTEXITCODE -ne 0) { throw 'Audit failed' }
+          python .github/ci/audit_commercial_pharmacy_assets.py
+          if ($LASTEXITCODE -ne 0) { throw 'Asset audit failed' }
           python .github/ci/commercial_pharmacy_identity.py
           if ($LASTEXITCODE -ne 0) { throw 'Identity contract failed' }
           python .github/ci/audit_commercial_windows_identity.py
