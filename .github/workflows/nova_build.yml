@@ -254,6 +254,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price UI syntax failed' }
           python .github/ci/test_nova_bulk_price_integration.py
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration regression failed' }
+      - name: Stage commercial pharmacy source after all NOVA patches
+        shell: pwsh
+        run: |
+          python .github/ci/stage_commercial_pharmacy.py
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy source staging failed' }
+      - name: Upload isolated pharmacy extraction source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-Commercial-Pharmacy-Source-Snapshot-NOT-INSTALLABLE
+          path: commercial_pharmacy_stage/
+          retention-days: 7
+          if-no-files-found: error
       - name: Restore previously verified development Windows build
         id: setup_cache
         uses: actions/cache/restore@v4
