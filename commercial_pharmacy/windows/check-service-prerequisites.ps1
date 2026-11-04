@@ -1,4 +1,4 @@
-param([string]$SourceRoot, [string]$PythonExecutable)
+param([Parameter(Mandatory=$true)][string]$SourceRoot, [Parameter(Mandatory=$true)][string]$PythonExecutable)
 $ErrorActionPreference = 'Stop'
 if (!(Test-Path -LiteralPath $PythonExecutable -PathType Leaf)) { throw 'Python runtime missing' }
 if (!(Test-Path -LiteralPath $SourceRoot -PathType Container)) { throw 'Commercial source root missing' }
