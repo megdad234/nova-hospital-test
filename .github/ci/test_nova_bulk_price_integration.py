@@ -65,7 +65,7 @@ parse=namespace["nova_price_list_file_rows"]
 xlsx=parse({"filename":"supplier.xlsx","content_base64":base64.b64encode(stream.getvalue()).decode("ascii")})
 assert xlsx["count"]==1 and xlsx["rows"][0]["name"]=="Paracetamol",xlsx
 assert xlsx["rows"][0]["purchase_price"]=="7000"
-csv_bytes="name,purchase_price\\nParacetamol,7000\\n".encode("utf-8")
+csv_bytes="name,purchase_price\nParacetamol,7000\n".encode("utf-8")
 csv_result=parse({"filename":"supplier.csv","content_base64":base64.b64encode(csv_bytes).decode("ascii")})
 assert csv_result["count"]==1
 try:
