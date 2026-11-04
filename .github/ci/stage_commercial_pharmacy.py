@@ -24,7 +24,7 @@ missing = [p for p in required if not (ROOT / p).is_file()]
 if missing:
     raise SystemExit("MISSING_REQUIRED: " + ", ".join(missing))
 shutil.copytree(ROOT / "pharmacy", OUT / "pharmacy",
-                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.db", "*.sqlite", "*.sqlite3"))
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.db", "*.sqlite", "*.sqlite3", "*.db-wal", "*.db-shm", "*.sqlite-wal", "*.sqlite-shm", "*.sqlite3-wal", "*.sqlite3-shm"))
 # Include isolated runtime code alongside the extracted source. The application
 # is not standalone until its actual server entrypoint adopts these primitives.
 if (ROOT / "commercial_pharmacy").is_dir():
