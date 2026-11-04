@@ -98,7 +98,8 @@ jobs:
             'nova_batch07_reference_ui.py','nova_batch08_pharmacy_recovery.py',
             'nova_batch09_pos_admin.py','nova_batch10_receipt_print.py',
             'nova_batch11_unified_print.py','nova_batch12_insurance.py',
-            'nova_batch13_purchase.py','nova_batch14_pos_discount.py'
+            'nova_batch13_purchase.py','nova_batch14_pos_discount.py',
+            'nova_batch14_finance_tests.py','nova_price_integration_audit.py'
           )
           foreach ($patch in $patches) {
             python ".github/ci/$patch"
