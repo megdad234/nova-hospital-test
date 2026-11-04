@@ -43,6 +43,14 @@ class BackupTests(unittest.TestCase):
                 with self.assertRaises(FileExistsError):
                     create_backup(conn, config, "first.sqlite3")
                 self.assertTrue(created.is_file())
+                link = config.backups / "linked.sqlite3"
+                try:
+                    link.symlink_to(created)
+                except (OSError, NotImplementedError):
+                    pass
+                else:
+                    with self.assertRaises(FileExistsError):
+                        create_backup(conn, config, "linked.sqlite3")
 
 if __name__ == "__main__":
     unittest.main()
