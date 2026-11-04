@@ -10,6 +10,7 @@ on:
       - '.github/ci/audit_commercial_pharmacy_assets.py'
       - '.github/ci/locate_commercial_integration_points.py'
       - '.github/ci/patch_commercial_insurance.py'
+      - '.github/ci/patch_commercial_brand.py'
       - '.github/ci/audit_commercial_windows_identity.py'
       - '.github/ci/commercial_pharmacy_identity.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
@@ -105,6 +106,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy insurance decoupling failed' }
           python -m compileall -q pharmacy
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy syntax failed' }
+      - name: Remove hospital branding dependency from pharmacy POS
+        shell: pwsh
+        run: |
+          python .github/ci/patch_commercial_brand.py
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial branding decoupling failed' }
       - name: Create audited source snapshot
         shell: pwsh
         run: |
