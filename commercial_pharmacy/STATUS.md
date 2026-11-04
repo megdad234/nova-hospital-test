@@ -50,3 +50,7 @@ The `diagnose` command reports configured port availability, data directories an
 ## Windows candidate build workflow
 
 `.github/workflows/commercial_pharmacy_candidates.yml` builds two PyInstaller EXE candidates on the commercial branch, smoke-tests the LAN client URL and checks both executable headers. Artifact: `Commercial-EXE-CANDIDATES-NOT-INSTALLABLE`. The service candidate still needs a dedicated Python runtime, extracted pharmacy source, and live SCM acceptance; do not install it as a production Windows service or distribute it as Setup.exe. The source-only Windows snapshot and release gate remain separate.
+
+## Windows LAN client configuration
+
+On each Windows workstation, `commercial_pharmacy/windows/configure-lan-client.ps1` can create a desktop shortcut targeting the dedicated client EXE with `--host` and `--port`; the client also supports `NOVA_COMMERCIAL_SERVER_HOST` and `NOVA_COMMERCIAL_PORT` environment overrides. Example: `powershell -File configure-lan-client.ps1 -ServerHost 192.168.1.10 -ClientExecutable C:\\Pharmacy\\NOVACommercialPharmacy.exe -ShortcutPath C:\\Users\\Public\\Desktop\\CommercialPharmacy.lnk`. This configures only a shortcut; it does not start or validate a live pharmacy server.
