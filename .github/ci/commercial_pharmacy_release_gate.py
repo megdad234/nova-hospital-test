@@ -54,8 +54,14 @@ def verify(stage: Path, evidence: Path) -> list[str]:
         check = data.get("checks", {}).get(item, {})
         if check.get("status") != "passed":
             errors.append("acceptance not passed: " + item)
-        if not check.get("log_sha256"):
-            errors.append("missing immutable log hash: " + item)
+        log_path = check.get("log_path")
+        log_hash = check.get("log_sha256")
+        if not log_path or not log_hash:
+            errors.append("missing acceptance log and hash: " + item)
+        elif not Path(log_path).is_file():
+            errors.append("acceptance log file absent: " + item)
+        elif hashlib.sha256(Path(log_path).read_bytes()).hexdigest().lower() != str(log_hash).lower():
+            errors.append("acceptance log hash mismatch: " + item)
     installer = data.get("installer", {})
     if not installer.get("path") or not installer.get("sha256"):
         errors.append("installer artifact and hash absent")
