@@ -4,9 +4,10 @@ Runs only after all NOVA patches and before commercial staging. Preserves
 the existing pharmacy's configurable branding and thermal receipt engine.
 """
 from pathlib import Path
+import os
 import re
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(os.environ.get('NOVA_EXTRACTION_ROOT', str(Path(__file__).resolve().parents[2]))).resolve()
 ui = ROOT / "pharmacy/static/app.js"
 html = ROOT / "pharmacy/static/index.html"
 if not ui.is_file() or not html.is_file():
