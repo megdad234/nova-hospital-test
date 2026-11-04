@@ -1,5 +1,5 @@
 """Integration smoke test for the commercial maintenance command line."""
-from contextlib import redirect_stdout
+from contextlib import closing, redirect_stdout
 from io import StringIO
 from pathlib import Path
 import json
@@ -50,7 +50,7 @@ class CliTests(unittest.TestCase):
             data = root / "commercial"
             self.invoke("--data-dir", str(data), "initialize")
             database = data / "commercial_pharmacy.sqlite3"
-            with sqlite3.connect(database) as conn:
+            with closing(sqlite3.connect(database)) as conn:
                 conn.execute("CREATE TABLE inventory (id INTEGER)")
                 conn.execute("INSERT INTO inventory VALUES (1)")
             result = self.invoke("--data-dir", str(data), "diagnose")
@@ -60,7 +60,7 @@ class CliTests(unittest.TestCase):
             health = self.invoke("--data-dir", str(data), "check-database")
             self.assertEqual(health["integrity"], "ok")
             self.assertTrue(health["read_only"])
-            with sqlite3.connect(database) as conn:
+            with closing(sqlite3.connect(database)) as conn:
                 self.assertEqual(conn.execute("SELECT COUNT(*) FROM inventory").fetchone()[0], 1)
 
     def test_automatic_backup_retention_keeps_manual_backups(self):
@@ -69,7 +69,7 @@ class CliTests(unittest.TestCase):
             root = Path(tmp)
             data = root / "commercial"
             self.invoke("--data-dir", str(data), "initialize")
-            with sqlite3.connect(data / "commercial_pharmacy.sqlite3") as db:
+            with closing(sqlite3.connect(data / "commercial_pharmacy.sqlite3")) as db:
                 db.execute("CREATE TABLE items (id INTEGER)")
                 db.execute("INSERT INTO items VALUES (7)")
             first = self.invoke("--data-dir", str(data), "backup-auto", "--retain", "1")
