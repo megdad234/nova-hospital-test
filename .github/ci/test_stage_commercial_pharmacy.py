@@ -25,6 +25,8 @@ with tempfile.TemporaryDirectory() as d:
     manifest = json.loads((out / "EXTRACTION_MANIFEST.json").read_text(encoding="utf-8"))
     assert manifest["status"] == "SOURCE_SNAPSHOT_ONLY_NOT_INSTALLABLE"
     assert not (out / "pharmacy" / "test_data.sqlite").exists()
+    assert not (out / "pharmacy" / "test_data.sqlite-wal").exists()
+    assert not (out / "hospital_reference" / "secret.db-shm").exists()
     assert (out / "hospital_reference" / "core.py").exists()
     assert manifest["pharmacy_files"] >= len(required)
     assert manifest["standalone_ready"] is False
