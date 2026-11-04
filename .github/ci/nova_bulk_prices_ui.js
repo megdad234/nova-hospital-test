@@ -34,13 +34,10 @@ const request=async(path,body)=>{
 previewBtn.onclick=async()=>{try{
  if(!file.files[0])throw Error('اختر ملف CSV أولاً');
  if(file.files[0].size>6*1024*1024)throw Error('الملف كبير');
- let rows;
- if(file.files[0].name.toLowerCase().endsWith('.xlsx')){
  const bytes=new Uint8Array(await file.files[0].arrayBuffer());let binary='';
  for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
  const parsed=await request('nova-price-list-parse',{filename:file.files[0].name,content_base64:btoa(binary)});
- rows=parsed.rows;
- }else rows=csvParse(await file.files[0].text());
+ const rows=parsed.rows;
  const payload={rows};if(pct.value!=='')payload.markup_percent=pct.value;
  const data=await request('nova-price-list-preview',payload);
  preview=data.rows;grid.replaceChildren();approveBtn.disabled=false;
