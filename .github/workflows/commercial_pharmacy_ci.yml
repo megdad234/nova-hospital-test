@@ -81,6 +81,9 @@ jobs:
           python .github/ci/test_verify_commercial_snapshot.py
   snapshot:
     runs-on: windows-2025
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONUTF8: '1'
     needs: isolated-runtime
     timeout-minutes: 35
     steps:
