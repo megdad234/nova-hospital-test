@@ -151,6 +151,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Audit failed' }
           python .github/ci/audit_commercial_pharmacy_assets.py
           if ($LASTEXITCODE -ne 0) { throw 'Asset audit failed' }
+          python .github/ci/audit_commercial_server_entrypoint.py
+          if ($LASTEXITCODE -ne 0) { throw "Server entrypoint audit failed" }
           python .github/ci/locate_commercial_integration_points.py
           if ($LASTEXITCODE -ne 0) { throw 'Integration point discovery failed' }
           python .github/ci/audit_commercial_hospital_coupling.py
