@@ -12,6 +12,7 @@ on:
       - '.github/ci/patch_commercial_insurance.py'
       - '.github/ci/patch_commercial_brand.py'
       - '.github/ci/patch_commercial_database.py'
+      - '.github/ci/audit_commercial_hospital_coupling.py'
       - '.github/ci/audit_commercial_windows_identity.py'
       - '.github/ci/commercial_pharmacy_identity.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
@@ -130,6 +131,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Asset audit failed' }
           python .github/ci/locate_commercial_integration_points.py
           if ($LASTEXITCODE -ne 0) { throw 'Integration point discovery failed' }
+          python .github/ci/audit_commercial_hospital_coupling.py
+          if ($LASTEXITCODE -ne 0) { throw 'Hospital coupling audit failed' }
           python .github/ci/commercial_pharmacy_identity.py
           if ($LASTEXITCODE -ne 0) { throw 'Identity contract failed' }
           python .github/ci/audit_commercial_windows_identity.py
