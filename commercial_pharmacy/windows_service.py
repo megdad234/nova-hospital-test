@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from .launch import prepare
+from .runtime_isolation import choose_port
 import subprocess
 import sys
 
@@ -22,6 +23,11 @@ def pharmacy_command(root: Path):
     return [python, str(entry)]
 
 def run_service():
+    if "--port" in sys.argv:
+        index = sys.argv.index("--port")
+        if index + 1 >= len(sys.argv):
+            raise ValueError("Missing commercial service port")
+        os.environ["NOVA_COMMERCIAL_PORT"] = str(choose_port({"NOVA_COMMERCIAL_PORT": sys.argv[index + 1]}))
     try:
         import win32event
         import win32service
