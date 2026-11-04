@@ -54,3 +54,7 @@ The `diagnose` command reports configured port availability, data directories an
 ## Windows LAN client configuration
 
 On each Windows workstation, `commercial_pharmacy/windows/configure-lan-client.ps1` can create a desktop shortcut targeting the dedicated client EXE with `--host` and `--port`; the client also supports `NOVA_COMMERCIAL_SERVER_HOST` and `NOVA_COMMERCIAL_PORT` environment overrides. Example: `powershell -File configure-lan-client.ps1 -ServerHost 192.168.1.10 -ClientExecutable C:\\Pharmacy\\NOVACommercialPharmacy.exe -ShortcutPath C:\\Users\\Public\\Desktop\\CommercialPharmacy.lnk`. This configures only a shortcut; it does not start or validate a live pharmacy server.
+
+## Opt-in live LAN connectivity smoke
+
+After independently starting the extracted pharmacy server, run `python -m commercial_pharmacy.smoke_http --host 127.0.0.1 --port 18763` on the server or replace the host with its LAN IPv4 address on a workstation. An HTTP response only confirms network reachability; it does not validate sales, stock, printing, insurance, or database isolation and never authorizes release. The candidate Inno installer deliberately has neither automatic service installation nor automatic service removal until the complete runtime is packaged and tested.
