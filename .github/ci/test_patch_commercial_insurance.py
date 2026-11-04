@@ -10,6 +10,8 @@ with tempfile.TemporaryDirectory() as tmp:
     root = Path(tmp)
     pharmacy = root / "pharmacy"
     pharmacy.mkdir()
+    (pharmacy / "static").mkdir()
+    (pharmacy / "static" / "nova_pharmacy_batch08.js").write_text("nova-hospital-patient-search; قاعدة المستشفى المركزية", encoding="utf-8")
     source = '''
 def nova_insured_schema(c):
     c.executescript("""CREATE TABLE IF NOT EXISTS nova_pharmacy_insured_people(
@@ -25,6 +27,7 @@ def nova_insured_enroll(c, p, uid):
 def nova_insured_sale_snapshot(c, member, contract, uid, coverage, sale_id):
     return c.execute("SELECT * FROM hospital_patients")
 '''
+    source += "\n# /api/v1/nova-hospital-patient-search\n# /api/v1/nova-hospital-patient-search\n"
     (pharmacy / "app.py").write_text(source, encoding="utf-8")
     env = dict(os.environ, NOVA_EXTRACTION_ROOT=str(root))
     result = subprocess.run([sys.executable, str(PATCH)], env=env,
