@@ -15,7 +15,7 @@ if not (STAGE / "EXTRACTION_MANIFEST.json").is_file():
     raise SystemExit("RUN_STAGE_FIRST")
 pharmacy = STAGE / "pharmacy"
 patterns = {
-    "hospital_routes": re.compile(r"(?i)(?:/api/[^\\"' ]*(?:hospital|patient|laboratory|reception|cashier)|/hospital/)[^\\"' ]*"),
+    "hospital_routes": re.compile(r"(?i)/(?:api|hospital)/[^ ]*(?:hospital|patient|laboratory|reception|cashier)"),
     "hospital_symbols": re.compile(r"(?i)\b(?:hospital_gateway|hospital_core|hospital_admin|hospital_patient|nova_server)\b"),
     "db_paths": re.compile(r"(?i)[\w./\\-]+\.(?:sqlite3?|db)\b"),
     "network_listeners": re.compile(r"(?i)\b(?:0\.0\.0\.0|127\.0\.0\.1|localhost|listen|bind|port)\b"),
