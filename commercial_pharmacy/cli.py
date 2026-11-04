@@ -65,9 +65,7 @@ def run(argv=None):
     elif args.command == "check-database":
         if not config.database.is_file():
             raise FileNotFoundError("Commercial database does not exist")
-        from .database import verify_pharmacy_database
-        with closing(open_pharmacy_database(config, protected_hospital_paths=args.protect_hospital_dir)) as conn:
-            verify_pharmacy_database(conn, config)
+        with closing(sqlite3.connect(config.database.resolve().as_uri() + "?mode=ro", uri=True)) as conn:
             result = {"integrity": conn.execute("PRAGMA integrity_check").fetchone()[0]}
     elif args.command == "list-backups":
         result = {"backups": [
