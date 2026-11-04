@@ -62,6 +62,7 @@ jobs:
           python .github/ci/test_commercial_pharmacy_contract.py
           python .github/ci/test_commercial_pharmacy_release_gate.py
           python .github/ci/test_patch_commercial_insurance.py
+          python .github/ci/test_commercial_insurance_real_schema.py
           python .github/ci/test_patch_commercial_brand.py
           python .github/ci/test_patch_commercial_database.py
           python .github/ci/test_commercial_runtime_preflight.py
