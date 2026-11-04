@@ -18,6 +18,9 @@ with tempfile.TemporaryDirectory() as directory:
     assert result["database_override_present"] is True
     assert result["port_override_present"] is False
     assert result["runtime_verified"] is False
+    assert result["source_syntax_valid"] is True
     (pharmacy / "server_host.py").write_text("PORT = 'NOVA_COMMERCIAL_PORT'\n")
     assert module.inspect(root)["port_override_present"] is True
+    (pharmacy / "server_host.py").write_text("PORT = (\n")
+    assert module.inspect(root)["source_syntax_valid"] is False
 print("COMMERCIAL_SERVER_AUDIT_TEST_OK")
