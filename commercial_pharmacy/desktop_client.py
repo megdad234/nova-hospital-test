@@ -13,6 +13,8 @@ def pharmacy_url(host="127.0.0.1", port=18763):
     try:
         address = ipaddress.ip_address(host)
     except ValueError:
+        if host.replace(".", "").isdigit():
+            raise ValueError("Invalid IPv4 address")
         if not all(label and label.replace("-", "").isalnum()
                    for label in host.split(".")):
             raise ValueError("Invalid pharmacy server hostname")
