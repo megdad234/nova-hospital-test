@@ -36,5 +36,5 @@ Name: desktopicon; Description: "Create desktop shortcut"; GroupDescription: "Ad
 ; Automatic service registration disabled until runtime acceptance.
 ; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\maintenance\install-commercial-service.ps1"" -ExecutablePath ""{app}\{#ServerExe}"" -Port 18763 -OpenLanFirewall -ServiceAwareExecutableConfirmed"; Flags: runhidden waituntilterminated
 
-[UninstallRun]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\maintenance\uninstall-commercial-service.ps1"" -RemoveLanFirewallRule"; Flags: runhidden waituntilterminated
+; [UninstallRun] disabled because service installation is disabled.
+; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\maintenance\uninstall-commercial-service.ps1"" -RemoveLanFirewallRule"; Flags: runhidden waituntilterminated
