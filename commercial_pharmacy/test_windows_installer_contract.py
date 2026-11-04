@@ -18,6 +18,7 @@ class InstallerContractTests(unittest.TestCase):
     def test_unverified_installer_does_not_autostart_service(self):
         source = (WINDOWS / "commercial-pharmacy-installer.iss").read_text(encoding="utf-8")
         self.assertNotIn("\n[Run]\n", source)
+        self.assertNotIn("\n[UninstallRun]\n", source)
         self.assertIn("Automatic service registration disabled", source)
 
     def test_unverified_candidate_build_requires_acknowledgement(self):
