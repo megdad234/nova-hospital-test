@@ -12,7 +12,7 @@ $ErrorActionPreference = 'Stop'
 if (-not $ServiceAwareExecutableConfirmed) {
   throw 'A Windows Service Control Manager-aware executable must be built and tested before registration; generic Python/EXE cannot be registered with sc.exe'
 }
-if (-not $env:NOVA_COMMERCIAL_SOURCE_ROOT -or -not $env:NOVA_COMMERCIAL_PYTHON) { throw 'Dedicated commercial runtime is not configured' }
+if (-not [Environment]::GetEnvironmentVariable('NOVA_COMMERCIAL_SOURCE_ROOT', 'Machine') -or -not [Environment]::GetEnvironmentVariable('NOVA_COMMERCIAL_PYTHON', 'Machine')) { throw 'Machine-level dedicated commercial runtime is not configured' }
 $serviceName = 'NOVACommercialPharmacyServer'
 $displayName = 'NOVA Commercial Pharmacy Server'
 if (-not (Test-Path -LiteralPath $ExecutablePath -PathType Leaf)) {
