@@ -13,6 +13,10 @@ if (-not $ServiceAwareExecutableConfirmed) {
   throw 'A Windows Service Control Manager-aware executable must be built and tested before registration; generic Python/EXE cannot be registered with sc.exe'
 }
 if (-not [Environment]::GetEnvironmentVariable('NOVA_COMMERCIAL_SOURCE_ROOT', 'Machine') -or -not [Environment]::GetEnvironmentVariable('NOVA_COMMERCIAL_PYTHON', 'Machine')) { throw 'Machine-level dedicated commercial runtime is not configured' }
+$runtimeRoot = [Environment]::GetEnvironmentVariable('NOVA_COMMERCIAL_SOURCE_ROOT', 'Machine')
+$runtimePython = [Environment]::GetEnvironmentVariable('NOVA_COMMERCIAL_PYTHON', 'Machine')
+if (!(Test-Path -LiteralPath (Join-Path $runtimeRoot 'pharmacy/server_host.py') -PathType Leaf)) { throw 'Commercial server source missing' }
+if (!(Test-Path -LiteralPath $runtimePython -PathType Leaf)) { throw 'Dedicated commercial Python runtime missing' }
 $serviceName = 'NOVACommercialPharmacyServer'
 $displayName = 'NOVA Commercial Pharmacy Server'
 if (-not (Test-Path -LiteralPath $ExecutablePath -PathType Leaf)) {
