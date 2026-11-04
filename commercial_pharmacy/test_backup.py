@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 import tempfile
 import unittest
@@ -16,7 +17,7 @@ class BackupTests(unittest.TestCase):
             marker.write_bytes(b"unchanged")
             p = paths({"NOVA_COMMERCIAL_DATA_DIR": str(root / "commercial")})
             initialize_directories(p)
-            with open_pharmacy_database(p, protected_hospital_paths=[protected]) as conn:
+            with closing(open_pharmacy_database(p, protected_hospital_paths=[protected])) as conn:
                 conn.execute("CREATE TABLE items (id INTEGER PRIMARY KEY)")
                 conn.execute("INSERT INTO items VALUES (1)")
                 conn.commit()
