@@ -14,6 +14,7 @@ on:
       - '.github/ci/patch_commercial_database.py'
       - '.github/ci/audit_commercial_hospital_coupling.py'
       - '.github/ci/commercial_runtime_preflight.py'
+      - '.github/ci/verify_commercial_snapshot.py'
       - '.github/ci/audit_commercial_windows_identity.py'
       - '.github/ci/commercial_pharmacy_identity.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
@@ -64,6 +65,7 @@ jobs:
           python .github/ci/test_patch_commercial_brand.py
           python .github/ci/test_patch_commercial_database.py
           python .github/ci/test_commercial_runtime_preflight.py
+          python .github/ci/test_verify_commercial_snapshot.py
   snapshot:
     runs-on: windows-2025
     needs: isolated-runtime
@@ -127,6 +129,8 @@ jobs:
         run: |
           python .github/ci/stage_commercial_pharmacy.py
           if ($LASTEXITCODE -ne 0) { throw 'Staging failed' }
+          python .github/ci/verify_commercial_snapshot.py
+          if ($LASTEXITCODE -ne 0) { throw 'Snapshot source integrity failed' }
           python .github/ci/audit_commercial_pharmacy.py
           if ($LASTEXITCODE -ne 0) { throw 'Audit failed' }
           python .github/ci/audit_commercial_pharmacy_assets.py
