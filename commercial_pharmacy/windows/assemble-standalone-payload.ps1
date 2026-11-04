@@ -13,6 +13,7 @@ $runtime = (Resolve-Path -LiteralPath $PythonRuntimeDirectory).Path
 if (!(Test-Path (Join-Path $source 'pharmacy/app.py') -PathType Leaf)) { throw 'Audited pharmacy app missing' }
 if (!(Test-Path (Join-Path $source 'pharmacy/server_host.py') -PathType Leaf)) { throw 'Audited pharmacy server missing' }
 if (!(Test-Path (Join-Path $source 'EXTRACTION_MANIFEST.json') -PathType Leaf)) { throw 'Extraction evidence missing' }
+if (!(Test-Path (Join-Path $source 'COMMERCIAL_RUNTIME_PREFLIGHT.json') -PathType Leaf)) { throw 'Runtime preflight evidence missing' }
 if (!(Test-Path (Join-Path $source 'HOSPITAL_COUPLING_BLOCKERS.json') -PathType Leaf)) { throw 'Hospital coupling evidence missing' }
 if (!(Test-Path (Join-Path $source 'commercial_pharmacy/launch.py') -PathType Leaf)) { throw 'Commercial launcher source missing' }
 if (!(Test-Path (Join-Path $source 'commercial_pharmacy/runtime_isolation.py') -PathType Leaf)) { throw 'Commercial isolation source missing' }
