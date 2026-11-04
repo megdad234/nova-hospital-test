@@ -38,3 +38,7 @@ The `diagnose` command reports configured port availability, data directories an
 ## Packaging tools (candidate only)
 
 `commercial_pharmacy/windows/validate-installer-inputs.ps1` verifies that both distinct commercial Windows executables exist and have PE signatures. `build-installer-candidate.ps1` invokes Inno Setup only after this check. `check-commercial-service.ps1` reads the independent service status and TCP listener without touching hospital services. These are preparatory tools: the actual executables, live integration, signed acceptance logs and tested Setup.exe remain outstanding.
+
+## Source launcher and service adapter
+
+`python -m commercial_pharmacy.launch --source-root <extracted-source> --preflight-only` validates the patched pharmacy source, commercial data root and port without starting the server. The launch command can invoke the extracted `pharmacy/server_host.py`, but that server’s actual port handling and hospital independence remain unverified. `commercial_pharmacy/windows_service.py` is a pywin32 SCM adapter prototype, not yet bundled into a tested EXE; it intentionally requires a separately configured `NOVA_COMMERCIAL_PYTHON` runtime. No production service registration should be attempted until end-to-end Windows acceptance.
