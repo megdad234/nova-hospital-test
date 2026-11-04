@@ -8,10 +8,11 @@ class LiveServerSmokeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             run(".", ".", port=0)
 
+    @patch("commercial_pharmacy.live_server_smoke.check_port_free", return_value=True)
     @patch("commercial_pharmacy.live_server_smoke.urlopen")
     @patch("commercial_pharmacy.live_server_smoke.subprocess.Popen")
     @patch("commercial_pharmacy.live_server_smoke.prepare")
-    def test_http_success_is_not_database_acceptance(self, prepare, popen, urlopen):
+    def test_http_success_is_not_database_acceptance(self, prepare, popen, urlopen, free):
         prepare.return_value = (["python", "server.py"], {}, ".")
         process = popen.return_value
         process.poll.return_value = None
@@ -24,9 +25,10 @@ class LiveServerSmokeTests(unittest.TestCase):
         self.assertFalse(result["pos_verified"])
         process.terminate.assert_called_once()
 
+    @patch("commercial_pharmacy.live_server_smoke.check_port_free", return_value=True)
     @patch("commercial_pharmacy.live_server_smoke.subprocess.Popen")
     @patch("commercial_pharmacy.live_server_smoke.prepare")
-    def test_early_exit_reports_failure(self, prepare, popen):
+    def test_early_exit_reports_failure(self, prepare, popen, free):
         prepare.return_value = (["python", "server.py"], {}, ".")
         process = popen.return_value
         process.poll.return_value = 1
