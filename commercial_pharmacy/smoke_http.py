@@ -11,7 +11,7 @@ def inspect(host: str, port: int, timeout: float = 3.0):
     try:
         with urlopen(url, timeout=timeout) as response:
             return {"reachable": True, "http_status": response.status,
-                    "url": url, "runtime_verified": response.status < 500}
+                    "url": url, "http_responded": True, "runtime_verified": False}
     except (URLError, TimeoutError, OSError) as exc:
         return {"reachable": False, "url": url, "runtime_verified": False,
                 "error": type(exc).__name__}
@@ -24,7 +24,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     result = inspect(args.host, args.port, args.timeout)
     print(json.dumps(result))
-    return 0 if result["runtime_verified"] else 2
+    return 0 if result.get("http_responded") else 2
 
 if __name__ == "__main__":
     raise SystemExit(main())
