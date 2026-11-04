@@ -25,6 +25,8 @@ Source: "..\..\dist\commercial\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversio
 Source: "..\..\dist\commercial\{#ServerExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "install-commercial-service.ps1"; DestDir: "{app}\maintenance"; Flags: ignoreversion
 Source: "uninstall-commercial-service.ps1"; DestDir: "{app}\maintenance"; Flags: ignoreversion
+Source: "configure-lan-client.ps1"; DestDir: "{app}\maintenance"; Flags: ignoreversion
+Source: "check-service-prerequisites.ps1"; DestDir: "{app}\maintenance"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\NOVA Commercial Pharmacy"; Filename: "{app}\{#AppExe}"
