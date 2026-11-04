@@ -19,6 +19,7 @@ class DatabaseTests(unittest.TestCase):
             initialize_directories(p)
             with closing(open_pharmacy_database(p, protected_hospital_paths=[hospital])) as conn:
                 self.assertTrue(verify_pharmacy_database(conn, p))
+                self.assertEqual(conn.execute("PRAGMA database_list").fetchone()[2], str(p.database))
                 self.assertEqual(conn.execute("PRAGMA foreign_keys").fetchone()[0], 1)
                 conn.execute("CREATE TABLE IF NOT EXISTS commercial_test (id INTEGER PRIMARY KEY)")
             self.assertTrue(p.database.exists())
