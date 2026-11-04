@@ -10,6 +10,7 @@ on:
       - '.github/ci/stage_commercial_pharmacy.py'
       - '.github/ci/audit_commercial_pharmacy.py'
       - '.github/ci/commercial_pharmacy_identity.py'
+      - '.github/ci/audit_commercial_windows_identity.py'
       - '.github/ci/test_commercial_pharmacy_contract.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
       - '.github/ci/test_commercial_pharmacy_release_gate.py'
@@ -264,7 +265,7 @@ jobs:
       - name: Verify standalone pharmacy staging safeguards
         shell: pwsh
         run: |
-          python -m py_compile .github/ci/stage_commercial_pharmacy.py .github/ci/audit_commercial_pharmacy.py .github/ci/commercial_pharmacy_identity.py .github/ci/test_stage_commercial_pharmacy.py .github/ci/test_commercial_pharmacy_contract.py .github/ci/commercial_pharmacy_release_gate.py
+          python -m py_compile .github/ci/stage_commercial_pharmacy.py .github/ci/audit_commercial_pharmacy.py .github/ci/commercial_pharmacy_identity.py .github/ci/audit_commercial_windows_identity.py .github/ci/test_stage_commercial_pharmacy.py .github/ci/test_commercial_pharmacy_contract.py .github/ci/commercial_pharmacy_release_gate.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy audit scripts invalid' }
           python .github/ci/test_stage_commercial_pharmacy.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy staging safeguards failed' }
@@ -281,6 +282,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy dependency audit failed' }
           python .github/ci/commercial_pharmacy_identity.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy identity generation failed' }
+          python .github/ci/audit_commercial_windows_identity.py
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy Windows coexistence identity audit failed' }
       - name: Upload isolated pharmacy extraction source snapshot
         uses: actions/upload-artifact@v4
         with:
