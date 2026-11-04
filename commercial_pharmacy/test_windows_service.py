@@ -1,0 +1,36 @@
+"""Service command tests do not register or start any Windows service."""
+import os
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+from commercial_pharmacy.windows_service import pharmacy_command
+
+class WindowsServiceTests(unittest.TestCase):
+    def test_refuses_missing_pharmacy_server(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(FileNotFoundError):
+                pharmacy_command(Path(tmp))
+
+    def test_refuses_undeclared_python_runtime(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "pharmacy").mkdir()
+            (root / "pharmacy" / "server_host.py").write_text("pass\n")
+            with patch.dict(os.environ, {}, clear=True):
+                with self.assertRaises(RuntimeError):
+                    pharmacy_command(root)
+
+    def test_uses_explicit_commercial_python(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "pharmacy").mkdir()
+            server = root / "pharmacy" / "server_host.py"
+            server.write_text("pass\n")
+            python = root / "commercial-python.exe"
+            python.write_bytes(b"fixture")
+            with patch.dict(os.environ, {"NOVA_COMMERCIAL_PYTHON": str(python)}):
+                self.assertEqual(pharmacy_command(root), [str(python), str(server)])
+
+if __name__ == "__main__":
+    unittest.main()
