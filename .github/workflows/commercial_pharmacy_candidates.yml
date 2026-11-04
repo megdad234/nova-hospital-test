@@ -24,6 +24,11 @@ jobs:
         run: |
           $url = & ./dist/commercial/NOVACommercialPharmacy.exe --print-url
           if ($LASTEXITCODE -ne 0 -or $url.Trim() -ne "http://127.0.0.1:18763/") { throw "Frozen commercial client smoke test failed" }
+      - name: Validate both Windows candidate binaries
+        shell: pwsh
+        run: |
+          & ./commercial_pharmacy/windows/validate-installer-inputs.ps1 -SourceRoot .
+          if ($LASTEXITCODE -ne 0) { throw "Windows candidate input validation failed" }
       - uses: actions/upload-artifact@v4
         with:
           name: Commercial-EXE-CANDIDATES-NOT-INSTALLABLE
