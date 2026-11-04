@@ -26,7 +26,7 @@ class BackupTests(unittest.TestCase):
                 conn.execute("INSERT INTO items VALUES (2)")
                 conn.commit()
                 candidate = stage_restore(backup, p)
-                with sqlite3.connect(candidate) as staged:
+                with closing(sqlite3.connect(candidate)) as staged:
                     self.assertEqual(staged.execute("SELECT count(*) FROM items").fetchone()[0], 1)
                 self.assertEqual(conn.execute("SELECT count(*) FROM items").fetchone()[0], 2)
             self.assertEqual(marker.read_bytes(), b"unchanged")
