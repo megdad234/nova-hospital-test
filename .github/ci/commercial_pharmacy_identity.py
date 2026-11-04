@@ -9,7 +9,7 @@ import os
 import secrets
 import sys
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(os.environ.get("NOVA_EXTRACTION_ROOT", str(Path(__file__).resolve().parents[2]))).resolve()
 STAGE = ROOT / "commercial_pharmacy_stage"
 MANIFEST = STAGE / "EXTRACTION_MANIFEST.json"
 if not MANIFEST.is_file():
