@@ -42,3 +42,7 @@ The `diagnose` command reports configured port availability, data directories an
 ## Source launcher and service adapter
 
 `python -m commercial_pharmacy.launch --source-root <extracted-source> --preflight-only` validates the patched pharmacy source, commercial data root and port without starting the server. The launch command can invoke the extracted `pharmacy/server_host.py`, but that server’s actual port handling and hospital independence remain unverified. `commercial_pharmacy/windows_service.py` is a pywin32 SCM adapter prototype, not yet bundled into a tested EXE; it intentionally requires a separately configured `NOVA_COMMERCIAL_PYTHON` runtime. No production service registration should be attempted until end-to-end Windows acceptance.
+
+## LAN desktop launcher
+
+`python -m commercial_pharmacy.desktop_client --host 192.168.1.10 --port 18763` opens the independent pharmacy URL in the default browser. `--print-url` outputs the URL without opening a browser. The host must be a valid IPv4 LAN address or hostname; reserved hospital port 10080 is rejected. This does not provide automatic server discovery or an installable desktop EXE; those still require runtime integration and Windows packaging.
