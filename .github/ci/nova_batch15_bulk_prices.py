@@ -141,5 +141,17 @@ s=s.replace(permission_anchor,"'/api/v1/nova-price-list-history':'prices',"+perm
 rollback_anchor="'/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),"
 assert s.count(rollback_anchor)==1
 s=s.replace(rollback_anchor,rollback_anchor+"\n                     '/api/v1/nova-price-list-rollback':('prices',lambda:nova_price_list_rollback(c,data,u['id'])),")
+# Ship the price-list screen with the installed offline pharmacy client.
+ui=Path(".github/ci/nova_bulk_prices_ui.js").read_text(encoding="utf-8")
+Path("pharmacy/static/nova_bulk_prices_ui.js").write_text(ui,encoding="utf-8")
+static_anchor="'/static/nova_pharmacy_batch08.js','/static/logo.png'"
+assert s.count(static_anchor)==1
+s=s.replace(static_anchor,"'/static/nova_pharmacy_batch08.js','/static/nova_bulk_prices_ui.js','/static/logo.png'")
+index=Path("pharmacy/static/index.html")
+html=index.read_text(encoding="utf-8")
+script_anchor='<script src="/static/nova_pharmacy_batch08.js"></script>'
+assert html.count(script_anchor)==1
+html=html.replace(script_anchor,script_anchor+'<script src="/static/nova_bulk_prices_ui.js"></script>')
+index.write_text(html,encoding="utf-8")
 p.write_text(s,encoding="utf-8")
 print("NOVA_PRICE_LIST_BACKEND_INTEGRATED")
