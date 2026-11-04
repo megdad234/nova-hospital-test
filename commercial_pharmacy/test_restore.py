@@ -39,5 +39,20 @@ class OfflineRestoreTests(unittest.TestCase):
                 self.assertEqual(previous.execute("SELECT COUNT(*) FROM stock").fetchone()[0], 2)
             self.assertEqual(hospital_marker.read_bytes(), b"protected")
 
+    def test_invalid_restore_preserves_database(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config = paths({"NOVA_COMMERCIAL_DATA_DIR": str(Path(tmp) / "commercial")})
+            initialize_directories(config)
+            with closing(open_pharmacy_database(config)) as conn:
+                conn.execute("CREATE TABLE stock (id INTEGER)")
+                conn.execute("INSERT INTO stock VALUES (42)")
+                conn.commit()
+            bad = config.backups / "invalid.sqlite3"
+            bad.write_bytes(b"invalid sqlite")
+            with self.assertRaises((sqlite3.DatabaseError, ValueError)):
+                restore_offline(bad, config, service_stopped=True)
+            with closing(sqlite3.connect(config.database)) as conn:
+                self.assertEqual(conn.execute("SELECT id FROM stock").fetchone()[0], 42)
+
 if __name__ == "__main__":
     unittest.main()
