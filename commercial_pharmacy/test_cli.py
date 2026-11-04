@@ -57,6 +57,9 @@ class CliTests(unittest.TestCase):
             self.assertEqual(self.invoke("--data-dir", str(data), "list-backups")["backups"], [])
             self.assertEqual(result["database_integrity"], "ok")
             self.assertTrue(result["database_exists"])
+            health = self.invoke("--data-dir", str(data), "check-database")
+            self.assertEqual(health["integrity"], "ok")
+            self.assertTrue(health["read_only"])
             with sqlite3.connect(database) as conn:
                 self.assertEqual(conn.execute("SELECT COUNT(*) FROM inventory").fetchone()[0], 1)
 
