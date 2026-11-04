@@ -15,6 +15,9 @@ def verify_snapshot(stage: Path):
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     issues = []
     for rel, expected in manifest.get("sha256", {}).items():
+        if Path(rel).is_absolute() or ".." in Path(rel).parts:
+            issues.append("unsafe manifest path: " + rel)
+            continue
         path = stage / rel
         if path.is_symlink() or not path.is_file() or stage.resolve() not in path.resolve().parents:
             issues.append("missing or unsafe source file: " + rel)
