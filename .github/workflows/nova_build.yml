@@ -49,6 +49,7 @@ on:
       - 'docs/NOVA_BATCH12_INSURANCE_PATIENT_LINK_AR.md'
       - '.github/ci/nova_batch15_integration_audit.py'
       - '.github/ci/nova_batch15_bulk_prices.py'
+      - '.github/ci/nova_bulk_prices_ui.js'
       - '.github/ci/nova_batch14_pos_discount.py'
       - '.github/ci/nova_batch14_finance_tests.py'
       - '.github/ci/nova_pos_source_audit.py'
