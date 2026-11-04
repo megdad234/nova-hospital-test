@@ -10,6 +10,8 @@ on:
       - '.github/ci/stage_commercial_pharmacy.py'
       - '.github/ci/audit_commercial_pharmacy.py'
       - '.github/ci/commercial_pharmacy_identity.py'
+      - '.github/ci/test_commercial_pharmacy_contract.py'
+      - '.github/ci/commercial_pharmacy_release_gate.py'
       - '.github/ci/test_stage_commercial_pharmacy.py'
       - '.github/ci/nova_price_list_*.py'
       - '.github/ci/test_nova_price_list_*.py'
@@ -261,10 +263,12 @@ jobs:
       - name: Verify standalone pharmacy staging safeguards
         shell: pwsh
         run: |
-          python -m py_compile .github/ci/stage_commercial_pharmacy.py .github/ci/audit_commercial_pharmacy.py .github/ci/commercial_pharmacy_identity.py .github/ci/test_stage_commercial_pharmacy.py
+          python -m py_compile .github/ci/stage_commercial_pharmacy.py .github/ci/audit_commercial_pharmacy.py .github/ci/commercial_pharmacy_identity.py .github/ci/test_stage_commercial_pharmacy.py .github/ci/test_commercial_pharmacy_contract.py .github/ci/commercial_pharmacy_release_gate.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy audit scripts invalid' }
           python .github/ci/test_stage_commercial_pharmacy.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy staging safeguards failed' }
+          python .github/ci/test_commercial_pharmacy_contract.py
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy isolation contract tests failed' }
       - name: Stage commercial pharmacy source after all NOVA patches
         shell: pwsh
         run: |
