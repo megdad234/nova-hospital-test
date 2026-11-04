@@ -17,7 +17,7 @@ def pharmacy_command(root: Path):
     entry = root / "pharmacy" / "server_host.py"
     if not entry.is_file():
         raise FileNotFoundError(str(entry))
-    python = os.environ.get("NOVA_COMMERCIAL_PYTHON")
+    python = os.environ.get("NOVA_COMMERCIAL_PYTHON") or str(root / "runtime" / "python.exe")
     if not python or not Path(python).is_file():
         raise RuntimeError("Dedicated commercial Python runtime has not been configured")
     return [python, str(entry)]
