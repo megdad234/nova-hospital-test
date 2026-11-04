@@ -57,11 +57,11 @@ def nova_price_list_preview(c,p):
                 else:multiplier=1+pct/100
                 proposed=int((price*multiplier).quantize(Decimal('1'),rounding=ROUND_HALF_UP))
                 if 0<proposed<=1000000000000:
-                    record.update(status='matched',package_id=int(pk['id']),
+                    record.update({'status':'matched','package_id':int(pk['id']),
                         'old_sale_price':int(pk['sale_price']),'old_purchase_cost':str(old_cost),
                         'last_purchase_line_id':int(last['id']),
                         'proposed_sale_price':proposed,
-                        'selected':proposed!=int(pk['sale_price']))
+                        'selected':proposed!=int(pk['sale_price'])})
         result.append(record)
     counts={x:sum(r['status']==x for r in result) for x in ('matched','review','missing_cost')}
     return {'rows':result,'counts':counts,'saved':False}
