@@ -51,6 +51,11 @@ foreach ($name in @('NOVACommercialPharmacy.exe','NOVACommercialPharmacyServer.e
 & (Join-Path $PSScriptRoot 'check-runtime-payload.ps1') -InstallRoot $Destination
 if ($LASTEXITCODE -ne 0) { throw 'Runtime payload preflight failed' }
 $probe = Join-Path $Destination 'COMMERCIAL_LIVE_SMOKE.json'
-& (Join-Path $Destination 'runtime/python.exe') -m commercial_pharmacy.live_server_smoke --source-root $Destination --data-dir (Join-Path $env:TEMP 'NOVACommercialAssemblySmoke') --port 18763 --timeout 30 --output $probe
-if ($LASTEXITCODE -ne 0) { throw 'Standalone payload failed actual HTTP server smoke; inspect COMMERCIAL_LIVE_SMOKE.json' }
+Push-Location $Destination
+try {
+  & (Join-Path $Destination 'runtime/python.exe') -m commercial_pharmacy.live_server_smoke --source-root $Destination --data-dir (Join-Path $env:TEMP 'NOVACommercialAssemblySmoke') --port 18763 --timeout 30 --output $probe
+  if ($LASTEXITCODE -ne 0) { throw 'Standalone payload failed actual HTTP server smoke; inspect COMMERCIAL_LIVE_SMOKE.json' }
+} finally {
+  Pop-Location
+}
 Write-Host 'COMMERCIAL_PAYLOAD_ASSEMBLED_CANDIDATE_NOT_RELEASE_APPROVED'
