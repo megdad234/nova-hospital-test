@@ -6,11 +6,11 @@ from pathlib import Path
 
 source=Path("pharmacy/app.py").read_text(encoding="utf-8")
 tree=ast.parse(source)
-names={"nova_price_list_preview","nova_price_list_approve","nova_price_list_history","nova_price_list_rollback"}
+names={"nova_price_list_preview","nova_price_list_approve","nova_price_list_history","nova_price_list_rollback","nova_price_signature"}
 functions=[node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name in names]
 assert {node.name for node in functions}==names
 # Extract functions so the test cannot start the pharmacy server or alter its production DB.
-namespace={"Decimal":__import__("decimal").Decimal,"json":__import__("json")}
+namespace={"Decimal":__import__("decimal").Decimal,"json":__import__("json"),"_nova_hmac":__import__("hmac"),"_nova_hashlib":__import__("hashlib"),"_nova_price_preview_secret":b"test-only-secret"}
 exec(compile(ast.Module(body=functions,type_ignores=[]),"pharmacy/app.py","exec"),namespace)
 c=sqlite3.connect(":memory:",isolation_level=None)
 c.row_factory=sqlite3.Row
@@ -37,11 +37,11 @@ row={"name":"Paracetamol","strength":"500mg","pack":"box","barcode":"ABC","purch
 result=preview(c,{"rows":[row]})["rows"][0]
 assert result["status"]=="matched" and result["proposed_sale_price"]==8400,result
 assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==6000
-approved=approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":8400}]},1)
+approved=approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":8400,"approval_token":result["approval_token"]}]},1)
 assert approved["updated"]==1
 assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==8400
 try:
- approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":9000}]},1)
+ approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":9000,"approval_token":result["approval_token"]}]},1)
  raise AssertionError("stale update was allowed")
 except ValueError:pass
 assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==8400
