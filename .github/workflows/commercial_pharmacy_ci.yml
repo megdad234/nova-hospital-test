@@ -151,6 +151,13 @@ jobs:
       - name: Real server smoke on Windows
         shell: pwsh
         run: python -m commercial_pharmacy.live_server_smoke --source-root . --data-dir "$env:RUNNER_TEMP/NOVACommercialSmoke" --output commercial_live_smoke.json
+      - name: Preserve live server result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Commercial-Windows-Live-Smoke-Result
+          path: commercial_live_smoke.json
+          if-no-files-found: warn
       - name: Create audited source snapshot
         shell: pwsh
         run: |
