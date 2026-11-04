@@ -1,5 +1,6 @@
 """Exercise standalone SQLite guard without using any NOVA Hospital database."""
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 import tempfile
 import unittest
@@ -16,7 +17,7 @@ class DatabaseTests(unittest.TestCase):
             hospital_db.write_bytes(b"DO NOT TOUCH")
             p = paths({"NOVA_COMMERCIAL_DATA_DIR": str(Path(temp) / "commercial")})
             initialize_directories(p)
-            with open_pharmacy_database(p, protected_hospital_paths=[hospital]) as conn:
+            with closing(open_pharmacy_database(p, protected_hospital_paths=[hospital])) as conn:
                 self.assertTrue(verify_pharmacy_database(conn, p))
                 self.assertEqual(conn.execute("PRAGMA foreign_keys").fetchone()[0], 1)
                 conn.execute("CREATE TABLE IF NOT EXISTS commercial_test (id INTEGER PRIMARY KEY)")
