@@ -15,6 +15,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 from .launch import prepare
+from .runtime_isolation import check_port_free
 
 
 def run(source_root, data_dir, port=18763, timeout=25.0):
@@ -22,6 +23,11 @@ def run(source_root, data_dir, port=18763, timeout=25.0):
         raise ValueError("Invalid commercial port")
     if timeout <= 0:
         raise ValueError("Timeout must be positive")
+    if not check_port_free(port):
+        return {"server_started": False, "http_responded": False,
+                "database_verified": False, "pos_verified": False,
+                "installer_verified": False, "port": port,
+                "error": "port_already_in_use"}
     command, env, cwd = prepare(source_root, data_dir=data_dir, port=port)
     # Never inherit a production hospital database override.
     env.pop("NOVA_HOSPITAL_DATA_DIR", None)
