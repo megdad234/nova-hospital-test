@@ -7,6 +7,8 @@ on:
       - '.github/workflows/nova_build.yml'
       - '.github/ci/windows_sqlite_test_cleanup.py'
       - '.github/ci/patch_upgrade_hash.py'
+      - '.github/ci/nova_price_list_*.py'
+      - '.github/ci/test_nova_price_list_*.py'
       - '.github/ci/nova_batch01_patch.py'
       - '.github/ci/nova_batch02_patch.py'
       - '.github/ci/nova_batch03_patch.py'
