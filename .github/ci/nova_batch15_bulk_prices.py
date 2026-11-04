@@ -66,6 +66,41 @@ def nova_price_list_preview(c,p):
     counts={x:sum(r['status']==x for r in result) for x in ('matched','review','missing_cost')}
     return {'rows':result,'counts':counts,'saved':False}
 
+def nova_price_list_history(c):
+    records=c.execute("""SELECT id,created_at,user_id,action,details FROM audit
+        WHERE action IN ('bulk_supplier_price_list_approved','bulk_supplier_price_list_rollback')
+        ORDER BY id DESC LIMIT 100""").fetchall()
+    import json as _json
+    return [{'id':r['id'],'created_at':r['created_at'],'user_id':r['user_id'],
+             'action':r['action'],'details':_json.loads(r['details'])} for r in records]
+
+def nova_price_list_rollback(c,p,uid):
+    import json as _json
+    source_id=int(p.get('audit_id',0))
+    if source_id<=0:raise ValueError('عملية الاعتماد غير صحيحة')
+    begin(c)
+    try:
+        row=c.execute("""SELECT details FROM audit WHERE id=?
+            AND action='bulk_supplier_price_list_approved'""",(source_id,)).fetchone()
+        if not row:raise ValueError('عملية الاعتماد غير موجودة')
+        already=c.execute("""SELECT 1 FROM audit
+            WHERE action='bulk_supplier_price_list_rollback'
+            AND json_extract(details,'$.source_audit_id')=? LIMIT 1""",(source_id,)).fetchone()
+        if already:raise ValueError('تم التراجع عن العملية مسبقاً')
+        updates=_json.loads(row['details'])['updates']
+        for x in updates:
+            pid=int(x['package_id']);old=int(x['old']);new=int(x['new'])
+            if c.execute('UPDATE packages SET sale_price=? WHERE id=? AND sale_price=?',
+                (old,pid,new)).rowcount!=1:
+                raise ValueError('بعض الأسعار تغيرت لاحقاً؛ لا يمكن التراجع تلقائياً')
+        audit(c,uid,'bulk_supplier_price_list_rollback',
+              {'source_audit_id':source_id,'updates':updates})
+        finish(c)
+        return {'restored':len(updates),'source_audit_id':source_id}
+    except Exception:
+        rollback(c)
+        raise
+
 def nova_price_list_approve(c,p,uid):
     """Optimistic conditional update; entire approval is one transaction."""
     items=p.get('items')
@@ -97,5 +132,14 @@ s=s.replace(anchor,helpers+anchor)
 anchor2="'/api/v1/nova-reprice-unpriced':('prices',lambda:nova_bulk_unpriced(c,data,u['id'])),"
 assert s.count(anchor2)==1
 s=s.replace(anchor2,"'/api/v1/nova-price-list-preview':('prices',lambda:nova_price_list_preview(c,data)),\n                     '/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),\n                     "+anchor2)
+get_anchor="'/api/v1/products':lambda:catalog(c),"
+assert s.count(get_anchor)==1
+s=s.replace(get_anchor,"'/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\\n                     "+get_anchor)
+permission_anchor="'/api/v1/products':'catalog'"
+assert s.count(permission_anchor)>=1
+s=s.replace(permission_anchor,"'/api/v1/nova-price-list-history':'prices',"+permission_anchor,1)
+rollback_anchor="'/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),"
+assert s.count(rollback_anchor)==1
+s=s.replace(rollback_anchor,rollback_anchor+"\\n                     '/api/v1/nova-price-list-rollback':('prices',lambda:nova_price_list_rollback(c,data,u['id'])),")
 p.write_text(s,encoding="utf-8")
 print("NOVA_PRICE_LIST_BACKEND_INTEGRATED")
