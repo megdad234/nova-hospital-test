@@ -134,12 +134,12 @@ assert s.count(anchor2)==1
 s=s.replace(anchor2,"'/api/v1/nova-price-list-preview':('prices',lambda:nova_price_list_preview(c,data)),\n                     '/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),\n                     "+anchor2)
 get_anchor="'/api/v1/products':lambda:catalog(c),"
 assert s.count(get_anchor)==1
-s=s.replace(get_anchor,"'/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\\n                     "+get_anchor)
+s=s.replace(get_anchor,"'/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\n                     "+get_anchor)
 permission_anchor="'/api/v1/products':'catalog'"
 assert s.count(permission_anchor)>=1
 s=s.replace(permission_anchor,"'/api/v1/nova-price-list-history':'prices',"+permission_anchor,1)
 rollback_anchor="'/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),"
 assert s.count(rollback_anchor)==1
-s=s.replace(rollback_anchor,rollback_anchor+"\\n                     '/api/v1/nova-price-list-rollback':('prices',lambda:nova_price_list_rollback(c,data,u['id'])),")
+s=s.replace(rollback_anchor,rollback_anchor+"\n                     '/api/v1/nova-price-list-rollback':('prices',lambda:nova_price_list_rollback(c,data,u['id'])),")
 p.write_text(s,encoding="utf-8")
 print("NOVA_PRICE_LIST_BACKEND_INTEGRATED")
