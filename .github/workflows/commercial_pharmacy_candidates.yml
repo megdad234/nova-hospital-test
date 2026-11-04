@@ -30,6 +30,11 @@ jobs:
         run: |
           & ./commercial_pharmacy/windows/validate-installer-inputs.ps1 -SourceRoot .
           if ($LASTEXITCODE -ne 0) { throw "Windows candidate input validation failed" }
+      - name: Reject missing isolated pharmacy runtime payload
+        shell: pwsh
+        run: |
+          if (Test-Path dist/commercial/pharmacy) { throw "Unexpected unverified pharmacy source in launcher-only artifact" }
+          Write-Host "LAUNCHER_ONLY_CANDIDATE_NOT_INSTALLABLE"
       - name: Record candidate executable hashes
         shell: pwsh
         run: |
