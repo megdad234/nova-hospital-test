@@ -11,6 +11,7 @@ on:
       - '.github/ci/locate_commercial_integration_points.py'
       - '.github/ci/patch_commercial_insurance.py'
       - '.github/ci/patch_commercial_brand.py'
+      - '.github/ci/patch_commercial_database.py'
       - '.github/ci/audit_commercial_windows_identity.py'
       - '.github/ci/commercial_pharmacy_identity.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
@@ -59,6 +60,7 @@ jobs:
           python .github/ci/test_commercial_pharmacy_release_gate.py
           python .github/ci/test_patch_commercial_insurance.py
           python .github/ci/test_patch_commercial_brand.py
+          python .github/ci/test_patch_commercial_database.py
   snapshot:
     runs-on: windows-2025
     needs: isolated-runtime
@@ -100,6 +102,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "NOVA Batch15 integration preflight failed" }
           python .github/ci/nova_batch15_bulk_prices.py
           if ($LASTEXITCODE -ne 0) { throw "NOVA Batch15 bulk prices failed" }
+      - name: Isolate pharmacy database globals from NOVA Hospital
+        shell: pwsh
+        run: |
+          python .github/ci/patch_commercial_database.py
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial database isolation failed' }
       - name: Decouple pharmacy insurance from hospital patient records
         shell: pwsh
         run: |
