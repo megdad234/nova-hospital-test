@@ -5,11 +5,12 @@ No source rewriting, DB migration, or installer publication happens here.
 from __future__ import annotations
 import ast
 import json
+import os
 from pathlib import Path
 import re
 import sys
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(os.environ.get("NOVA_EXTRACTION_ROOT", str(Path(__file__).resolve().parents[2]))).resolve()
 STAGE = ROOT / "commercial_pharmacy_stage"
 if not (STAGE / "EXTRACTION_MANIFEST.json").is_file():
     raise SystemExit("RUN_STAGE_FIRST")
