@@ -10,7 +10,7 @@ class LaunchTests(unittest.TestCase):
             root = Path(tmp)
             pharmacy = root / "pharmacy"
             pharmacy.mkdir()
-            (pharmacy / "app.py").write_text("NOVA_COMMERCIAL_DATA_DIR commercial_pharmacy.sqlite3")
+            (pharmacy / "app.py").write_text("DATA = 'NOVA_COMMERCIAL_DATA_DIR'\nDB = 'commercial_pharmacy.sqlite3'\n")
             (pharmacy / "server_host.py").write_text("pass\n")
             data = root / "commercial_data"
             command, env, cwd = prepare(root, data, 18763)
@@ -35,7 +35,7 @@ class LaunchTests(unittest.TestCase):
             root = Path(tmp)
             pharmacy = root / "pharmacy"
             pharmacy.mkdir()
-            (pharmacy / "app.py").write_text("NOVA_COMMERCIAL_DATA_DIR commercial_pharmacy.sqlite3")
+            (pharmacy / "app.py").write_text("DATA = 'NOVA_COMMERCIAL_DATA_DIR'\nDB = 'commercial_pharmacy.sqlite3'\n")
             (pharmacy / "server_host.py").write_text("pass\n")
             hospital = root / "hospital"
             hospital.mkdir()
