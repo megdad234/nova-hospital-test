@@ -53,6 +53,8 @@ def inspect(stage: Path):
     blocker_file = stage / "HOSPITAL_COUPLING_BLOCKERS.json"
     if blocker_file.is_file():
         blockers = json.loads(blocker_file.read_text(encoding="utf-8"))
+        if blockers.get("standalone_network_and_schema_clear") is not True:
+            errors.append("hospital coupling audit not cleared")
         if blockers.get("unresolved"):
             errors.append(f"remaining hospital dependencies: {len(blockers['unresolved'])}")
     return {"preflight_passed": not errors, "errors": errors,
