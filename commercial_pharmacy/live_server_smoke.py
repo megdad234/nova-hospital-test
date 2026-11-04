@@ -31,6 +31,7 @@ def run(source_root, data_dir, port=18763, timeout=25.0):
     command, env, cwd = prepare(source_root, data_dir=data_dir, port=port)
     # Never inherit a production hospital database override.
     env.pop("NOVA_HOSPITAL_DATA_DIR", None)
+    env["PYTHONNOUSERSITE"] = "1"
     result = {"server_started": False, "http_responded": False,
               "database_verified": False, "pos_verified": False,
               "installer_verified": False, "port": port}
