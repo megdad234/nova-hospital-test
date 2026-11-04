@@ -48,8 +48,8 @@ for name, node in nodes.items():
     CREATE TABLE IF NOT EXISTS nova_pharmacy_insured_people('''
         revised = revised.replace(anchor, replacement, 1)
     if name == "nova_insured_enroll":
-        revised = revised.replace("'hospital_patient_created_from_pharmacy'",
-                                  "'commercial_pharmacy_patient_created'")
+        revised = revised.replace("hospital_patient_created_from_pharmacy",
+                                  "commercial_pharmacy_patient_created")
     patched.append((node.lineno-1, node.end_lineno, revised))
 for start, end, replacement in sorted(patched, reverse=True):
     lines[start:end] = [replacement]
