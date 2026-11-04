@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import sys
 import sqlite3
+from datetime import datetime, timezone
 from .backup import create_backup, inspect_backup
 from .database import open_pharmacy_database
 from .restore import restore_offline
@@ -29,6 +30,8 @@ def parser():
     commands.add_parser("initialize")
     commands.add_parser("check-database")
     commands.add_parser("list-backups")
+    automatic = commands.add_parser("backup-auto")
+    automatic.add_argument("--retain", type=int, default=30)
     backup = commands.add_parser("backup")
     backup.add_argument("filename")
     check = commands.add_parser("verify-backup")
@@ -75,6 +78,23 @@ def run(argv=None):
             if item.is_file() and not item.is_symlink()
             and item.suffix.lower() in (".sqlite3", ".sqlite", ".db")
         ] if config.backups.is_dir() else []}
+    elif args.command == "backup-auto":
+        if not 1 <= args.retain <= 365:
+            raise ValueError("Automatic backup retention must be 1 to 365")
+        if not config.database.is_file():
+            raise FileNotFoundError("Commercial database does not exist")
+        with closing(open_pharmacy_database(config, protected_hospital_paths=args.protect_hospital_dir)) as conn:
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+            backup_path = create_backup(conn, config, "auto-" + stamp + ".sqlite3")
+        backups = sorted((p for p in config.backups.glob("auto-*.sqlite3")
+                          if p.is_file() and not p.is_symlink()),
+                         key=lambda p: p.name, reverse=True)
+        removed = []
+        for old in backups[args.retain:]:
+            old.unlink()
+            removed.append(old.name)
+        result = {"backup": str(backup_path), "retained": min(len(backups), args.retain),
+                  "removed_automatic_backups": removed}
     elif args.command == "backup":
         if not config.database.is_file():
             raise FileNotFoundError("Commercial database does not exist")
