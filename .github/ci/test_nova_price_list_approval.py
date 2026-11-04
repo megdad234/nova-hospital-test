@@ -11,6 +11,7 @@ class ApprovalTests(unittest.TestCase):
         self.db=sqlite3.connect(":memory:")
         self.db.execute("CREATE TABLE packages(id INTEGER PRIMARY KEY, sale_price INTEGER)")
         self.db.execute("INSERT INTO packages VALUES(11,3000)")
+        self.db.commit()
         self.rows=[dict(package_id=11,status="ready",selected=True,old_sale=3000,
                         new_purchase=2500,proposed_sale=3750)]
         self.audit=[]
@@ -33,6 +34,7 @@ class ApprovalTests(unittest.TestCase):
     def test_concurrent_update_rejected(self):
         changes=validate_approval(self.rows,{11:{"action":"approve"}},{11:3000})
         self.db.execute("UPDATE packages SET sale_price=3200 WHERE id=11")
+        self.db.commit()
         with self.assertRaises(ValueError):
             with self.db:
                 apply_approved(self.db,changes,lambda action,data:None)
@@ -42,6 +44,7 @@ class ApprovalTests(unittest.TestCase):
         with self.db:
             apply_approved(self.db,changes,lambda action,data:None)
         self.db.execute("UPDATE packages SET sale_price=4000 WHERE id=11")
+        self.db.commit()
         with self.assertRaises(ValueError):
             with self.db:
                 rollback_approved(self.db,changes,lambda action,data:None)
