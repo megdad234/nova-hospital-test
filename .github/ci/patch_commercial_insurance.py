@@ -73,8 +73,8 @@ ui = ui.replace("قاعدة المستشفى المركزية", "قاعدة بي
 ui = ui.replace("مرتبط بملف المريض", "مرتبط بملف عميل الصيدلية")
 if old_endpoint in updated or "nova-hospital-patient-search" in ui:
     raise SystemExit("COMMERCIAL_INSURANCE_HOSPITAL_SEARCH_REMAINS")
-TARGET.write_text(updated, encoding="utf-8")
-ui_path.write_text(ui, encoding="utf-8")
 if "REFERENCES commercial_pharmacy_patients(id)" not in updated:
     raise SystemExit("COMMERCIAL_INSURANCE_FOREIGN_KEY_NOT_MIGRATED")
+TARGET.write_text(updated, encoding="utf-8")
+ui_path.write_text(ui, encoding="utf-8")
 print("COMMERCIAL_INSURANCE_DECOUPLED_FROM_HOSPITAL_PATIENT_TABLE")
