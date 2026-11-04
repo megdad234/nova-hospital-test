@@ -46,3 +46,7 @@ The `diagnose` command reports configured port availability, data directories an
 ## LAN desktop launcher
 
 `python -m commercial_pharmacy.desktop_client --host 192.168.1.10 --port 18763` opens the independent pharmacy URL in the default browser. `--print-url` outputs the URL without opening a browser. The host must be a valid IPv4 LAN address or hostname; reserved hospital port 10080 is rejected. This does not provide automatic server discovery or an installable desktop EXE; those still require runtime integration and Windows packaging.
+
+## Windows candidate build workflow
+
+`.github/workflows/commercial_pharmacy_candidates.yml` builds two PyInstaller EXE candidates on the commercial branch, smoke-tests the LAN client URL and checks both executable headers. Artifact: `Commercial-EXE-CANDIDATES-NOT-INSTALLABLE`. The service candidate still needs a dedicated Python runtime, extracted pharmacy source, and live SCM acceptance; do not install it as a production Windows service or distribute it as Setup.exe. The source-only Windows snapshot and release gate remain separate.
