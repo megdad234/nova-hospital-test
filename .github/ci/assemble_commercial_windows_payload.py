@@ -25,6 +25,12 @@ def assemble(stage: Path, runtime: Path, destination: Path):
     manifest = stage / "EXTRACTION_MANIFEST.json"
     if not manifest.is_file() or json.loads(manifest.read_text(encoding="utf-8")).get("status") != "SOURCE_SNAPSHOT_ONLY_NOT_INSTALLABLE":
         raise ValueError("Audited source snapshot manifest required")
+    blockers_path = stage / "HOSPITAL_COUPLING_BLOCKERS.json"
+    if not blockers_path.is_file():
+        raise ValueError("Hospital coupling audit required")
+    blockers = json.loads(blockers_path.read_text(encoding="utf-8"))
+    if blockers.get("standalone_network_and_schema_clear") is not True or blockers.get("unresolved"):
+        raise ValueError("Hospital coupling is not cleared")
     for relative in REQUIRED:
         if not (stage / relative).is_file():
             raise FileNotFoundError(relative)
