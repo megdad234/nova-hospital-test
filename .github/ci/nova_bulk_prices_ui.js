@@ -45,7 +45,7 @@ previewBtn.onclick=async()=>{try{
  grid.append(table);status.textContent='المعاينة فقط؛ لم يتم تعديل أي سعر.';
  }catch(e){status.textContent=e.message}};
 approveBtn.onclick=async()=>{try{
- const items=preview.filter(r=>r._checkbox?.checked&&r.status==='matched').map(r=>({package_id:r.package_id,old_sale_price:r.old_sale_price,proposed_sale_price:r.proposed_sale_price}));
+ const items=preview.filter(r=>r._checkbox?.checked&&r.status==='matched').map(r=>({package_id:r.package_id,old_sale_price:r.old_sale_price,proposed_sale_price:r.proposed_sale_price,approval_token:r.approval_token}));
  if(!items.length)throw Error('حدد صنفاً واحداً على الأقل');
  if(!confirm('اعتماد '+items.length+' سعر بيع؟'))return;
  const data=await request('nova-price-list-approve',{items});status.textContent='تم اعتماد '+data.updated+' سعر. راجع السجل للتراجع.';approveBtn.disabled=true;
