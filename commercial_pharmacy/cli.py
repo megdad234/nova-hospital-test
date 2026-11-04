@@ -13,7 +13,7 @@ from .backup import create_backup, inspect_backup
 from .database import open_pharmacy_database
 from .restore import restore_offline
 from .runtime_isolation import (
-    choose_port, initialize_directories, paths, validate_paths,
+    check_port_free, choose_port, initialize_directories, paths, validate_paths,
     write_runtime_config,
 )
 from contextlib import closing
@@ -24,6 +24,7 @@ def parser():
     p.add_argument("--protect-hospital-dir", type=Path, action="append", default=[])
     commands = p.add_subparsers(dest="command", required=True)
     commands.add_parser("inspect")
+    commands.add_parser("diagnose")
     commands.add_parser("initialize")
     commands.add_parser("check-database")
     backup = commands.add_parser("backup")
@@ -44,6 +45,21 @@ def run(argv=None):
                   "port": choose_port(), "initialized": config.data.is_dir(),
                   "database_exists": config.database.is_file(),
                   "hospital_database_enabled": False}
+    elif args.command == "diagnose":
+        result = {"product": "NOVACommercialPharmacy",
+                  "database": str(config.database),
+                  "database_exists": config.database.is_file(),
+                  "port": choose_port(),
+                  "port_available": check_port_free(choose_port()),
+                  "backups_directory_exists": config.backups.is_dir(),
+                  "logs_directory_exists": config.logs.is_dir(),
+                  "hospital_database_enabled": False,
+                  "hospital_service_enabled": False}
+        if config.database.is_file():
+            from .database import verify_pharmacy_database
+            with closing(open_pharmacy_database(config, protected_hospital_paths=args.protect_hospital_dir)) as conn:
+                verify_pharmacy_database(conn, config)
+                result["database_integrity"] = conn.execute("PRAGMA integrity_check").fetchone()[0]
     elif args.command == "initialize":
         result = write_runtime_config(config)
     elif args.command == "check-database":
