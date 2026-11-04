@@ -20,6 +20,7 @@ def prepare(source_root, data_dir=None, port=None, protected_hospital_paths=()):
         raise RuntimeError("Commercial database patch not applied")
     if "NOVA_COMMERCIAL_PORT" not in entry.read_text(encoding="utf-8"):
         raise RuntimeError("Server does not honor commercial port override")
+    ast.parse(entry.read_text(encoding="utf-8"), filename=str(entry))
     env = dict(os.environ)
     if data_dir is not None:
         env["NOVA_COMMERCIAL_DATA_DIR"] = str(Path(data_dir).resolve())
