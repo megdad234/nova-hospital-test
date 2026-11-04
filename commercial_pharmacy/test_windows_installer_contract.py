@@ -25,6 +25,12 @@ class InstallerContractTests(unittest.TestCase):
         source = (WINDOWS / "build-installer-candidate.ps1").read_text(encoding="utf-8")
         self.assertIn("NOVA_COMMERCIAL_ALLOW_UNVERIFIED_INSTALLER", source)
 
+    def test_service_requires_machine_level_runtime(self):
+        source = (WINDOWS / "install-commercial-service.ps1").read_text(encoding="utf-8")
+        self.assertIn("NOVA_COMMERCIAL_SOURCE_ROOT", source)
+        self.assertIn("NOVA_COMMERCIAL_PYTHON", source)
+        self.assertIn("Machine", source)
+
     def test_scheduled_backup_scripts_are_commercial_only(self):
         install = (WINDOWS / "install-backup-task.ps1").read_text(encoding="utf-8")
         uninstall = (WINDOWS / "uninstall-backup-task.ps1").read_text(encoding="utf-8")
