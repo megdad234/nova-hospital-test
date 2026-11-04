@@ -32,6 +32,8 @@ def nova_price_list_preview(c,p):
         hits=[]
         for pk in catalog_rows:
             if barcode and pk['barcode'] and barcode==str(pk['barcode']):
+                if strength and norm(pk['strength'])!=strength:continue
+                if pack and norm(pk['unit_name'])!=pack:continue
                 hits.append(pk);continue
             if norm(pk['name'])!=norm(name):continue
             if strength and norm(pk['strength'])!=strength:continue
