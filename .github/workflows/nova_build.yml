@@ -50,6 +50,7 @@ on:
       - '.github/ci/nova_batch15_integration_audit.py'
       - '.github/ci/nova_batch15_bulk_prices.py'
       - '.github/ci/nova_bulk_prices_ui.js'
+      - '.github/ci/test_nova_bulk_price_integration.py'
       - '.github/ci/nova_batch14_pos_discount.py'
       - '.github/ci/nova_batch14_finance_tests.py'
       - '.github/ci/nova_pos_source_audit.py'
@@ -249,6 +250,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration failed' }
           python -m compileall -q pharmacy
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration syntax failed' }
+          python .github/ci/test_nova_bulk_price_integration.py
+          if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration regression failed' }
       - name: Restore previously verified development Windows build
         id: setup_cache
         uses: actions/cache/restore@v4
