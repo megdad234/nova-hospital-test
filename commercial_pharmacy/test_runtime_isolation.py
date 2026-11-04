@@ -45,6 +45,20 @@ class RuntimeIsolationTests(unittest.TestCase):
             p = paths({"NOVA_COMMERCIAL_DATA_DIR": temp})
             self.assertEqual(backup_destination(p, "pharmacy-2026-11-04.zip").parent, p.backups)
 
+    def test_reject_external_backup_directory(self):
+        with tempfile.TemporaryDirectory() as temp:
+            from dataclasses import replace
+            root = Path(temp)
+            config = paths({"NOVA_COMMERCIAL_DATA_DIR": str(root / "commercial")})
+            external = root / "hospital"
+            external.mkdir()
+            with self.assertRaises(ValueError):
+                validate_paths(replace(config, backups=external))
+            with self.assertRaises(ValueError):
+                validate_paths(replace(config, logs=external))
+            with self.assertRaises(ValueError):
+                validate_paths(replace(config, config=external / "config.json"))
+
     def test_port_collision_guard(self):
         self.assertEqual(choose_port({}), PORT)
         for value in ("10080", "0", "65536", "-1", "bad"):
