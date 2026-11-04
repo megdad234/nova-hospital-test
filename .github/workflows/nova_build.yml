@@ -12,6 +12,7 @@ on:
       - '.github/ci/commercial_pharmacy_identity.py'
       - '.github/ci/test_commercial_pharmacy_contract.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
+      - '.github/ci/test_commercial_pharmacy_release_gate.py'
       - '.github/ci/test_stage_commercial_pharmacy.py'
       - '.github/ci/nova_price_list_*.py'
       - '.github/ci/test_nova_price_list_*.py'
@@ -269,6 +270,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy staging safeguards failed' }
           python .github/ci/test_commercial_pharmacy_contract.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy isolation contract tests failed' }
+          python .github/ci/test_commercial_pharmacy_release_gate.py
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy release gate tests failed' }
       - name: Stage commercial pharmacy source after all NOVA patches
         shell: pwsh
         run: |
