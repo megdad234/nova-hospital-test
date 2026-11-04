@@ -24,6 +24,7 @@ with tempfile.TemporaryDirectory() as tmp:
         json.dumps({"unresolved": [{"type": "hospital_api"}]}), encoding="utf-8")
     result = module.inspect(root)
     assert result["preflight_passed"] is False
+    assert "commercial server entrypoint missing" in result["errors"]
     assert result["windows_installer_verified"] is False
     assert any("hospital" in error for error in result["errors"])
     (root / "HOSPITAL_COUPLING_BLOCKERS.json").write_text(
