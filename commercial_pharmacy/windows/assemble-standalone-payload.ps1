@@ -25,6 +25,13 @@ if (!(Test-Path -LiteralPath $LaunchersDirectory -PathType Container)) { throw '
 foreach ($name in @('NOVACommercialPharmacy.exe','NOVACommercialPharmacyServer.exe')) {
   if (!(Test-Path -LiteralPath (Join-Path $LaunchersDirectory $name) -PathType Leaf)) { throw "Commercial launcher missing: $name" }
 }
+$destinationFull = [System.IO.Path]::GetFullPath($Destination)
+foreach ($protected in @($source, $runtime, (Resolve-Path -LiteralPath $LaunchersDirectory).Path)) {
+  $protectedFull = [System.IO.Path]::GetFullPath($protected).TrimEnd('\\')
+  if ($destinationFull.Equals($protectedFull, [System.StringComparison]::OrdinalIgnoreCase) -or $destinationFull.StartsWith($protectedFull + '\\', [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Destination must not be inside source, runtime or launcher directories'
+  }
+}
 if (Test-Path -LiteralPath $Destination) { throw 'Destination must not already exist' }
 New-Item -ItemType Directory -Path $Destination | Out-Null
 Copy-Item -LiteralPath (Join-Path $source 'pharmacy') -Destination (Join-Path $Destination 'pharmacy') -Recurse
