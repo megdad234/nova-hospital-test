@@ -230,6 +230,7 @@ jobs:
         run: |
           python .github/ci/nova_batch14_pos_discount.py
           python .github/ci/nova_batch14_finance_tests.py
+          python .github/ci/nova_price_integration_audit.py
           if ($LASTEXITCODE -ne 0) { throw 'NOVA14 discount patch failed; installer blocked' }
           python -m compileall -q pharmacy
           node --check pharmacy/static/app.js
