@@ -25,7 +25,7 @@ def verify_snapshot(stage: Path):
     for file in (stage / "pharmacy").rglob("*"):
         if file.is_symlink():
             issues.append("source symlink forbidden: " + str(file))
-        if file.is_file() and file.suffix.lower() in (".db", ".sqlite", ".sqlite3", ".sqlite3-wal"):
+        if file.is_file() and (file.suffix.lower() in (".db", ".sqlite", ".sqlite3") or file.name.lower().endswith((".db-wal", ".db-shm", ".sqlite-wal", ".sqlite-shm", ".sqlite3-wal", ".sqlite3-shm"))):
             issues.append("live database included: " + str(file))
     if not manifest.get("sha256"):
         issues.append("empty source manifest")
