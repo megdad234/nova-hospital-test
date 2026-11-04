@@ -28,6 +28,12 @@ class InstallerContractTests(unittest.TestCase):
         self.assertNotIn("\n[UninstallRun]\n", source)
         self.assertIn("Automatic service registration disabled", source)
 
+    def test_payload_preflight_rejects_hospital_reference(self):
+        source = (WINDOWS / "check-runtime-payload.ps1").read_text(encoding="utf-8")
+        self.assertIn("hospital_reference", source)
+        self.assertIn("pharmacy/static/index.html", source)
+        self.assertIn("commercial_pharmacy.launch", source)
+
     def test_unverified_candidate_build_requires_acknowledgement(self):
         source = (WINDOWS / "build-installer-candidate.ps1").read_text(encoding="utf-8")
         self.assertIn("NOVA_COMMERCIAL_ALLOW_UNVERIFIED_INSTALLER", source)
