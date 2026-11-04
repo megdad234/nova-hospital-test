@@ -92,15 +92,6 @@ jobs:
           if(!(Test-Path 'windows/build-windows.ps1')){throw 'Windows build script missing'}
           if(!(Test-Path 'windows/ci-acceptance.ps1')){throw 'Windows acceptance script missing'}
           Write-Host 'NOVA_SOURCE_EXTRACTED'
-      - name: Verify read-only price-list calculations before modifying pharmacy
-        shell: pwsh
-        run: |
-          python .github/ci/test_nova_price_list_preview.py
-          python .github/ci/test_nova_price_list_matching.py
-          python .github/ci/test_nova_price_list_candidates.py
-          python .github/ci/test_nova_price_list_approval.py
-          if ($LASTEXITCODE -ne 0) { throw 'NOVA price approval regression failed' }
-          if ($LASTEXITCODE -ne 0) { throw 'NOVA price-list preview regression failed' }
       - name: Inspect original NOVA POS source before financial modifications
         shell: pwsh
         run: python .github/ci/nova_pos_source_audit.py
@@ -113,6 +104,15 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check 'openpyxl>=3.1,<4'
           if ($LASTEXITCODE -ne 0) { throw 'openpyxl test dependency installation failed' }
+      - name: Verify NOVA price-list import, matching, approval and rollback
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $tests = @('preview','matching','candidates','approval','import')
+          foreach ($test in $tests) {
+            python ".github/ci/test_nova_price_list_$test.py"
+            if ($LASTEXITCODE -ne 0) { throw "NOVA price-list $test tests failed" }
+          }
       - name: Install Inno Setup on temporary Windows build runner only
         shell: pwsh
         run: choco install innosetup --yes --no-progress
