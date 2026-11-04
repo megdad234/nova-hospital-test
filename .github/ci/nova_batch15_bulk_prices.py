@@ -14,6 +14,58 @@ def nova_price_signature(package_id,old,new):
     message=f"{int(package_id)}:{int(old)}:{int(new)}".encode('ascii')
     return _nova_hmac.new(_nova_price_preview_secret,message,_nova_hashlib.sha256).hexdigest()
 
+def nova_price_list_file_rows(p):
+    """Parse a bounded CSV or XLSX payload on the local server."""
+    import base64 as _base64
+    import csv as _csv
+    import io as _io
+    filename=str(p.get('filename') or '').lower()
+    encoded=p.get('content_base64')
+    if not isinstance(encoded,str) or len(encoded)>8_000_000:
+        raise ValueError('ملف الأسعار كبير أو غير صالح')
+    try:
+        raw=_base64.b64decode(encoded,validate=True)
+    except Exception:
+        raise ValueError('تعذر قراءة الملف')
+    if len(raw)>6_000_000:raise ValueError('الملف يتجاوز الحد المسموح')
+    if filename.endswith('.csv'):
+        try:content=raw.decode('utf-8-sig')
+        except UnicodeDecodeError:content=raw.decode('cp1256')
+        records=_csv.reader(_io.StringIO(content))
+    elif filename.endswith('.xlsx'):
+        try:
+            from openpyxl import load_workbook
+        except ImportError:
+            raise ValueError('دعم Excel غير مثبت على السيرفر')
+        wb=load_workbook(_io.BytesIO(raw),read_only=True,data_only=True)
+        if len(wb.sheetnames)!=1:
+            wb.close()
+            raise ValueError('ملف Excel يجب أن يحتوي على ورقة واحدة')
+        records=wb.active.iter_rows(values_only=True)
+    else:raise ValueError('الصيغ المدعومة CSV و XLSX')
+    try:
+        header=next(iter(records))
+        aliases={'name':('name','trade name','product','اسم الصنف','الاسم التجاري','الصنف'),
+                 'purchase_price':('purchase_price','purchase price','price','السعر','سعر الشراء'),
+                 'strength':('strength','التركيز'),'pack':('pack','العبوة'),
+                 'barcode':('barcode','باركود')}
+        normalized=[str(h or '').strip().casefold() for h in header]
+        cols={key:next((i for i,h in enumerate(normalized) if h in names),None)
+              for key,names in aliases.items()}
+        if cols['name'] is None or cols['purchase_price'] is None:
+            raise ValueError('يجب وجود عمود الاسم التجاري والسعر')
+        rows=[]
+        for i,values in enumerate(records,2):
+            if i>20001:raise ValueError('الملف يتجاوز 20 ألف صنف')
+            row={key:str(values[idx] if idx is not None and idx<len(values) and values[idx] is not None else '').strip()
+                 for key,idx in cols.items()}
+            if row['name']:
+                row['line']=i
+                rows.append(row)
+        return {'rows':rows,'count':len(rows)}
+    finally:
+        if filename.endswith('.xlsx'):wb.close()
+
 def nova_price_list_preview(c,p):
     """Read-only, exact-match preview. Never creates purchases or stock movements."""
     from decimal import Decimal, ROUND_HALF_UP
@@ -147,7 +199,7 @@ def nova_price_list_approve(c,p,uid):
 s=s.replace(anchor,helpers+anchor)
 anchor2="'/api/v1/nova-reprice-unpriced':('prices',lambda:nova_bulk_unpriced(c,data,u['id'])),"
 assert s.count(anchor2)==1
-s=s.replace(anchor2,"'/api/v1/nova-price-list-preview':('prices',lambda:nova_price_list_preview(c,data)),\n                     '/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),\n                     "+anchor2)
+s=s.replace(anchor2,"'/api/v1/nova-price-list-parse':('prices',lambda:nova_price_list_file_rows(data)),\n                     '/api/v1/nova-price-list-preview':('prices',lambda:nova_price_list_preview(c,data)),\n                     '/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),\n                     "+anchor2)
 get_anchor="'/api/v1/products':lambda:catalog(c),"
 assert s.count(get_anchor)==1
 s=s.replace(get_anchor,"'/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\n                     "+get_anchor)
