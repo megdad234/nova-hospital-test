@@ -138,7 +138,7 @@ jobs:
       - name: Verify commercial pharmacy source launch environment
         shell: pwsh
         run: |
-          python -m commercial_pharmacy.launch --source-root . --preflight-only
+          python -m commercial_pharmacy.launch --source-root . --data-dir "$env:RUNNER_TEMP\NOVACommercialPharmacy" --preflight-only
           if ($LASTEXITCODE -ne 0) { throw "Commercial pharmacy source launcher preflight failed" }
       - name: Create audited source snapshot
         shell: pwsh
