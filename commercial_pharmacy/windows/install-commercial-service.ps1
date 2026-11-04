@@ -36,4 +36,7 @@ if ($OpenLanFirewall) {
     New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort $Port -Profile Private | Out-Null
   }
 }
-Write-Host "COMMERCIAL_PHARMACY_SERVICE_REGISTERED $serviceName"
+Start-Service -Name $serviceName -ErrorAction Stop
+$service = Get-Service -Name $serviceName -ErrorAction Stop
+$service.WaitForStatus("Running", [TimeSpan]::FromSeconds(30))
+Write-Host "COMMERCIAL_PHARMACY_SERVICE_RUNNING $serviceName"
