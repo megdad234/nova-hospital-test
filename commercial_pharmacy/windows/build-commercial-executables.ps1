@@ -1,6 +1,8 @@
 [CmdletBinding()]
 param([Parameter(Mandatory=$true)][string]$SourceRoot)
 $ErrorActionPreference = 'Stop'
+if (!(Test-Path -LiteralPath (Join-Path $SourceRoot "commercial_pharmacy/windows_client_entry.py"))) { throw "Commercial client entrypoint missing" }
+if (!(Test-Path -LiteralPath (Join-Path $SourceRoot "commercial_pharmacy/windows_server_entry.py"))) { throw "Commercial service entrypoint missing" }
 Push-Location $SourceRoot
 try {
   python -m PyInstaller --noconfirm --clean --onefile --name NOVACommercialPharmacy --distpath dist\commercial commercial_pharmacy\windows_client_entry.py
