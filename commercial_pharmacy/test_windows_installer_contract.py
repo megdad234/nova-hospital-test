@@ -33,6 +33,8 @@ class InstallerContractTests(unittest.TestCase):
 
     def test_runtime_payload_gate_requires_actual_pharmacy_and_python(self):
         script = (WINDOWS / "check-runtime-payload.ps1").read_text(encoding="utf-8")
+        builder = (WINDOWS / "build-installer-candidate.ps1").read_text(encoding="utf-8")
+        self.assertIn("check-runtime-payload.ps1", builder)
         for required in ("runtime/python.exe", "pharmacy/app.py", "pharmacy/server_host.py",
                          "pharmacy/static/app.js", "commercial_pharmacy/launch.py",
                          "--preflight-only", "PYTHONNOUSERSITE"):
