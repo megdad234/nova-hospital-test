@@ -15,6 +15,7 @@ on:
       - '.github/ci/audit_commercial_hospital_coupling.py'
       - '.github/ci/commercial_runtime_preflight.py'
       - '.github/ci/audit_commercial_server_entrypoint.py'
+      - '.github/ci/test_audit_commercial_server_entrypoint.py'
       - '.github/ci/verify_commercial_snapshot.py'
       - '.github/ci/audit_commercial_windows_identity.py'
       - '.github/ci/commercial_pharmacy_identity.py'
