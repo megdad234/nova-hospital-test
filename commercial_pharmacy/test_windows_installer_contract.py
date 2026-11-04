@@ -19,7 +19,8 @@ class InstallerContractTests(unittest.TestCase):
         source = (WINDOWS / "commercial-pharmacy-installer.iss").read_text(encoding="utf-8")
         for directory in (r"commercial\\runtime\\*", r"commercial\\pharmacy\\*",
                           r"commercial\\commercial_pharmacy\\*"):
-            self.assertIn(directory, source)
+            self.assertIn(directory.replace("\\\\", "\\"), source)
+            self.assertEqual(source.count(directory.replace("\\\\", "\\")), 1)
         self.assertIn("recursesubdirs", source)
 
     def test_unverified_installer_does_not_autostart_service(self):
