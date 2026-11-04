@@ -36,7 +36,12 @@ if ($OpenLanFirewall) {
     New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort $Port -Profile Private | Out-Null
   }
 }
-Start-Service -Name $serviceName -ErrorAction Stop
-$service = Get-Service -Name $serviceName -ErrorAction Stop
-$service.WaitForStatus("Running", [TimeSpan]::FromSeconds(30))
+try {
+  Start-Service -Name $serviceName -ErrorAction Stop
+  $service = Get-Service -Name $serviceName -ErrorAction Stop
+  $service.WaitForStatus("Running", [TimeSpan]::FromSeconds(30))
+} catch {
+  & sc.exe delete $serviceName | Out-Null
+  throw "Commercial pharmacy service failed to start; registration rolled back: $_"
+}
 Write-Host "COMMERCIAL_PHARMACY_SERVICE_RUNNING $serviceName"
