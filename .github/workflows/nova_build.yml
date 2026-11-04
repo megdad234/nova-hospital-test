@@ -109,7 +109,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $tests = @('preview','matching','candidates','approval','import')
+          $tests = @('preview','matching','candidates','approval','import','actual_cost')
           foreach ($test in $tests) {
             python ".github/ci/test_nova_price_list_$test.py"
             if ($LASTEXITCODE -ne 0) { throw "NOVA price-list $test tests failed" }
