@@ -191,6 +191,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Integration point discovery failed' }
           python .github/ci/audit_commercial_hospital_coupling.py
           if ($LASTEXITCODE -ne 0) { throw 'Hospital coupling audit failed' }
+          python -c "from pathlib import Path; print(Path('commercial_pharmacy_stage/HOSPITAL_COUPLING_BLOCKERS.json').read_text(encoding='utf-8'))"
           python .github/ci/commercial_pharmacy_identity.py
           if ($LASTEXITCODE -ne 0) { throw 'Identity contract failed' }
           python .github/ci/audit_commercial_windows_identity.py
@@ -198,6 +199,7 @@ jobs:
           python .github/ci/commercial_runtime_preflight.py
           if ($LASTEXITCODE -ne 0) { Write-Host 'Standalone runtime preflight BLOCKED: see uploaded evidence' }
       - name: Upload source snapshot, NOT a commercial installer
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Commercial-Pharmacy-Audited-Source-NOT-INSTALLABLE
