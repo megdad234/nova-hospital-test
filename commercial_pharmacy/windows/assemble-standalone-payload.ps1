@@ -4,7 +4,8 @@
 param(
   [Parameter(Mandatory=$true)][string]$SourceStage,
   [Parameter(Mandatory=$true)][string]$PythonRuntimeDirectory,
-  [Parameter(Mandatory=$true)][string]$Destination
+  [Parameter(Mandatory=$true)][string]$Destination,
+  [Parameter(Mandatory=$true)][string]$LaunchersDirectory
 )
 $ErrorActionPreference = 'Stop'
 $source = (Resolve-Path -LiteralPath $SourceStage).Path
@@ -24,7 +25,7 @@ Copy-Item -LiteralPath (Join-Path $source 'pharmacy') -Destination (Join-Path $D
 Copy-Item -LiteralPath (Join-Path $source 'commercial_pharmacy') -Destination (Join-Path $Destination 'commercial_pharmacy') -Recurse
 Copy-Item -LiteralPath $runtime -Destination (Join-Path $Destination 'runtime') -Recurse
 foreach ($name in @('NOVACommercialPharmacy.exe','NOVACommercialPharmacyServer.exe')) {
-  $exe = Join-Path (Join-Path (Split-Path $Destination -Parent) 'launchers') $name
+  $exe = Join-Path $LaunchersDirectory $name
   if (!(Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Launcher missing: $name" }
   Copy-Item -LiteralPath $exe -Destination (Join-Path $Destination $name)
 }
