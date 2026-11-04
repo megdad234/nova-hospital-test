@@ -9,7 +9,7 @@ class DesktopClientTests(unittest.TestCase):
         self.assertEqual(pharmacy_url("pharmacy-server"), "http://pharmacy-server:18763/")
 
     def test_refuse_invalid_or_reserved_addresses(self):
-        for host in ("", "http://evil", "user@host", "x/path", "host:123", "host?x", "::1"):
+        for host in ("", "http://evil", "user@host", "x/path", "host:123", "host?x", "::1", "999.999.999.999", "123.456"):
             with self.subTest(host=host), self.assertRaises(ValueError):
                 pharmacy_url(host)
         for port in (0, 80, 10080, 65536):
