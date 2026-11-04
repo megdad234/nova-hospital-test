@@ -17,6 +17,8 @@ with tempfile.TemporaryDirectory() as d:
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text("pass\n" if p.suffix == ".py" else "fixture\n", encoding="utf-8")
     (root / "pharmacy" / "test_data.sqlite").write_bytes(b"private test data")
+    (root / "pharmacy" / "test_data.sqlite-wal").write_bytes(b"private journal")
+    (root / "hospital" / "secret.db-shm").write_bytes(b"private shared memory")
     env = dict(os.environ, NOVA_EXTRACTION_ROOT=str(root))
     run = subprocess.run([sys.executable, str(SCRIPT)], env=env,
                          capture_output=True, text=True)
