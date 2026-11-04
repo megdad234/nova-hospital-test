@@ -19,6 +19,9 @@ on:
       - '.github/ci/commercial_pharmacy_identity.py'
       - '.github/ci/commercial_pharmacy_release_gate.py'
       - '.github/ci/test_*commercial_pharmacy*.py'
+      - '.github/ci/test_commercial_*.py'
+      - '.github/ci/test_patch_commercial_*.py'
+      - '.github/ci/test_verify_commercial_snapshot.py'
       - '.github/workflows/commercial_pharmacy_ci.yml'
   workflow_dispatch:
 permissions:
