@@ -26,3 +26,7 @@ The `diagnose` command reports configured port availability, data directories an
 6. Only then permit the release gate to mark the commercial installer as publishable.
 
 **Never distribute `Commercial-Pharmacy-Audited-Source-NOT-INSTALLABLE` as a setup executable.**
+
+## Automatic backup
+
+`python -m commercial_pharmacy.cli backup-auto --retain 30` creates a timestamped online SQLite backup and retains the latest 30 automatic backups without deleting manual backups. `list-backups` inventories available files. On Windows, `commercial_pharmacy/windows/install-backup-task.ps1` can register an opt-in daily schedule against a verified Python source installation; `uninstall-backup-task.ps1` removes only that task. These scripts do not build or validate a standalone installer.
