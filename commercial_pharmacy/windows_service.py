@@ -6,6 +6,7 @@ Never registers or modifies the hospital service.
 from __future__ import annotations
 import os
 from pathlib import Path
+from .launch import prepare
 import subprocess
 import sys
 
@@ -47,9 +48,7 @@ def run_service():
         def SvcDoRun(self):
             root = Path(os.environ.get("NOVA_COMMERCIAL_SOURCE_ROOT", Path(sys.executable).parent)).resolve()
             command = pharmacy_command(root)
-            env = dict(os.environ)
-            env.setdefault("NOVA_COMMERCIAL_DATA_DIR", str(Path(os.environ.get("PROGRAMDATA", "C:/ProgramData")) / "NOVACommercialPharmacy"))
-            env.setdefault("NOVA_COMMERCIAL_PORT", "18763")
+            _, env, _ = prepare(root)
             self.process = subprocess.Popen(command, cwd=str(root), env=env)
             try:
                 self.process.wait()
