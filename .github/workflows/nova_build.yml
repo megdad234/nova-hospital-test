@@ -266,7 +266,7 @@ jobs:
       - name: Test standalone pharmacy runtime and SQLite isolation
         shell: pwsh
         run: |
-          python -m unittest -v commercial_pharmacy.test_runtime_isolation commercial_pharmacy.test_database commercial_pharmacy.test_backup
+          python -m unittest -v commercial_pharmacy.test_runtime_isolation commercial_pharmacy.test_database commercial_pharmacy.test_backup commercial_pharmacy.test_insurance_registry
           if ($LASTEXITCODE -ne 0) { throw 'Commercial pharmacy runtime isolation failed' }
       - name: Verify standalone pharmacy staging safeguards
         shell: pwsh
