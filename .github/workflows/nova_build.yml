@@ -250,6 +250,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration failed' }
           python -m compileall -q pharmacy
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration syntax failed' }
+          node --check pharmacy/static/nova_bulk_prices_ui.js
+          if ($LASTEXITCODE -ne 0) { throw 'Bulk price UI syntax failed' }
           python .github/ci/test_nova_bulk_price_integration.py
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration regression failed' }
       - name: Restore previously verified development Windows build
