@@ -15,14 +15,14 @@ if not (STAGE / "EXTRACTION_MANIFEST.json").is_file():
     raise SystemExit("RUN_STAGE_FIRST")
 pharmacy = STAGE / "pharmacy"
 patterns = {
-    "hospital_routes": re.compile(r"(?i)(?:/api/[^\\\"' ]*(?:hospital|patient|laboratory|reception|cashier)|/hospital/)[^\\\"' ]*"),
-    "hospital_symbols": re.compile(r"(?i)\\b(?:hospital_gateway|hospital_core|hospital_admin|hospital_patient|nova_server)\\b"),
-    "db_paths": re.compile(r"(?i)[\\w./\\\\-]+\\.(?:sqlite3?|db)\\b"),
-    "network_listeners": re.compile(r"(?i)\\b(?:0\\.0\\.0\\.0|127\\.0\\.0\\.1|localhost|listen|bind|port)\\b"),
-    "service_identity": re.compile(r"(?i)\\b(?:NOVA[_ -]?Hospital|service[_ -]?name|display[_ -]?name|AppId|DefaultDirName)\\b"),
-    "insurance": re.compile(r"(?i)\\b(?:insurance|beneficiary|policy|coverage|patient)\\b"),
-    "printing": re.compile(r"(?i)\\b(?:receipt|thermal|printer|print)\\b"),
-    "first_admin": re.compile(r"(?i)\\b(?:first.admin|bootstrap.admin|create.admin|initial.admin|setup.admin)\\b"),
+    "hospital_routes": re.compile(r"(?i)(?:/api/[^\\"' ]*(?:hospital|patient|laboratory|reception|cashier)|/hospital/)[^\\"' ]*"),
+    "hospital_symbols": re.compile(r"(?i)\b(?:hospital_gateway|hospital_core|hospital_admin|hospital_patient|nova_server)\b"),
+    "db_paths": re.compile(r"(?i)[\w./\\-]+\.(?:sqlite3?|db)\b"),
+    "network_listeners": re.compile(r"(?i)\b(?:0\.0\.0\.0|127\.0\.0\.1|localhost|listen|bind|port)\b"),
+    "service_identity": re.compile(r"(?i)\b(?:NOVA[_ -]?Hospital|service[_ -]?name|display[_ -]?name|AppId|DefaultDirName)\b"),
+    "insurance": re.compile(r"(?i)\b(?:insurance|beneficiary|policy|coverage|patient)\b"),
+    "printing": re.compile(r"(?i)\b(?:receipt|thermal|printer|print)\b"),
+    "first_admin": re.compile(r"(?i)\b(?:first.admin|bootstrap.admin|create.admin|initial.admin|setup.admin)\b"),
 }
 inventory = {"stage_manifest": "EXTRACTION_MANIFEST.json", "status": "AUDIT_ONLY",
              "isolation_complete": False, "files": {}, "imports": [], "routes": [],
