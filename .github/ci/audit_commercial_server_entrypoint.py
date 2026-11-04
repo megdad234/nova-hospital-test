@@ -26,6 +26,7 @@ def inspect(root=ROOT):
             "commercial_database_override": "NOVA_COMMERCIAL_DATA_DIR" in source,
         }
     return {"runtime_verified": False, "source": findings,
+            "source_syntax_valid": all(item.get("syntax_valid", False) for item in findings.values()),
             "port_override_present": findings.get("server_host.py", {}).get("commercial_port_override", False),
             "database_override_present": findings.get("app.py", {}).get("commercial_database_override", False)}
 
