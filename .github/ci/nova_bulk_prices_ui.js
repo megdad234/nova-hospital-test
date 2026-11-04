@@ -6,8 +6,8 @@ const panel=el('section');panel.id='nova-price-list-panel';panel.hidden=true;
 panel.style.cssText='position:fixed;inset:6% 5%;z-index:9999;background:#fff;color:#153b43;overflow:auto;border:2px solid #0b8791;border-radius:16px;padding:22px;box-shadow:0 12px 50px #0006;direction:rtl';
 const heading=el('h2','مراجعة برايس الموردين وتحديث أسعار البيع');panel.append(heading);
 const close=el('button','إغلاق');close.onclick=()=>panel.hidden=true;panel.append(close);
-panel.append(el('p','ارفع CSV: الأعمدة name,purchase_price,strength,pack,barcode. لا يتم تعديل المخزون أو المشتريات.'));
-const file=el('input');file.type='file';file.accept='.csv,text/csv';panel.append(file);
+panel.append(el('p','ارفع CSV أو Excel: الأعمدة name,purchase_price,strength,pack,barcode. لا يتم تعديل المخزون أو المشتريات.'));
+const file=el('input');file.type='file';file.accept='.csv,.xlsx,text/csv';panel.append(file);
 const pct=el('input');pct.type='number';pct.min='0';pct.max='1000';pct.placeholder='نسبة ربح جديدة (اختياري: اتركها للمحافظة على هامش الربح)';panel.append(pct);
 const previewBtn=el('button','معاينة الأسعار');panel.append(previewBtn);
 const approveBtn=el('button','اعتماد الأصناف المحددة');approveBtn.disabled=true;panel.append(approveBtn);
@@ -34,7 +34,13 @@ const request=async(path,body)=>{
 previewBtn.onclick=async()=>{try{
  if(!file.files[0])throw Error('اختر ملف CSV أولاً');
  if(file.files[0].size>6*1024*1024)throw Error('الملف كبير');
- const rows=csvParse(await file.files[0].text());
+ let rows;
+ if(file.files[0].name.toLowerCase().endsWith('.xlsx')){
+ const bytes=new Uint8Array(await file.files[0].arrayBuffer());let binary='';
+ for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
+ const parsed=await request('nova-price-list-parse',{filename:file.files[0].name,content_base64:btoa(binary)});
+ rows=parsed.rows;
+ }else rows=csvParse(await file.files[0].text());
  const payload={rows};if(pct.value!=='')payload.markup_percent=pct.value;
  const data=await request('nova-price-list-preview',payload);
  preview=data.rows;grid.replaceChildren();approveBtn.disabled=false;
