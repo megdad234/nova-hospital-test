@@ -124,6 +124,7 @@ jobs:
       - name: Remove hospital branding dependency from pharmacy POS
         shell: pwsh
         run: |
+          node --check pharmacy/static/app.js
           python .github/ci/patch_commercial_brand.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial branding decoupling failed' }
       - name: Create audited source snapshot
