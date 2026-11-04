@@ -45,6 +45,11 @@ def validate_paths(value: CommercialPaths, forbidden_paths=()):
     db = value.database.resolve()
     if db.parent != value.data.resolve() or db.name != DATABASE_NAME:
         raise ValueError("Commercial database must remain in its own data directory")
+    for child in (value.backups, value.logs):
+        if child.resolve().parent != value.data.resolve():
+            raise ValueError("Commercial runtime directory escapes its data root")
+    if value.config.resolve().parent != value.data.resolve():
+        raise ValueError("Commercial config escapes its data root")
     for forbidden in forbidden_paths:
         f = Path(forbidden).resolve()
         if value.data.resolve() == f or f in value.data.resolve().parents or value.data.resolve() in f.parents:
