@@ -9,6 +9,9 @@ if ($env:NOVA_COMMERCIAL_ALLOW_UNVERIFIED_INSTALLER -ne 'YES') { throw 'Unverifi
 if (!(Test-Path -LiteralPath $InnoCompiler -PathType Leaf)) { throw 'Inno Setup compiler missing' }
 & (Join-Path $PSScriptRoot 'validate-installer-inputs.ps1') -SourceRoot $SourceRoot
 
+$payload = Join-Path $SourceRoot 'dist\commercial'
+& (Join-Path $PSScriptRoot 'check-runtime-payload.ps1') -InstallRoot $payload
+if ($LASTEXITCODE -ne 0) { throw 'Standalone runtime payload is not ready' }
 $spec = Join-Path $PSScriptRoot 'commercial-pharmacy-installer.iss'
 Push-Location $PSScriptRoot
 try {
