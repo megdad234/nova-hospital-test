@@ -7,3 +7,11 @@ for key in ('def sale_list(', 'def sale_history(', 'def sale_return(', 'CREATE T
 for key in ('فواتير البيع والمرتجعات','سجل الفواتير والمرتجعات','function renderSales','function saleHistory','function saleReturn'):
  i=j.find(key)
  if i>=0:print('NOVA_RETURN_UI',key,repr(j[max(0,i-600):i+1800]))
+
+for key in ("FROM sales", "function sales", "sale-history", "sale-list", "sale-returns", "فواتير البيع"):
+ for filename in ('pharmacy/app.py','pharmacy/static/index.html','pharmacy/static/app.js','pharmacy/static/nova_pharmacy_batch08.js'):
+  p=Path(filename)
+  if not p.exists():continue
+  content=p.read_text(encoding='utf-8')
+  hits=[i for i in range(len(content)) if content.startswith(key,i)]
+  for i in hits[:4]:print('NOVA_RETURN_CONTEXT',filename,key,repr(content[max(0,i-550):i+950]))
