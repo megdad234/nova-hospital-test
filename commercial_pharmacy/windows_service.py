@@ -56,7 +56,7 @@ def run_service():
             win32event.SetEvent(self.stop_event)
             if self.process is not None:
                 if self.process.poll() is None:
-                self.process.terminate()
+                    self.process.terminate()
 
         def SvcDoRun(self):
             root = Path(os.environ.get("NOVA_COMMERCIAL_SOURCE_ROOT", Path(sys.executable).parent)).resolve()
