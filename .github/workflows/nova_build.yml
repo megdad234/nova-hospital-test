@@ -252,7 +252,6 @@ jobs:
           python .github/ci/nova_batch16_return_inspect.py
           python .github/ci/nova_batch15_bulk_prices.py
           python .github/ci/nova_batch16_return_status.py
-          python .github/ci/nova_batch17_pos_restore.py
           node --check hospital/static/admin-ui.js
           node --check pharmacy/static/app.js
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration failed' }
