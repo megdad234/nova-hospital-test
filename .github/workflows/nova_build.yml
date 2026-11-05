@@ -261,6 +261,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Refund history display patch failed' }
           node --check pharmacy/static/app.js
           if ($LASTEXITCODE -ne 0) { throw 'Refund history syntax invalid' }
+      - name: Validate isolated admin collections preview JavaScript
+        shell: pwsh
+        run: |
+          node --check hospital/static/nova_batch09_collections.js
+          if ($LASTEXITCODE -ne 0) { throw 'Admin collections preview JavaScript syntax invalid; installer blocked' }
       - name: Restore previously verified development Windows build
         id: setup_cache
         uses: actions/cache/restore@v4
