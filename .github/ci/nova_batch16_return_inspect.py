@@ -36,3 +36,5 @@ for filename in ('pharmacy/static/index.html','pharmacy/static/nova_pharmacy_bat
  for term in ('مرتجع','sale-return','saleReturn','renderSales','sales-list','sales-table','returnSale','sale-returns'):
   i=source.find(term)
   if i>=0:print('NOVA16_UI_SEARCH',filename,term,repr(source[max(0,i-700):i+900]))
+
+print('NOVA16_UI_DIAGNOSTIC_COMPLETE')
