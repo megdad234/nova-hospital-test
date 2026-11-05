@@ -64,10 +64,10 @@ def run_service():
             self.process = subprocess.Popen(command, cwd=str(root), env=env)
             try:
                 while self.process.poll() is None:
-                if win32event.WaitForSingleObject(self.stop_event, 500) == win32event.WAIT_OBJECT_0:
-                    self.process.terminate()
-                    self.process.wait(timeout=10)
-                    break
+                    if win32event.WaitForSingleObject(self.stop_event, 500) == win32event.WAIT_OBJECT_0:
+                        self.process.terminate()
+                        self.process.wait(timeout=10)
+                        break
             finally:
                 self.process = None
 
