@@ -1,0 +1,39 @@
+name: Commercial installed server acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [commercial-pharmacy-extraction-2026-11-04]
+    paths:
+      - '.github/workflows/commercial_installed_server_acceptance.yml'
+jobs:
+  installed-server:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: NOVA-Commercial-Setup-UNVERIFIED-NOT-FOR-PRODUCTION
+          run-id: 41978014664
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: installer
+      - name: Install and launch actual packaged server
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = Get-ChildItem installer -Filter '*.exe' | Select-Object -First 1
+          if (!$setup) { throw 'Installer not found' }
+          $dest = Join-Path $env:RUNNER_TEMP 'CommercialAcceptance'
+          $p = Start-Process $setup.FullName -ArgumentList @('/VERYSILENT','/NORESTART',"/DIR=$dest") -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw 'Installer failed' }
+          $python = Join-Path $dest 'runtime/python.exe'
+          & $python -m commercial_pharmacy.live_server_smoke --source-root $dest --data-dir (Join-Path $env:RUNNER_TEMP 'CommercialAcceptanceData') --port 18764 --timeout 35 --output installed_live_smoke.json
+          if ($LASTEXITCODE -ne 0) { throw 'Installed server failed HTTP check' }
+          $result = Get-Content installed_live_smoke.json -Raw | ConvertFrom-Json
+          if (!$result.database_verified) { throw 'Installed independent database failed check' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Commercial-Installed-Server-Smoke
+          path: installed_live_smoke.json
+          if-no-files-found: warn
