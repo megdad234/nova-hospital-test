@@ -5,8 +5,9 @@
 - Commercial isolated runtime and packaged Windows installer pipeline: PASS, run 41985566751.
 - Independent Windows EXE candidate pipeline: PASS, run 41985566548.
 - Installed HTTP/SQLite, uninstall data preservation, and reinstall acceptance: PASS against earlier candidate, run 41981750234.
-- Windows SCM auto-registration, boot start, stop/restart, LAN firewall, POS, insurance, receipt printing, and hospital coexistence: NOT YET VERIFIED.
-- Inno Setup currently does not register or start the service automatically. The installer remains explicitly UNVERIFIED and is not production-ready.
+- Windows SCM service auto-registration, service start and local HTTP (127.0.0.1:18763): PASSED in the Windows installer run 42091450421 (job 127472316649; log marker AUTOMATIC_COMMERCIAL_SERVICE_AND_HTTP_PASSED).
+- Uninstall removed only the commercial service and program files in the same Windows test run; longer-term restart, LAN from a second device, real POS, actual printers, insurance transactions and NOVA Hospital coexistence remain unverified.
+- The installer remains an acceptance-test candidate, NOT an approved production release. Historical notes below reflect earlier prototype milestones.
 - Branch-only development: do not change NOVA Hospital main, hospital data, or hospital service.
 
 The older status notes below document the initial implementation stage; this dated evidence supersedes claims that no candidate EXE or installer has been built.

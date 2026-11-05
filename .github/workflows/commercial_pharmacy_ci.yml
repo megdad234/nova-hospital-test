@@ -9,6 +9,9 @@ on:
       - '.github/ci/audit_commercial_pharmacy.py'
       - '.github/ci/audit_commercial_pharmacy_assets.py'
       - '.github/ci/locate_commercial_integration_points.py'
+      - '.github/ci/nova_batch16_return_status.py'
+      - '.github/ci/nova_bulk_prices_ui.js'
+      - '.github/ci/test_commercial_latest_sync.py'
       - '.github/ci/patch_commercial_insurance.py'
       - '.github/ci/patch_commercial_brand.py'
       - '.github/ci/patch_commercial_database.py'
@@ -125,6 +128,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "NOVA Batch15 integration preflight failed" }
           python .github/ci/nova_batch15_bulk_prices.py
           if ($LASTEXITCODE -ne 0) { throw "NOVA Batch15 bulk prices failed" }
+      - name: Apply latest approved NOVA sale-return status without changing POS
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python .github/ci/nova_batch16_return_status.py
+          if ($LASTEXITCODE -ne 0) { throw 'Latest sale-return status patch rejected; commercial extraction blocked' }
+          node --check pharmacy/static/app.js
+          if ($LASTEXITCODE -ne 0) { throw 'Latest sale-return JavaScript invalid' }
       - name: Isolate pharmacy database globals from NOVA Hospital
         shell: pwsh
         run: |
@@ -147,6 +158,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Commercial POS JavaScript invalid' }
           node --check pharmacy/static/nova_pharmacy_batch08.js
           if ($LASTEXITCODE -ne 0) { throw 'Commercial insurance JavaScript invalid' }
+      - name: Verify modern pharmacy returns, supplier price overlay and data isolation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python .github/ci/test_commercial_latest_sync.py
+          if ($LASTEXITCODE -ne 0) { throw 'Modern pharmacy transfer regression failed' }
       - name: Isolate extracted server port and database identity
         shell: pwsh
         run: |
