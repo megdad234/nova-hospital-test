@@ -42,6 +42,12 @@
    $('nova-col-show').onclick=()=>{filters.page=0;novaLoadCollections()};
    $('nova-col-xlsx').onclick=()=>novaExportCollections();
    $('nova-col-pdf').onclick=()=>novaPrintCollections();\n   $('nova-col-thermal').onclick=()=>novaPrintQuickThermal();
+   // Place the quick thermal action next to the existing period-collection heading.
+   const heading=[...document.querySelectorAll('h2,h3,h4')].find(el=>el.textContent.trim()==='تحصيل الفترة');
+   if(heading){
+     const quick=$('nova-col-thermal');
+     heading.parentElement.appendChild(quick);
+   }
    novaLoadCollections();
  };
  function query(page,all){
