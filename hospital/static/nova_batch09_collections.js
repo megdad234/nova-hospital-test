@@ -23,8 +23,7 @@
      '<label>الموظف<select id="nova-col-staff"><option value="0">كل الموظفين</option></select></label>'+
      '<button type="button" class="primary" id="nova-col-show">عرض الكشف</button>'+
      '<button type="button" class="outline" id="nova-col-xlsx">Excel (.xlsx)</button>'+
-     '<button type="button" class="outline" id="nova-col-pdf">طباعة / PDF كامل</button>'+
-     '<button type="button" class="primary" id="nova-col-thermal">طباعة تحصيل الفترة (حراري)</button></div>'+
+     '<button type="button" class="outline" id="nova-col-pdf">طباعة / PDF كامل</button></div>'+
      '<div id="nova-col-content" aria-live="polite">جارٍ تحميل تفاصيل التحصيل...</div></section>';
    const end=existing.lastIndexOf('</div>');
    return end>=0?existing.slice(0,end)+block+existing.slice(end):existing+block;
@@ -43,13 +42,6 @@
    $('nova-col-show').onclick=()=>{filters.page=0;novaLoadCollections()};
    $('nova-col-xlsx').onclick=()=>novaExportCollections();
    $('nova-col-pdf').onclick=()=>novaPrintCollections();
-   $('nova-col-thermal').onclick=()=>novaPrintQuickThermal();
-   // Place the quick thermal action next to the existing period-collection heading.
-   const heading=[...document.querySelectorAll('h2,h3,h4')].find(el=>el.textContent.trim()==='تحصيل الفترة');
-   if(heading){
-     const quick=$('nova-col-thermal');
-     heading.parentElement.appendChild(quick);
-   }
    novaLoadCollections();
  };
  function query(page,all){
@@ -128,26 +120,6 @@
  async function novaExportCollections(){
    try{await novaDownloadEntireData();notice('تم إعداد كشف Excel كاملاً حسب الفلاتر الحالية')}
    catch(e){notice('فشل تصدير Excel: '+e.message,true)}
- }
- function novaPrintQuickThermal(){
-   try{
-     if(!current||!current.summary)throw Error('انتظر تحميل تحصيل الفترة');
-     if(typeof novaUnifiedThermalPrint!=='function')throw Error('محرك الطباعة الحرارية غير متوفر');
-     const s=current.summary;
-     const name=state.brand?.hospital_name||'NOVA Hospital';
-     const item=(label,value)=>'<div class="nova-receipt-row"><span>'+safe(label)+'</span><strong dir="ltr">'+fmtNum(value)+'</strong></div>';
-     const slip='<article class="nova-thermal-v2" dir="rtl">'+
-       '<div class="nova-receipt-head"><h2>'+safe(name)+'</h2><strong>تحصيل الفترة</strong>'+
-       '<p>'+safe(adminState.from)+' — '+safe(adminState.to)+'</p></div>'+
-       '<div class="nova-receipt-divider"></div>'+
-       item('نقدي إجمالي',s.cash_gross)+item('بنكي إجمالي',s.bank_gross)+
-       item('مرتجعات نقدية',s.cash_refunds)+item('مرتجعات بنكية',s.bank_refunds)+
-       '<div class="nova-receipt-divider"></div>'+
-       '<div class="nova-receipt-total">'+item('الصافي',s.net)+'</div>'+
-       '<div class="nova-receipt-foot"><span>عدد الحركات: '+safe(s.count)+'</span>'+
-       '<span>المبالغ بالجنيه السوداني</span></div></article>';
-     novaUnifiedThermalPrint(slip,'thermal80');
-   }catch(e){notice('تعذر طباعة تحصيل الفترة: '+e.message,true)}
  }
  async function novaPrintCollections(){
    try{
