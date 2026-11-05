@@ -275,3 +275,33 @@ jobs:
           path: dist/commercial/
           retention-days: 7
           if-no-files-found: error
+
+  windows-installer-candidate:
+    runs-on: windows-2025
+    needs: windows-standalone-payload
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: NOVA-Commercial-Standalone-Payload-CANDIDATE
+          path: dist/commercial
+      - name: Compile explicitly unverified Windows installer
+        shell: pwsh
+        env:
+          NOVA_COMMERCIAL_ALLOW_UNVERIFIED_INSTALLER: 'YES'
+        run: |
+          $compiler = @(
+            "${env:ProgramFiles(x86)}\\Inno Setup 6\\ISCC.exe",
+            "$env:ProgramFiles\\Inno Setup 6\\ISCC.exe"
+          ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+          if (!$compiler) { throw 'Inno Setup 6 compiler unavailable on runner' }
+          & ./commercial_pharmacy/windows/build-installer-candidate.ps1 -SourceRoot (Get-Location).Path -InnoCompiler $compiler
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial installer candidate compilation failed' }
+      - name: Upload unverified installer candidate for acceptance testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-Commercial-Setup-UNVERIFIED-NOT-FOR-PRODUCTION
+          path: dist/commercial-installer-candidate/*.exe
+          retention-days: 7
+          if-no-files-found: error
