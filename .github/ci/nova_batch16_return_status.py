@@ -27,9 +27,7 @@ pattern=r'<button[^>]*onclick="returnModal\(\$\{s\.id\}\)"[^>]*>[^<]*</button>'
 matches=list(re.finditer(pattern,new))
 assert len(matches)==1, 'Refund button shape changed; refuse unsafe patch'
 button=matches[0].group()
-replacement="${novaReturnState==='full'?'<span style=\\"color:#b91c1c;font-weight:700\\">تم الاسترجاع</span>':novaReturnState==='partial'?'<span style=\\"color:#a16207;font-weight:700\\">مرتجع جزئي</span>':''}"+button
-# In a full refund, suppress original button visually, but never alter the refund function.
-replacement="${novaReturnState==='full'?'<span style=\\"color:#b91c1c;font-weight:700\\">تم الاسترجاع</span>':novaReturnState==='partial'?'<span style=\\"color:#a16207;font-weight:700\\">مرتجع جزئي</span>':''}"+ "${novaReturnState==='full'?'':\`"+button+"\`}"
+replacement="${novaReturnState==='full'?'<span style=\\\"color:#b91c1c;font-weight:700\\\">تم الاسترجاع</span>':novaReturnState==='partial'?'<span style=\\\"color:#a16207;font-weight:700\\\">مرتجع جزئي</span>':''}" + "${novaReturnState==='full'?'':`" + button + "`}"
 new=new[:matches[0].start()]+replacement+new[matches[0].end():]
 s=s[:start]+status+new+s[end:]
 p.write_text(s,encoding='utf-8')
