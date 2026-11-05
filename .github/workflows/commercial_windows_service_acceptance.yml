@@ -1,0 +1,53 @@
+name: Commercial Windows service acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [commercial-pharmacy-extraction-2026-11-04]
+    paths:
+      - '.github/workflows/commercial_windows_service_acceptance.yml'
+      - 'commercial_pharmacy/windows_service.py'
+      - 'commercial_pharmacy/windows/install-commercial-service.ps1'
+jobs:
+  service:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: NOVA-Commercial-Setup-UNVERIFIED-NOT-FOR-PRODUCTION
+          run-id: 41985566751
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: installer
+      - name: Install commercial pharmacy and register dedicated service
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = Get-ChildItem installer -Filter '*.exe' | Select-Object -First 1
+          if (!$setup) { throw 'Commercial installer missing' }
+          $root = Join-Path $env:RUNNER_TEMP 'CommercialServiceAcceptance'
+          $p = Start-Process $setup.FullName -ArgumentList @('/VERYSILENT','/NORESTART',"/DIR=$root") -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw 'Commercial installer failed' }
+          [Environment]::SetEnvironmentVariable('NOVA_COMMERCIAL_SOURCE_ROOT', $root, 'Machine')
+          [Environment]::SetEnvironmentVariable('NOVA_COMMERCIAL_PYTHON', (Join-Path $root 'runtime/python.exe'), 'Machine')
+          & ./commercial_pharmacy/windows/install-commercial-service.ps1 -ExecutablePath (Join-Path $root 'NOVACommercialPharmacyServer.exe') -Port 18763 -ServiceAwareExecutableConfirmed
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial service installation failed' }
+          $svc = Get-Service NOVACommercialPharmacyServer -ErrorAction Stop
+          if ($svc.Status -ne 'Running') { throw 'Commercial service is not running' }
+          $deadline = (Get-Date).AddSeconds(25)
+          $ok = $false
+          while ((Get-Date) -lt $deadline) {
+            try {
+              $response = Invoke-WebRequest 'http://127.0.0.1:18763/' -TimeoutSec 2
+              if ($response.StatusCode -eq 200) { $ok = $true; break }
+            } catch { Start-Sleep -Milliseconds 500 }
+          }
+          if (!$ok) { throw 'Windows service did not serve pharmacy HTTP' }
+          Write-Host 'COMMERCIAL_WINDOWS_SERVICE_RUNNING_HTTP_200'
+      - name: Clean up only commercial service
+        if: always()
+        shell: pwsh
+        run: |
+          & ./commercial_pharmacy/windows/uninstall-commercial-service.ps1
+          [Environment]::SetEnvironmentVariable('NOVA_COMMERCIAL_SOURCE_ROOT', $null, 'Machine')
+          [Environment]::SetEnvironmentVariable('NOVA_COMMERCIAL_PYTHON', $null, 'Machine')
