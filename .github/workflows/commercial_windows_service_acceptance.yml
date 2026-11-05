@@ -16,7 +16,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: NOVA-Commercial-Setup-UNVERIFIED-NOT-FOR-PRODUCTION
-          run-id: 41985566751
+          run-id: 42091450421
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: installer
       - name: Install commercial pharmacy and register dedicated service
@@ -28,10 +28,6 @@ jobs:
           $root = Join-Path $env:RUNNER_TEMP 'CommercialServiceAcceptance'
           $p = Start-Process $setup.FullName -ArgumentList @('/VERYSILENT','/NORESTART',"/DIR=$root") -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw 'Commercial installer failed' }
-          [Environment]::SetEnvironmentVariable('NOVA_COMMERCIAL_SOURCE_ROOT', $root, 'Machine')
-          [Environment]::SetEnvironmentVariable('NOVA_COMMERCIAL_PYTHON', (Join-Path $root 'runtime/python.exe'), 'Machine')
-          & ./commercial_pharmacy/windows/install-commercial-service.ps1 -ExecutablePath (Join-Path $root 'NOVACommercialPharmacyServer.exe') -Port 18763 -ServiceAwareExecutableConfirmed
-          if ($LASTEXITCODE -ne 0) { throw 'Commercial service installation failed' }
           $svc = Get-Service NOVACommercialPharmacyServer -ErrorAction Stop
           if ($svc.Status -ne 'Running') { throw 'Commercial service is not running' }
           $deadline = (Get-Date).AddSeconds(25)
