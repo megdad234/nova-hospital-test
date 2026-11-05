@@ -70,6 +70,8 @@ def run_service():
                         self.process.wait(timeout=10)
                         break
             finally:
+                if self.process is not None and self.process.poll() is None:
+                    self.process.terminate()
                 self.process = None
 
     if "--service" in sys.argv:
