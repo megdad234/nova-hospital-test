@@ -63,7 +63,11 @@ def run_service():
             _, env, _ = prepare(root, port=selected_port)
             self.process = subprocess.Popen(command, cwd=str(root), env=env)
             try:
-                self.process.wait()
+                while self.process.poll() is None:
+                if win32event.WaitForSingleObject(self.stop_event, 500) == win32event.WAIT_OBJECT_0:
+                    self.process.terminate()
+                    self.process.wait(timeout=10)
+                    break
             finally:
                 self.process = None
 
