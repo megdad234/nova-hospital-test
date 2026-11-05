@@ -61,6 +61,8 @@ def run(source_root, data_dir, port=18763, timeout=25.0):
         else:
             result["error"] = "server_http_timeout"
         if result["http_responded"]:
+            from .installed_acceptance import audit
+            result["installed_acceptance"] = audit(source_root, data_dir, port)
             # Confirm that the running server initialized its own SQLite database,
             # not merely that a web page answered HTTP 200.
             database = Path(data_dir).resolve() / "commercial_pharmacy.sqlite3"
