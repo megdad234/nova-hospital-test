@@ -240,3 +240,38 @@ jobs:
             dist/commercial/NOVACommercialPharmacyServer.exe
           retention-days: 7
           if-no-files-found: error
+
+  windows-standalone-payload:
+    runs-on: windows-2025
+    needs: [snapshot, windows-launcher-build]
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: Commercial-Pharmacy-Audited-Source-NOT-INSTALLABLE
+          path: commercial_pharmacy_stage
+      - uses: actions/download-artifact@v4
+        with:
+          name: NOVA-Commercial-Windows-Launchers-NOT-INSTALLABLE
+          path: commercial_launchers
+      - name: Create independent embedded Python runtime
+        shell: pwsh
+        run: |
+          & ./commercial_pharmacy/windows/build-embedded-runtime.ps1 -Destination "$env:RUNNER_TEMP/NOVACommercialEmbeddedPython"
+          if ($LASTEXITCODE -ne 0) { throw 'Independent Python runtime build failed' }
+      - name: Assemble and launch-test standalone pharmacy payload
+        shell: pwsh
+        run: |
+          & ./commercial_pharmacy/windows/assemble-standalone-payload.ps1 -SourceStage (Resolve-Path commercial_pharmacy_stage).Path -PythonRuntimeDirectory "$env:RUNNER_TEMP/NOVACommercialEmbeddedPython" -LaunchersDirectory (Resolve-Path commercial_launchers).Path -Destination (Join-Path (Get-Location).Path 'dist/commercial')
+          if ($LASTEXITCODE -ne 0) { throw 'Standalone commercial pharmacy assembly failed' }
+      - name: Upload tested standalone payload candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-Commercial-Standalone-Payload-CANDIDATE
+          path: dist/commercial/
+          retention-days: 7
+          if-no-files-found: error
