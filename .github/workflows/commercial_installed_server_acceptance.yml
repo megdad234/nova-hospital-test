@@ -42,6 +42,15 @@ jobs:
           if (Test-Path (Join-Path $dest 'pharmacy/app.py')) { throw 'Uninstall did not remove installed application' }
           if (!(Test-Path $db)) { throw 'Uninstall erased commercial pharmacy user database' }
           Write-Host 'INSTALLED_HTTP_DB_AND_UNINSTALL_DATA_PRESERVATION_PASSED'
+          $before = (Get-FileHash $db -Algorithm SHA256).Hash
+          $again = Start-Process $setup.FullName -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$dest") -PassThru -Wait
+          if ($again.ExitCode -ne 0) { throw 'Reinstallation failed' }
+          if (!(Test-Path (Join-Path $dest 'runtime/python.exe'))) { throw 'Reinstallation runtime missing' }
+          $after = (Get-FileHash $db -Algorithm SHA256).Hash
+          if ($before -ne $after) { throw 'Reinstallation changed commercial pharmacy data' }
+          & (Join-Path $dest 'runtime/python.exe') -m commercial_pharmacy.live_server_smoke --source-root $dest --data-dir (Join-Path $env:RUNNER_TEMP 'CommercialAcceptanceData') --port 18765 --timeout 35
+          if ($LASTEXITCODE -ne 0) { throw 'Reinstalled server cannot reopen existing database' }
+          Write-Host 'COMMERCIAL_REINSTALLATION_DATA_PRESERVATION_AND_RESTART_PASSED'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
