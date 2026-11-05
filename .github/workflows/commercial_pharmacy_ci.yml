@@ -169,6 +169,14 @@ jobs:
         run: |
           python .github/ci/patch_commercial_server_host.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial server host isolation failed' }
+      - name: Compare working NOVA Hospital Windows installer and service boot contract
+        shell: pwsh
+        run: |
+          foreach ($path in @('windows/build-windows.ps1','windows/ci-acceptance.ps1')) {
+            if (!(Test-Path $path)) { throw "Hospital installer reference missing: $path" }
+            Write-Host "HOSPITAL_REFERENCE $path"
+            Select-String -Path $path -Pattern 'service|sc.exe|Start-Service|Inno|iscc|setup|startup|python|127.0.0.1|wait|ready|port' -Context 2,2 | Select-Object -First 100 | ForEach-Object { Write-Host $_.ToString() }
+          }
       - name: Inspect extracted server entrypoint for independent port wiring
         shell: pwsh
         run: |
