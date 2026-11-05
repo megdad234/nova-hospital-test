@@ -54,7 +54,11 @@ $probe = Join-Path $Destination 'COMMERCIAL_LIVE_SMOKE.json'
 Push-Location $Destination
 try {
   & (Join-Path $Destination 'runtime/python.exe') -m commercial_pharmacy.live_server_smoke --source-root $Destination --data-dir (Join-Path $env:TEMP 'NOVACommercialAssemblySmoke') --port 18763 --timeout 30 --output $probe
-  if ($LASTEXITCODE -ne 0) { throw 'Standalone payload failed actual HTTP server smoke; inspect COMMERCIAL_LIVE_SMOKE.json' }
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host 'EMBEDDED_SERVER_DIAGNOSTIC_BEGIN'
+    & (Join-Path $Destination 'runtime/python.exe') -c 'import runpy; runpy.run_path("pharmacy/server_host.py",run_name="__main__")'
+    throw 'Standalone payload failed actual HTTP server smoke; inspect COMMERCIAL_LIVE_SMOKE.json'
+  }
 } finally {
   Pop-Location
 }
