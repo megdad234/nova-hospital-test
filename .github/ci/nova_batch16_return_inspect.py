@@ -23,3 +23,10 @@ for key in ('تحصيل الفترة','cash_gross','bank_gross'):
    content=p.read_text(encoding='utf-8')
    for i in [i for i in range(len(content)) if content.startswith(key,i)][:4]:
     print('NOVA_FINANCE_CONTEXT',filename,key,repr(content[max(0,i-700):i+1100]))
+
+for filename in ('pharmacy/app.py','pharmacy/static/index.html'):
+ source=Path(filename).read_text(encoding='utf-8')
+ lines=source.splitlines()
+ for i,line in enumerate(lines):
+  if any(t in line for t in ('sale_returns sr','FROM sales s','FROM sales ORDER','فواتير البيع والمرتجعات','سجل الفواتير والمرتجعات','function renderSale','function saleList','function salesList','function renderHistory')):
+   print('NOVA16_TARGET',filename,i+1,repr('\\n'.join(lines[max(0,i-5):i+12])[:2000]))
