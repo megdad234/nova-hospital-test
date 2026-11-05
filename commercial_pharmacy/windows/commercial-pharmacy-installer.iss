@@ -39,7 +39,7 @@ Name: "{autodesktop}\NOVA Commercial Pharmacy"; Filename: "{app}\{#AppExe}"; Tas
 Name: desktopicon; Description: "Create desktop shortcut"; GroupDescription: "Additional shortcuts:"
 
 [Run]
-Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\\maintenance\\install-commercial-service.ps1"" -ExecutablePath ""{app}\\{#ServerExe}"" -Port 18763 -OpenLanFirewall -ServiceAwareExecutableConfirmed"; Flags: runhidden waituntilterminated; StatusMsg: "Starting NOVA Commercial Pharmacy server..."
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\maintenance\install-commercial-service.ps1"" -ExecutablePath ""{app}\{#ServerExe}"" -Port 18763 -OpenLanFirewall -ServiceAwareExecutableConfirmed"; Flags: runhidden waituntilterminated; StatusMsg: "Starting NOVA Commercial Pharmacy server..."
 
 [UninstallRun]
-Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\\maintenance\\uninstall-commercial-service.ps1"" -RemoveLanFirewallRule"; Flags: runhidden waituntilterminated
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\maintenance\uninstall-commercial-service.ps1"" -RemoveLanFirewallRule"; Flags: runhidden waituntilterminated
