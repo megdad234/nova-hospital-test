@@ -15,3 +15,11 @@ for key in ("FROM sales", "function sales", "sale-history", "sale-list", "sale-r
   content=p.read_text(encoding='utf-8')
   hits=[i for i in range(len(content)) if content.startswith(key,i)]
   for i in hits[:4]:print('NOVA_RETURN_CONTEXT',filename,key,repr(content[max(0,i-550):i+950]))
+
+for key in ('تحصيل الفترة','cash_gross','bank_gross'):
+ for filename in ('hospital/static/admin-ui.js','hospital/static/nova_batch09_collections.js'):
+  p=Path(filename)
+  if p.exists():
+   content=p.read_text(encoding='utf-8')
+   for i in [i for i in range(len(content)) if content.startswith(key,i)][:4]:
+    print('NOVA_FINANCE_CONTEXT',filename,key,repr(content[max(0,i-700):i+1100]))
