@@ -18,7 +18,7 @@ status="""function novaReturnDisplayStatus(s){
 """
 # Build on exact existing sale row, without replacing the whole history screen.
 new=old.replace('state.sales.map(s=>','state.sales.map(s=>{const novaReturnState=novaReturnDisplayStatus(s);return ',1)
-assert new.count('}))')==1, 'Unknown history callback structure'
+assert new.count('}))')==1, 'Unknown history callback structure: '+repr({'count':new.count('}))'),'tail':new[-1400:]})
 new=new.replace('}))',';}))',1)
 new=new.replace('<tr>','<tr style="background:${novaReturnState===\'full\'?\'#fee2e2\':novaReturnState===\'partial\'?\'#fef9c3\':\'\'}">',1)
 # Locate only the pre-existing refund button, retain its original onclick and behavior for partial/normal.
