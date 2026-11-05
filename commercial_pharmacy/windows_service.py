@@ -55,6 +55,7 @@ def run_service():
             self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
             win32event.SetEvent(self.stop_event)
             if self.process is not None:
+                if self.process.poll() is None:
                 self.process.terminate()
 
         def SvcDoRun(self):
