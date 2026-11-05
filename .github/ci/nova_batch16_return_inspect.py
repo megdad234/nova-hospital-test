@@ -38,3 +38,9 @@ for filename in ('pharmacy/static/index.html','pharmacy/static/nova_pharmacy_bat
   if i>=0:print('NOVA16_UI_SEARCH',filename,term,repr(source[max(0,i-700):i+900]))
 
 print('NOVA16_UI_DIAGNOSTIC_COMPLETE')
+
+for file in Path('pharmacy/static').glob('*.js'):
+ src=file.read_text(encoding='utf-8')
+ for token in ('فواتير البيع والمرتجعات','sale-return','return-sale','سجل فواتير البيع','مرتجع</button>','>مرتجع<'):
+  idx=src.find(token)
+  if idx>=0:print('NOVA16_RENDER_ANCHOR',str(file),token,repr(src[max(0,idx-1400):idx+1700]))
