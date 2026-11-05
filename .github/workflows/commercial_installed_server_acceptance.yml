@@ -58,6 +58,9 @@ jobs:
           & (Join-Path $dest 'runtime/python.exe') -m commercial_pharmacy.live_server_smoke --source-root $dest --data-dir (Join-Path $env:RUNNER_TEMP 'CommercialAcceptanceData') --port 18765 --timeout 35
           if ($LASTEXITCODE -ne 0) { throw 'Reinstalled server cannot reopen existing database' }
           Write-Host 'COMMERCIAL_REINSTALLATION_DATA_PRESERVATION_AND_RESTART_PASSED'
+          & (Join-Path $dest 'maintenance/check-service-prerequisites.ps1') -SourceRoot $dest -PythonExecutable (Join-Path $dest 'runtime/python.exe')
+          if ($LASTEXITCODE -ne 0) { throw 'Installed commercial service prerequisites failed' }
+          Write-Host 'COMMERCIAL_INSTALLED_SERVICE_PREREQUISITES_PASSED'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
