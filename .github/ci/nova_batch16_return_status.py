@@ -2,6 +2,8 @@ from pathlib import Path
 p=Path('pharmacy/static/app.js')
 s=p.read_text(encoding='utf-8')
 a=s.index('function sales(){return ')
+# The approved POS is immutable during return-status changes.
+pos_before=s[s.index('function pos()'):s.index('function sales(){return ')] if 'function pos()' in s else None
 b=s.index('\nfunction showReceipt(',a)
 replacement="""function novaReturnStatus(s){
  const lines=Array.isArray(s.lines)?s.lines:[];
@@ -16,5 +18,7 @@ old="let lines=s.lines.filter(x=>x.qty>x.returned);modal("
 new="let lines=s.lines.filter(x=>x.qty>x.returned);if(!lines.length){toast('هذه الفاتورة مرتجعة بالكامل ولا توجد كمية متاحة للإرجاع',true);return;}modal("
 assert s.count(old)==1
 s=s.replace(old,new)
+if pos_before is not None:
+    assert s[s.index('function pos()'):s.index('function novaReturnStatus(')] == pos_before, 'POS changed during returns patch'
 p.write_text(s,encoding='utf-8')
 print('NOVA16_RETURN_STATUS_UI_APPLIED')
