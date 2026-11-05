@@ -30,3 +30,9 @@ for filename in ('pharmacy/app.py','pharmacy/static/index.html'):
  for i,line in enumerate(lines):
   if any(t in line for t in ('sale_returns sr','FROM sales s','FROM sales ORDER','فواتير البيع والمرتجعات','سجل الفواتير والمرتجعات','function renderSale','function saleList','function salesList','function renderHistory')):
    print('NOVA16_TARGET',filename,i+1,repr('\\n'.join(lines[max(0,i-5):i+12])[:2000]))
+
+for filename in ('pharmacy/static/index.html','pharmacy/static/nova_pharmacy_batch08.js'):
+ source=Path(filename).read_text(encoding='utf-8')
+ for term in ('مرتجع','sale-return','saleReturn','renderSales','sales-list','sales-table','returnSale','sale-returns'):
+  i=source.find(term)
+  if i>=0:print('NOVA16_UI_SEARCH',filename,term,repr(source[max(0,i-700):i+900]))
