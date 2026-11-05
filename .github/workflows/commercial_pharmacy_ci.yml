@@ -305,3 +305,36 @@ jobs:
           path: dist/commercial-installer-candidate/*.exe
           retention-days: 7
           if-no-files-found: error
+
+  windows-installer-installation-test:
+    runs-on: windows-2025
+    needs: windows-installer-candidate
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: NOVA-Commercial-Setup-UNVERIFIED-NOT-FOR-PRODUCTION
+          path: installer-candidate
+      - name: Silent install and verify isolated commercial files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = Get-ChildItem installer-candidate -Filter '*.exe' | Select-Object -First 1
+          if (!$installer) { throw 'Candidate installer missing' }
+          $target = Join-Path $env:RUNNER_TEMP 'NOVACommercialInstallAcceptance'
+          $log = Join-Path $env:RUNNER_TEMP 'NOVACommercialInstall.log'
+          $process = Start-Process -FilePath $installer.FullName -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$target","/LOG=$log") -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Inno Setup installation failed: $($process.ExitCode)" }
+          foreach ($item in @('NOVACommercialPharmacy.exe','NOVACommercialPharmacyServer.exe','runtime/python.exe','pharmacy/app.py','pharmacy/server_host.py','commercial_pharmacy/launch.py')) {
+            if (!(Test-Path -LiteralPath (Join-Path $target $item) -PathType Leaf)) { throw "Installed file missing: $item" }
+          }
+          if (Test-Path (Join-Path $target 'hospital_reference')) { throw 'Hospital reference shipped inside installer' }
+          & (Join-Path $target 'runtime/python.exe') -m commercial_pharmacy.launch --source-root $target --preflight-only
+          if ($LASTEXITCODE -ne 0) { throw 'Installed commercial pharmacy failed preflight' }
+          $uninstaller = Get-ChildItem $target -Filter 'unins*.exe' | Select-Object -First 1
+          if (!$uninstaller) { throw 'Inno Setup uninstaller missing' }
+          $uninstall = Start-Process -FilePath $uninstaller.FullName -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw "Uninstall failed: $($uninstall.ExitCode)" }
+          if (Test-Path (Join-Path $target 'pharmacy/app.py')) { throw 'Uninstall left commercial program source behind' }
+          Write-Host 'COMMERCIAL_INSTALL_UNINSTALL_STRUCTURE_ACCEPTED_NO_POS_OR_SERVICE_ACCEPTANCE'
