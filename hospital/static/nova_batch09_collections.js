@@ -23,7 +23,8 @@
      '<label>الموظف<select id="nova-col-staff"><option value="0">كل الموظفين</option></select></label>'+
      '<button type="button" class="primary" id="nova-col-show">عرض الكشف</button>'+
      '<button type="button" class="outline" id="nova-col-xlsx">Excel (.xlsx)</button>'+
-     '<button type="button" class="outline" id="nova-col-pdf">طباعة / PDF كامل</button>'+\n     '<button type="button" class="primary" id="nova-col-thermal">طباعة تحصيل الفترة (حراري)</button></div>'+
+     '<button type="button" class="outline" id="nova-col-pdf">طباعة / PDF كامل</button>'+
+     '<button type="button" class="primary" id="nova-col-thermal">طباعة تحصيل الفترة (حراري)</button></div>'+
      '<div id="nova-col-content" aria-live="polite">جارٍ تحميل تفاصيل التحصيل...</div></section>';
    const end=existing.lastIndexOf('</div>');
    return end>=0?existing.slice(0,end)+block+existing.slice(end):existing+block;
@@ -41,7 +42,8 @@
    }
    $('nova-col-show').onclick=()=>{filters.page=0;novaLoadCollections()};
    $('nova-col-xlsx').onclick=()=>novaExportCollections();
-   $('nova-col-pdf').onclick=()=>novaPrintCollections();\n   $('nova-col-thermal').onclick=()=>novaPrintQuickThermal();
+   $('nova-col-pdf').onclick=()=>novaPrintCollections();
+   $('nova-col-thermal').onclick=()=>novaPrintQuickThermal();
    // Place the quick thermal action next to the existing period-collection heading.
    const heading=[...document.querySelectorAll('h2,h3,h4')].find(el=>el.textContent.trim()==='تحصيل الفترة');
    if(heading){
