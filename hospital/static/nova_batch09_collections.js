@@ -142,10 +142,22 @@
        '<h2>كشف التحصيل التفصيلي</h2><p>'+safe(adminState.from)+' إلى '+safe(adminState.to)+'</p></div></header>'+
        renderFull({...payload,has_more:false,filters:{...payload.filters,page:0},page_size:Math.max(1,allRows.length)})+
        '<footer>عدد العمليات: '+allRows.length+' — المبالغ بالجنيه السوداني — تقرير NOVA</footer></article>';
-     document.body.classList.add('printing-admin','nova-collection-printing');
-     const cleanup=()=>{document.body.classList.remove('printing-admin','nova-collection-printing');area.innerHTML=''};
-     window.addEventListener('afterprint',cleanup,{once:true});
-     window.print();setTimeout(cleanup,30000);
+     // Preview before printing; do not modify shared receipt print engine.
+     const existing=$('nova-collection-preview');if(existing)existing.remove();
+     const overlay=document.createElement('div');
+     overlay.id='nova-collection-preview';
+     overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.72);display:flex;flex-direction:column;padding:16px;box-sizing:border-box;direction:rtl';
+     const toolbar=document.createElement('div');
+     toolbar.style.cssText='background:#fff;border-radius:12px 12px 0 0;padding:12px;display:flex;gap:12px;align-items:center';
+     const printBtn=document.createElement('button');printBtn.type='button';printBtn.textContent='طباعة / حفظ PDF';printBtn.className='primary';
+     const closeBtn=document.createElement('button');closeBtn.type='button';closeBtn.textContent='إغلاق المعاينة';closeBtn.className='outline';
+     toolbar.append(printBtn,closeBtn);
+     const preview=document.createElement('div');preview.style.cssText='background:#f1f5f9;overflow:auto;flex:1;padding:16px;border-radius:0 0 12px 12px';
+     const sheet=area.firstElementChild.cloneNode(true);sheet.style.cssText='background:white;max-width:1100px;margin:auto;padding:20px;direction:rtl';
+     preview.appendChild(sheet);overlay.append(toolbar,preview);document.body.appendChild(overlay);
+     const close=()=>{overlay.remove();area.innerHTML='';document.body.classList.remove('printing-admin','nova-collection-printing')};
+     closeBtn.onclick=close;
+     printBtn.onclick=()=>{overlay.style.display='none';document.body.classList.add('printing-admin','nova-collection-printing');window.addEventListener('afterprint',close,{once:true});window.print();setTimeout(()=>{if(document.body.contains(overlay)){document.body.classList.remove('printing-admin','nova-collection-printing');overlay.style.display='flex'}},1200)};
    }catch(e){notice('فشل إعداد PDF: '+e.message,true)}
  }
 })();
