@@ -11,7 +11,7 @@ Expand-Archive -LiteralPath $zip -DestinationPath $Destination
 $pth = Join-Path $Destination 'python312._pth'
 if (!(Test-Path $pth)) { throw 'Embedded Python path configuration missing' }
 $lines = Get-Content $pth
-$lines = @($lines | Where-Object { $_ -ne '#import site' }) + @('Lib/site-packages','import site')
+$lines = @($lines | Where-Object { $_ -ne '#import site' }) + @('..','Lib/site-packages','import site')
 Set-Content -LiteralPath $pth -Value $lines -Encoding ascii
 $packages = Join-Path $Destination 'Lib/site-packages'
 New-Item -ItemType Directory -Path $packages -Force | Out-Null
