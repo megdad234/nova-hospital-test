@@ -257,6 +257,8 @@ jobs:
       - name: Apply presentation-only refund history status
         shell: pwsh
         run: |
+          python -m py_compile .github/ci/nova_batch16_return_status.py
+          if ($LASTEXITCODE -ne 0) { throw 'Refund patch Python syntax invalid' }
           python .github/ci/nova_batch16_return_status.py
           if ($LASTEXITCODE -ne 0) { throw 'Refund history display patch failed' }
           node --check pharmacy/static/app.js
