@@ -31,6 +31,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Installed server failed HTTP check' }
           $result = Get-Content installed_live_smoke.json -Raw | ConvertFrom-Json
           if (!$result.database_verified) { throw 'Installed independent database failed check' }
+          if (!$result.http_responded) { throw 'Installed HTTP server did not respond' }
+          if ($result.database_table_count -lt 1) { throw 'Installed database schema is empty' }
+          $db = Join-Path $env:RUNNER_TEMP 'CommercialAcceptanceData/commercial_pharmacy.sqlite3'
+          if (!(Test-Path $db)) { throw 'Dedicated commercial SQLite file missing' }
+          $uninstaller = Get-ChildItem $dest -Filter 'unins*.exe' | Select-Object -First 1
+          if (!$uninstaller) { throw 'Installed uninstaller not found' }
+          $uninstall = Start-Process $uninstaller.FullName -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -PassThru -Wait
+          if ($uninstall.ExitCode -ne 0) { throw 'Installed program uninstall failed' }
+          if (Test-Path (Join-Path $dest 'pharmacy/app.py')) { throw 'Uninstall did not remove installed application' }
+          if (!(Test-Path $db)) { throw 'Uninstall erased commercial pharmacy user database' }
+          Write-Host 'INSTALLED_HTTP_DB_AND_UNINSTALL_DATA_PRESERVATION_PASSED'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
