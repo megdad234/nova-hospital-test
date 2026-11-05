@@ -330,6 +330,17 @@ jobs:
             if (!(Test-Path -LiteralPath (Join-Path $target $item) -PathType Leaf)) { throw "Installed file missing: $item" }
           }
           if (Test-Path (Join-Path $target 'hospital_reference')) { throw 'Hospital reference shipped inside installer' }
+          $service = Get-Service -Name NOVACommercialPharmacyServer -ErrorAction SilentlyContinue
+          if (!$service -or $service.Status -ne 'Running') { throw 'Installer did not automatically start commercial pharmacy service' }
+          $ready = $false
+          for ($attempt=0; $attempt -lt 30; $attempt++) {
+            try {
+              $response = Invoke-WebRequest 'http://127.0.0.1:18763/' -TimeoutSec 3
+              if ($response.StatusCode -eq 200) { $ready = $true; break }
+            } catch { Start-Sleep -Seconds 1 }
+          }
+          if (!$ready) { throw 'Installed commercial service is not serving HTTP' }
+          Write-Host 'AUTOMATIC_COMMERCIAL_SERVICE_AND_HTTP_PASSED'
           & (Join-Path $target 'runtime/python.exe') -m commercial_pharmacy.launch --source-root $target --preflight-only
           if ($LASTEXITCODE -ne 0) { throw 'Installed commercial pharmacy failed preflight' }
           $uninstaller = Get-ChildItem $target -Filter 'unins*.exe' | Select-Object -First 1
@@ -337,4 +348,5 @@ jobs:
           $uninstall = Start-Process -FilePath $uninstaller.FullName -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -Wait -PassThru
           if ($uninstall.ExitCode -ne 0) { throw "Uninstall failed: $($uninstall.ExitCode)" }
           if (Test-Path (Join-Path $target 'pharmacy/app.py')) { throw 'Uninstall left commercial program source behind' }
+          if (Get-Service NOVACommercialPharmacyServer -ErrorAction SilentlyContinue) { throw 'Uninstall left commercial service registered' }
           Write-Host 'COMMERCIAL_INSTALL_UNINSTALL_STRUCTURE_ACCEPTED_NO_POS_OR_SERVICE_ACCEPTANCE'
