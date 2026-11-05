@@ -16,19 +16,19 @@ status="""function novaReturnDisplayStatus(s){
  return qty>0&&returned>=qty?'full':returned>0?'partial':'none';
 }
 """
-# Build on exact existing sale row, without replacing the whole history screen.
-new=old.replace('state.sales.map(s=>','state.sales.map(s=>{const novaReturnState=novaReturnDisplayStatus(s);return ',1)
-assert new.count('}))')==1, 'Unknown history callback structure: '+repr({'count':new.count('}))'),'tail':new[-1400:]})
-new=new.replace('}))',';}))',1)
-new=new.replace('<tr>','<tr style="background:${novaReturnState===\'full\'?\'#fee2e2\':novaReturnState===\'partial\'?\'#fef9c3\':\'\'}">',1)
-# Locate only the pre-existing refund button, retain its original onclick and behavior for partial/normal.
-import re
-pattern=r'<button[^>]*onclick="returnModal\(\$\{s\.id\}\)"[^>]*>[^<]*</button>'
-matches=list(re.finditer(pattern,new))
-assert len(matches)==1, 'Refund button shape changed; refuse unsafe patch'
-button=matches[0].group()
-replacement="${novaReturnState==='full'?'<span style=\\\"color:#b91c1c;font-weight:700\\\">تم الاسترجاع</span>':novaReturnState==='partial'?'<span style=\\\"color:#a16207;font-weight:700\\\">مرتجع جزئي</span>':''}" + "${novaReturnState==='full'?'':`" + button + "`}"
-new=new[:matches[0].start()]+replacement+new[matches[0].end():]
+# The verified history row has a nested permission-controlled refund button.
+# Change only that row's presentation, preserving the existing permission check and handler.
+assert old.count("state.sales.map(s=>")==1
+assert old.count("can('refund')?")==1
+assert old.count('onclick="returnModal(${s.id})"')==1
+assert old.count('onclick="showReceipt(${s.id})"')==1
+new=old.replace('state.sales.map(s=>\x60<tr>', 'state.sales.map(s=>{const novaReturnState=novaReturnDisplayStatus(s);return \x60<tr style="background:${novaReturnState===\'full\'?\'#fee2e2\':novaReturnState===\'partial\'?\'#fef9c3\':\'\'}">',1)
+assert new!=old, 'Sales history row template changed'
+old_button="can('refund')?\x60<button class=\"btn danger small\" onclick=\"returnModal(${s.id})\">مرتجع</button>\x60:''"
+new_button="novaReturnState==='full'?\x60<span style=\"color:#b91c1c;font-weight:700\">تم الاسترجاع</span>\x60:(novaReturnState==='partial'?\x60<span style=\"color:#a16207;font-weight:700\">مرتجع جزئي</span>\x60:'')+(can('refund')?\x60<button class=\"btn danger small\" onclick=\"returnModal(${s.id})\">مرتجع</button>\x60:'')"
+new=new.replace(old_button,new_button,1)
+new=new.replace('\x60))}', '\x60;}))}',1)
+assert new!=old and 'novaReturnDisplayStatus(s)' in new
 s=s[:start]+status+new+s[end:]
 p.write_text(s,encoding='utf-8')
 print('NOVA_RETURN_HISTORY_DISPLAY_ONLY')
