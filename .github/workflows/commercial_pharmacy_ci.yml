@@ -209,3 +209,34 @@ jobs:
           path: commercial_pharmacy_stage/
           retention-days: 7
           if-no-files-found: error
+
+  windows-launcher-build:
+    runs-on: windows-2025
+    needs: snapshot
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Windows launcher build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller pywin32
+          if ($LASTEXITCODE -ne 0) { throw 'Windows launcher build dependencies unavailable' }
+      - name: Build commercial-only Windows executables
+        shell: pwsh
+        run: |
+          & ./commercial_pharmacy/windows/build-commercial-executables.ps1 -SourceRoot (Get-Location).Path
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial Windows executable build failed' }
+          & ./commercial_pharmacy/windows/validate-installer-inputs.ps1 -SourceRoot (Get-Location).Path
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial Windows PE validation failed' }
+      - name: Upload commercial launchers for packaging development, not installation
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-Commercial-Windows-Launchers-NOT-INSTALLABLE
+          path: |
+            dist/commercial/NOVACommercialPharmacy.exe
+            dist/commercial/NOVACommercialPharmacyServer.exe
+          retention-days: 7
+          if-no-files-found: error
