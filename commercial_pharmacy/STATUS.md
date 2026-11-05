@@ -1,5 +1,17 @@
 # NOVA Commercial Pharmacy — implementation status
 
+## Verified CI evidence (2026-11-05)
+
+- Commercial isolated runtime and packaged Windows installer pipeline: PASS, run 41985566751.
+- Independent Windows EXE candidate pipeline: PASS, run 41985566548.
+- Installed HTTP/SQLite, uninstall data preservation, and reinstall acceptance: PASS against earlier candidate, run 41981750234.
+- Windows SCM auto-registration, boot start, stop/restart, LAN firewall, POS, insurance, receipt printing, and hospital coexistence: NOT YET VERIFIED.
+- Inno Setup currently does not register or start the service automatically. The installer remains explicitly UNVERIFIED and is not production-ready.
+- Branch-only development: do not change NOVA Hospital main, hospital data, or hospital service.
+
+The older status notes below document the initial implementation stage; this dated evidence supersedes claims that no candidate EXE or installer has been built.
+
+
 ## Current verified scope
 The branch contains isolated commercial storage, backup and offline restore modules, maintenance CLI, synthetic regression tests, extraction and coupling audits. It is **not** a validated Windows application or installer.
 
