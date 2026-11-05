@@ -30,7 +30,10 @@ if ($Port -lt 1024 -or $Port -gt 65535 -or $Port -eq 10080) {
   throw 'Invalid or hospital-reserved commercial pharmacy port'
 }
 if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
-  throw 'Commercial pharmacy service already exists; refusing overwrite'
+  Stop-Service -Name $serviceName -ErrorAction SilentlyContinue
+  & sc.exe delete $serviceName | Out-Null
+  Start-Sleep -Seconds 2
+  if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) { throw 'Previous commercial service is still registered; retry after reboot' }
 }
 $fullExe = (Resolve-Path -LiteralPath $ExecutablePath).Path
 if ($fullExe -match '[\x00-\x1f]') { throw 'Invalid executable path' }
