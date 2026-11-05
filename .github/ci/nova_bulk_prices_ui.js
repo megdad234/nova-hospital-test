@@ -3,7 +3,7 @@
 let preview=[];
 const el=(tag,txt)=>{const e=document.createElement(tag);if(txt!==undefined)e.textContent=txt;return e};
 const panel=el('section');panel.id='nova-price-list-panel';panel.hidden=true;panel.style.display='none';
-panel.style.cssText='position:fixed;inset:6% 5%;z-index:9999;background:#fff;color:#153b43;overflow:auto;border:2px solid #0b8791;border-radius:16px;padding:22px;box-shadow:0 12px 50px #0006;direction:rtl;box-sizing:border-box;overscroll-behavior:contain';
+panel.style.cssText='position:fixed;inset:6% 5%;z-index:9999;background:#fff;color:#153b43;overflow:auto;border:2px solid #0b8791;border-radius:16px;padding:22px;box-shadow:0 12px 50px #0006;direction:rtl;box-sizing:border-box;overscroll-behavior:contain;display:none';
 const heading=el('h2','مراجعة برايس الموردين وتحديث أسعار البيع');panel.append(heading);
 const close=el('button','إغلاق');close.onclick=()=>{panel.hidden=true;panel.style.display='none'};panel.append(close);
 panel.append(el('p','ارفع CSV أو Excel: الأعمدة name,purchase_price,strength,pack,barcode. لا يتم تعديل المخزون أو المشتريات.'));
