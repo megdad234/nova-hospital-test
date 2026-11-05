@@ -2,10 +2,10 @@
 (()=>{'use strict';
 let preview=[];
 const el=(tag,txt)=>{const e=document.createElement(tag);if(txt!==undefined)e.textContent=txt;return e};
-const panel=el('section');panel.id='nova-price-list-panel';panel.hidden=true;panel.style.display='none';
-panel.style.cssText='position:fixed;inset:6% 5%;z-index:9999;background:#fff;color:#153b43;overflow:auto;border:2px solid #0b8791;border-radius:16px;padding:22px;box-shadow:0 12px 50px #0006;direction:rtl;box-sizing:border-box;overscroll-behavior:contain;display:none';
+const panel=el('section');panel.id='nova-price-list-panel';panel.hidden=true;
+panel.style.cssText='position:fixed;inset:6% 5%;z-index:9999;background:#fff;color:#153b43;overflow:auto;border:2px solid #0b8791;border-radius:16px;padding:22px;box-shadow:0 12px 50px #0006;direction:rtl';
 const heading=el('h2','مراجعة برايس الموردين وتحديث أسعار البيع');panel.append(heading);
-const close=el('button','إغلاق');close.onclick=()=>{panel.hidden=true;panel.style.display='none'};panel.append(close);
+const close=el('button','إغلاق');close.onclick=()=>panel.hidden=true;panel.append(close);
 panel.append(el('p','ارفع CSV أو Excel: الأعمدة name,purchase_price,strength,pack,barcode. لا يتم تعديل المخزون أو المشتريات.'));
 const file=el('input');file.type='file';file.accept='.csv,.xlsx,text/csv';panel.append(file);
 const pct=el('input');pct.type='number';pct.min='0';pct.max='1000';pct.placeholder='نسبة ربح جديدة (اختياري: اتركها للمحافظة على هامش الربح)';panel.append(pct);
@@ -60,5 +60,5 @@ historyBtn.onclick=async()=>{try{
  const b=el('button','تراجع');b.onclick=async()=>{if(!confirm('استرجاع جميع أسعار هذه العملية؟'))return;try{await request('nova-price-list-rollback',{audit_id:r.id});status.textContent='تم التراجع';historyBtn.click()}catch(e){status.textContent=e.message}};div.append(b)}
  grid.append(div)});
  }catch(e){status.textContent=e.message}};
-document.addEventListener('DOMContentLoaded',()=>{const launch=el('button','تحديث الأسعار من برايس');launch.style.cssText='position:fixed;bottom:16px;left:16px;z-index:9998;background:#087b87;color:white;padding:12px;border:0;border-radius:12px';launch.onclick=()=>{panel.hidden=false;panel.style.display='block'};document.body.append(launch,panel)});
+document.addEventListener('DOMContentLoaded',()=>{const launch=el('button','تحديث الأسعار من برايس');launch.style.cssText='position:fixed;bottom:16px;left:16px;z-index:9998;background:#087b87;color:white;padding:12px;border:0;border-radius:12px';launch.onclick=()=>panel.hidden=false;document.body.append(launch,panel)});
 })();
