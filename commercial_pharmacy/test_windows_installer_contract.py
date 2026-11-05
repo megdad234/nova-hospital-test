@@ -23,11 +23,13 @@ class InstallerContractTests(unittest.TestCase):
             self.assertEqual(source.count(directory.replace("\\\\", "\\")), 1)
         self.assertIn("recursesubdirs", source)
 
-    def test_unverified_installer_does_not_autostart_service(self):
+    def test_installer_registers_and_removes_dedicated_service(self):
         source = (WINDOWS / "commercial-pharmacy-installer.iss").read_text(encoding="utf-8")
-        self.assertNotIn("\n[Run]\n", source)
-        self.assertNotIn("\n[UninstallRun]\n", source)
-        self.assertIn("Automatic service registration disabled", source)
+        self.assertIn("\n[Run]\n", source)
+        self.assertIn("\n[UninstallRun]\n", source)
+        self.assertIn("install-commercial-service.ps1", source)
+        self.assertIn("uninstall-commercial-service.ps1", source)
+        self.assertIn("-ServiceAwareExecutableConfirmed", source)
 
     def test_payload_preflight_rejects_hospital_reference(self):
         source = (WINDOWS / "check-runtime-payload.ps1").read_text(encoding="utf-8")
