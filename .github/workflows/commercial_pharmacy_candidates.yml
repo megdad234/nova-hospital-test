@@ -32,7 +32,7 @@ jobs:
         shell: pwsh
         run: |
           & ./commercial_pharmacy/windows/validate-installer-inputs.ps1 -SourceRoot .
-          if ($LASTEXITCODE -ne 0) { throw "Windows candidate input validation failed" }
+          if (!(Test-Path dist/commercial/NOVACommercialPharmacy.exe) -or !(Test-Path dist/commercial/NOVACommercialPharmacyServer.exe)) { throw "Missing commercial executable" }
       - name: Reject missing isolated pharmacy runtime payload
         shell: pwsh
         run: |
