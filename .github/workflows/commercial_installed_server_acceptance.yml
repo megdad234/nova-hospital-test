@@ -14,7 +14,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: NOVA-Commercial-Setup-UNVERIFIED-NOT-FOR-PRODUCTION
-          run-id: 41978014664
+          run-id: 41985566751
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: installer
       - name: Check commercial service adapter syntax and unit contracts
