@@ -165,6 +165,19 @@ def nova_price_list_rollback(c,p,uid):
         rollback(c)
         raise
 
+def nova_sale_price_catalog(c,p):
+    """Bounded read-only package search for the medicine price editor."""
+    q=str(p.get('q') or '').strip()[:100]
+    if not q: return {'rows':[],'count':0}
+    pattern='%'+q.replace('\\','\\\\').replace('%','\\%').replace('_','\\_')+'%'
+    rows=c.execute("""SELECT pk.id AS package_id,pr.name,pr.strength,
+        pk.unit_name,pk.barcode,pk.sale_price
+        FROM packages pk JOIN products pr ON pr.id=pk.product_id
+        WHERE pr.active=1 AND
+        (pr.name LIKE ? ESCAPE '\\' OR pk.barcode LIKE ? ESCAPE '\\')
+        ORDER BY pr.name,pk.id LIMIT 60""",(pattern,pattern)).fetchall()
+    return {'rows':[dict(r) for r in rows],'count':len(rows)}
+
 def nova_manual_sale_price(c,p,uid):
     """Update a package selling price only, with an atomic audit record."""
     from decimal import Decimal, InvalidOperation
@@ -233,10 +246,11 @@ s=s.replace(anchor2,"'/api/v1/nova-price-list-parse':('prices',lambda:nova_price
                      '/api/v1/nova-manual-sale-price':('prices',lambda:nova_manual_sale_price(c,data,u['id'])),\n                     "+anchor2)
 get_anchor="'/api/v1/products':lambda:catalog(c),"
 assert s.count(get_anchor)==1
-s=s.replace(get_anchor,"'/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\n                     "+get_anchor)
+s=s.replace(get_anchor,"'/api/v1/nova-sale-price-catalog':lambda:nova_sale_price_catalog(c,parse_qs(urlparse(self.path).query) if False else {'q':parse_qs(urlparse(self.path).query).get('q',[''])[0]}),
+                     '/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\n                     "+get_anchor)
 permission_anchor="'/api/v1/products':'catalog'"
 assert s.count(permission_anchor)>=1
-s=s.replace(permission_anchor,"'/api/v1/nova-price-list-history':'prices',"+permission_anchor,1)
+s=s.replace(permission_anchor,"'/api/v1/nova-sale-price-catalog':'prices','/api/v1/nova-price-list-history':'prices',"+permission_anchor,1)
 rollback_anchor="'/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),"
 assert s.count(rollback_anchor)==1
 s=s.replace(rollback_anchor,rollback_anchor+"\n                     '/api/v1/nova-price-list-rollback':('prices',lambda:nova_price_list_rollback(c,data,u['id'])),")
