@@ -319,7 +319,19 @@ jobs:
         run: |
           choco install nssm --yes --no-progress
           if ($LASTEXITCODE -ne 0) { throw 'Service manager install failed' }
-          Copy-Item 'C:\ProgramData\chocolatey\bin\nssm.exe' 'dist/commercial/nssm.exe' -Force
+          # Do not package Chocolatey's self-referencing shim from bin/:
+          # it points to ..\lib\NSSM\tools\nssm.exe and fails after installation.
+          $realNssm = Join-Path $env:ProgramData 'chocolatey\lib\NSSM\tools\nssm.exe'
+          if (!(Test-Path -LiteralPath $realNssm -PathType Leaf)) {
+            throw "Real NSSM executable missing: $realNssm"
+          }
+          $destNssm = Join-Path (Get-Location).Path 'dist/commercial/nssm.exe'
+          Copy-Item -LiteralPath $realNssm -Destination $destNssm -Force
+          if ((Get-FileHash -LiteralPath $realNssm -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $destNssm -Algorithm SHA256).Hash) {
+            throw 'Packaged NSSM differs from the real executable'
+          }
+          & $destNssm version
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged NSSM executable cannot start by itself' }
       - name: Upload tested standalone payload candidate
         uses: actions/upload-artifact@v4
         with:
