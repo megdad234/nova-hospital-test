@@ -62,12 +62,13 @@ def patch_backend(s):
     # normal POS load, searches require an intentional staff query.
     s=one(s,
       "'/api/v1/insurance':'claims',",
-      "'/api/v1/nova-insured-search':'sale','/api/v1/nova-hospital-patient-search':'sale','/api/v1/nova-insurance-monthly-detail':'claims','/api/v1/insurance':'claims',",
+      "'/api/v1/nova-admin-patient-search':'claims','/api/v1/nova-insured-search':'sale','/api/v1/nova-hospital-patient-search':'sale','/api/v1/nova-insurance-monthly-detail':'claims','/api/v1/insurance':'claims',",
       'GET permission')
     s=one(s,
       "'/api/v1/insurance':lambda:insurance_list(c),",
       """'/api/v1/nova-insured-search':lambda:nova_insured_search(c,(parse_qs(urlparse(self.path).query).get('contract_id') or [''])[0],(parse_qs(urlparse(self.path).query).get('q') or [''])[0]),
                      '/api/v1/nova-hospital-patient-search':lambda:nova_patient_search(c,(parse_qs(urlparse(self.path).query).get('q') or [''])[0]),
+                     '/api/v1/nova-admin-patient-search':lambda:nova_patient_search(c,(parse_qs(urlparse(self.path).query).get('q') or [''])[0]),
                      '/api/v1/nova-insurance-monthly-detail':lambda:nova_insurance_monthly_detail(c,(parse_qs(urlparse(self.path).query).get('authority_id') or [''])[0],(parse_qs(urlparse(self.path).query).get('period') or [''])[0]),
                      '/api/v1/insurance':lambda:insurance_list(c),""",
       'GET result')
