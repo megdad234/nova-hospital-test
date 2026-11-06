@@ -40,6 +40,10 @@ row={"name":"Paracetamol","strength":"500mg","pack":"box","barcode":"ABC","purch
 c.execute("UPDATE lots SET qty_base=0 WHERE id=1")
 without_stock=preview(c,{"rows":[row]})["rows"][0]
 assert without_stock["status"]=="review" and not without_stock["candidates"] and not without_stock["suggestions"],without_stock
+c.execute("UPDATE lots SET qty_base=20,expiry='2000-01-01' WHERE id=1")
+expired=preview(c,{"rows":[row]})["rows"][0]
+assert expired["status"]=="review" and not expired["candidates"],expired
+c.execute("UPDATE lots SET expiry='' WHERE id=1")
 c.execute("UPDATE lots SET qty_base=20 WHERE id=1")
 result=preview(c,{"rows":[row]})["rows"][0]
 assert result["status"]=="matched" and result["proposed_sale_price"]==8400,result
