@@ -58,6 +58,20 @@ try:
  preview(c,{"rows":[{"name":"Paracetmol","strength":"1000mg","pack":"box","purchase_price":"7000","line":18}],"confirmed_matches":{"18":1}})
  raise AssertionError("different strength was accepted")
 except ValueError:pass
+# A signed preview cannot update a medicine that sells out or expires before approval.
+c.execute("UPDATE lots SET qty_base=0 WHERE id=1")
+try:
+ approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":8400,"approval_token":result["approval_token"]}]},1)
+ raise AssertionError("sold-out medicine was repriced")
+except ValueError:pass
+assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==6000
+c.execute("UPDATE lots SET qty_base=20,expiry='2000-01-01' WHERE id=1")
+try:
+ approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":8400,"approval_token":result["approval_token"]}]},1)
+ raise AssertionError("expired medicine was repriced")
+except ValueError:pass
+assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==6000
+c.execute("UPDATE lots SET expiry='' WHERE id=1")
 approved=approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":8400,"approval_token":result["approval_token"]}]},1)
 assert approved["updated"]==1
 assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==8400
