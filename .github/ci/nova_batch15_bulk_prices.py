@@ -242,8 +242,7 @@ def nova_price_list_approve(c,p,uid):
 s=s.replace(anchor,helpers+anchor)
 anchor2="'/api/v1/nova-reprice-unpriced':('prices',lambda:nova_bulk_unpriced(c,data,u['id'])),"
 assert s.count(anchor2)==1
-s=s.replace(anchor2,"'/api/v1/nova-price-list-parse':('prices',lambda:nova_price_list_file_rows(data)),\n                     '/api/v1/nova-price-list-preview':('prices',lambda:nova_price_list_preview(c,data)),\n                     '/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),
-                     '/api/v1/nova-manual-sale-price':('prices',lambda:nova_manual_sale_price(c,data,u['id'])),\n                     "+anchor2)
+s=s.replace(anchor2,"'/api/v1/nova-price-list-parse':('prices',lambda:nova_price_list_file_rows(data)),\n                     '/api/v1/nova-price-list-preview':('prices',lambda:nova_price_list_preview(c,data)),\n                     '/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),\n                     '/api/v1/nova-manual-sale-price':('prices',lambda:nova_manual_sale_price(c,data,u['id'])),\n                     "+anchor2)
 get_anchor="'/api/v1/products':lambda:catalog(c),"
 assert s.count(get_anchor)==1
 s=s.replace(get_anchor,"'/api/v1/nova-sale-price-catalog':lambda:nova_sale_price_catalog(c,{'q':parse_qs(urlparse(self.path).query).get('q',[''])[0]}),\n                     '/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\n                     "+get_anchor)
