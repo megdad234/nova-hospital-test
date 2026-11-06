@@ -58,3 +58,25 @@
 @media screen and (max-width:650px){
  .salearea>.nova-pos-checkout .pay-buttons button{flex-basis:calc(50% - 8px)}
 }
+
+/* The cart viewport is always visible, including an empty invoice.
+   Scroll only the medicine rows, not the payment controls below them. */
+@media screen{
+ .salearea>.nova-pos-checkout .sale-cart-list{
+   display:block!important;
+   box-sizing:border-box!important;
+   height:clamp(148px,23vh,210px)!important;
+   min-height:148px!important;
+   max-height:210px!important;
+   overflow-y:auto!important;
+   overflow-x:hidden!important;
+   border:1px solid #d6e4e7!important;
+   border-radius:12px!important;
+   background:#fff!important;
+   padding:8px!important;
+ }
+ .salearea>.nova-pos-checkout [hidden],
+ .salearea>.nova-pos-checkout label[hidden],
+ .salearea>.nova-pos-checkout .field[hidden]{display:none!important}
+ .salearea>.nova-pos-checkout .pay-buttons{margin-top:4px!important}
+}
