@@ -61,7 +61,7 @@ approveBtn.onclick=async()=>{if(approvalPending)return;try{
  approvalPending=true;approveBtn.disabled=true;previewBtn.disabled=true;file.disabled=true;pct.disabled=true;
  const data=await request('nova-price-list-approve',{items});invalidatePreview();status.textContent='تم اعتماد '+data.updated+' سعر. راجع السجل للتراجع.';
  }catch(e){status.textContent=e.message}finally{approvalPending=false;previewBtn.disabled=false;file.disabled=false;pct.disabled=false}};
-historyBtn.onclick=async()=>{try{
+historyBtn.onclick=async()=>{invalidatePreview();try{
  const data=await request('nova-price-list-history');grid.replaceChildren();
  const records=Array.isArray(data)?data:(data.rows||[]);
  records.forEach(r=>{const div=el('div',r.created_at+' · '+r.action+' · #'+r.id+' ');if(r.action==='bulk_supplier_price_list_approved'){
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const launch=el('button','تحديث الأسعار من برايس');
   launch.id='nova-price-list-launch';
   launch.className='btn outline small';
-  launch.onclick=()=>panel.hidden=false;
+  launch.onclick=()=>{invalidatePreview();panel.hidden=false};
   document.body.append(panel);
   const previousNav=nav;
   nav=function(page){
