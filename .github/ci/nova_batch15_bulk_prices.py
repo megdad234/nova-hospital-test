@@ -165,6 +165,36 @@ def nova_price_list_rollback(c,p,uid):
         rollback(c)
         raise
 
+def nova_manual_sale_price(c,p,uid):
+    """Update a package selling price only, with an atomic audit record."""
+    from decimal import Decimal, InvalidOperation
+    try:
+        pid=int(p.get('package_id',0))
+        old=Decimal(str(p.get('old_sale_price')))
+        new=Decimal(str(p.get('new_sale_price')))
+    except (TypeError,ValueError,InvalidOperation):
+        raise ValueError('بيانات السعر غير صحيحة')
+    if pid<=0 or not old.is_finite() or not new.is_finite():
+        raise ValueError('بيانات السعر غير صحيحة')
+    if old!=old.to_integral_value() or new!=new.to_integral_value():
+        raise ValueError('السعر يجب أن يكون عدداً صحيحاً')
+    if old<0 or new<=0 or new>1000000000000 or old==new:
+        raise ValueError('السعر الجديد غير صالح')
+    begin(c)
+    try:
+        row=c.execute('SELECT id FROM packages WHERE id=?',(pid,)).fetchone()
+        if not row:raise ValueError('العبوة غير موجودة')
+        n=c.execute('UPDATE packages SET sale_price=? WHERE id=? AND sale_price=?',
+                    (int(new),pid,int(old))).rowcount
+        if n!=1:raise ValueError('السعر تغير؛ أعد تحميل الصنف')
+        audit(c,uid,'manual_sale_price_update',
+              {'package_id':pid,'old':int(old),'new':int(new)})
+        finish(c)
+        return {'updated':True,'package_id':pid,'new_sale_price':int(new)}
+    except Exception:
+        rollback(c)
+        raise
+
 def nova_price_list_approve(c,p,uid):
     """Optimistic conditional update; entire approval is one transaction."""
     items=p.get('items')
@@ -199,7 +229,8 @@ def nova_price_list_approve(c,p,uid):
 s=s.replace(anchor,helpers+anchor)
 anchor2="'/api/v1/nova-reprice-unpriced':('prices',lambda:nova_bulk_unpriced(c,data,u['id'])),"
 assert s.count(anchor2)==1
-s=s.replace(anchor2,"'/api/v1/nova-price-list-parse':('prices',lambda:nova_price_list_file_rows(data)),\n                     '/api/v1/nova-price-list-preview':('prices',lambda:nova_price_list_preview(c,data)),\n                     '/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),\n                     "+anchor2)
+s=s.replace(anchor2,"'/api/v1/nova-price-list-parse':('prices',lambda:nova_price_list_file_rows(data)),\n                     '/api/v1/nova-price-list-preview':('prices',lambda:nova_price_list_preview(c,data)),\n                     '/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),
+                     '/api/v1/nova-manual-sale-price':('prices',lambda:nova_manual_sale_price(c,data,u['id'])),\n                     "+anchor2)
 get_anchor="'/api/v1/products':lambda:catalog(c),"
 assert s.count(get_anchor)==1
 s=s.replace(get_anchor,"'/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\n                     "+get_anchor)
