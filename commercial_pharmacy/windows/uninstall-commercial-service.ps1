@@ -10,7 +10,8 @@ if ($service) {
     Stop-Service -Name $serviceName -ErrorAction Stop
     $service.WaitForStatus('Stopped', [TimeSpan]::FromSeconds(30))
   }
-  & sc.exe delete $serviceName
+  $nssm = Join-Path (Split-Path -Parent $PSScriptRoot) 'nssm.exe'
+  if (Test-Path $nssm) { & $nssm remove $serviceName confirm } else { & sc.exe delete $serviceName }
   if ($LASTEXITCODE -ne 0) { throw 'Failed to remove commercial pharmacy service' }
 }
 if ($RemoveLanFirewallRule) {
