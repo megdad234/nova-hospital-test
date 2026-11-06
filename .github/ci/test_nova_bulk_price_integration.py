@@ -18,6 +18,8 @@ c.executescript("""
 CREATE TABLE products(id INTEGER PRIMARY KEY,name TEXT,strength TEXT,form TEXT,manufacturer TEXT,active INTEGER);
 CREATE TABLE packages(id INTEGER PRIMARY KEY,product_id INTEGER,factor INTEGER,sale_price INTEGER,barcode TEXT,unit_name TEXT);
 CREATE TABLE purchase_lines(id INTEGER PRIMARY KEY,package_id INTEGER,amount INTEGER,qty INTEGER,bonus INTEGER,received INTEGER);
+CREATE TABLE lots(id INTEGER PRIMARY KEY,product_id INTEGER,status TEXT,qty_base INTEGER,expiry TEXT);
+INSERT INTO lots VALUES(1,1,'sellable',20,'');
 CREATE TABLE audit(id INTEGER PRIMARY KEY,created_at TEXT,user_id INTEGER,action TEXT,details TEXT);
 INSERT INTO products VALUES(1,'Paracetamol','500mg','tablet','Acme',1);
 INSERT INTO packages VALUES(1,1,10,6000,'ABC','box');
@@ -34,6 +36,11 @@ approve=namespace["nova_price_list_approve"]
 history=namespace["nova_price_list_history"]
 undo=namespace["nova_price_list_rollback"]
 row={"name":"Paracetamol","strength":"500mg","pack":"box","barcode":"ABC","purchase_price":"7000"}
+# A registered medicine without available stock must not be repriced.
+c.execute("UPDATE lots SET qty_base=0 WHERE id=1")
+without_stock=preview(c,{"rows":[row]})["rows"][0]
+assert without_stock["status"]=="review" and not without_stock["candidates"] and not without_stock["suggestions"],without_stock
+c.execute("UPDATE lots SET qty_base=20 WHERE id=1")
 result=preview(c,{"rows":[row]})["rows"][0]
 assert result["status"]=="matched" and result["proposed_sale_price"]==8400,result
 assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==6000
