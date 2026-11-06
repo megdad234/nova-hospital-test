@@ -80,3 +80,22 @@
  .salearea>.nova-pos-checkout .field[hidden]{display:none!important}
  .salearea>.nova-pos-checkout .pay-buttons{margin-top:4px!important}
 }
+
+/* NOVA POS final compact layout: no giant empty medicines block. */
+@media screen{
+ .salearea>.panel.nova-pos-search{padding:12px!important}
+ .salearea>.panel.nova-pos-search .panel-head{margin-bottom:8px!important}
+ .salearea>.nova-pos-search .sale-catalog{max-height:clamp(180px,36vh,340px)!important;overflow-y:auto!important}
+ .salearea>.panel.nova-pos-checkout{padding:12px 14px!important}
+ .salearea>.nova-pos-checkout .sale-cart-list{
+   height:auto!important;min-height:74px!important;max-height:210px!important;
+   overflow-y:auto!important;padding:7px!important
+ }
+ .salearea>.nova-pos-checkout .sale-cart-list:empty{min-height:74px!important}
+ .salearea>.nova-pos-checkout .section{margin-top:6px!important}
+ .salearea>.nova-pos-checkout .divider{margin:6px 0!important}
+}
+@media screen and (max-width:950px){
+ .salearea>.nova-pos-search .sale-catalog{max-height:240px!important}
+ .salearea>.nova-pos-checkout .sale-cart-list{max-height:180px!important}
+}
