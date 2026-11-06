@@ -86,11 +86,13 @@
     const directCredit=state.payMode==='credit';
     const customerInput=area.querySelector('#pos-customer');
     const customerWrap=fieldWrap(customerInput);
-    if(customerWrap)customerWrap.hidden=!isInsurance&&!directCredit;
+    // Insurance member search already determines the linked customer account.
+    // Hide the duplicate manual customer selector in insurance mode too.
+    if(customerWrap)customerWrap.hidden=isInsurance||!directCredit;
     for(const selector of ['#pos-authority','#pos-insurance','#pos-coverage']){
       const input=area.querySelector(selector);
       const wrapper=fieldWrap(input);
-      if(wrapper)wrapper.hidden=!isInsurance;
+      if(wrapper)wrapper.hidden=!isInsurance || selector==='#pos-coverage';
     }
     const customer=currentInsured();
     const authorized=!!state.authorityId;
@@ -160,6 +162,7 @@
     state.authorityId=String(item.authority_id);
     state.insuranceContractId=String(item.contract_id);
     state.coverage=Number(item.coverage);
+    // Coverage is contract-derived; no editable manual coverage input.
     nav('pos');
     toast('تم اختيار المستفيد؛ راجع البطاقة ثم أكد أهلية الصرف');
   }
