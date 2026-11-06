@@ -43,9 +43,9 @@ class InstallerContractTests(unittest.TestCase):
 
     def test_service_requires_machine_level_runtime(self):
         source = (WINDOWS / "install-commercial-service.ps1").read_text(encoding="utf-8")
-        self.assertIn("NOVA_COMMERCIAL_SOURCE_ROOT", source)
-        self.assertIn("NOVA_COMMERCIAL_PYTHON", source)
-        self.assertIn("Machine", source)
+        self.assertIn("nssm.exe", source)
+        self.assertIn("runtime/python.exe", source)
+        self.assertIn("pharmacy/server_host.py", source)
 
     def test_installer_includes_isolated_runtime_payload(self):
         source = (WINDOWS / "commercial-pharmacy-installer.iss").read_text(encoding="utf-8")
