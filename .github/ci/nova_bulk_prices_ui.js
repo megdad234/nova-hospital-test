@@ -18,15 +18,18 @@ const search=el('input');search.type='search';search.placeholder='بحث داخ�
 const filterBar=el('div');filterBar.style.cssText='display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0';
 const showReview=el('input');showReview.type='checkbox';showReview.checked=false;
 const reviewLabel=el('label',' إظهار الأصناف غير المطابقة (للمراجعة فقط)');reviewLabel.prepend(showReview);
+const ignored=new Set();
+const showIgnored=el('input');showIgnored.type='checkbox';
+const ignoredLabel=el('label',' إظهار المستبعدة من المراجعة');ignoredLabel.prepend(showIgnored);
 const selectedOnly=el('input');selectedOnly.type='checkbox';
 const selectedLabel=el('label',' المحددة فقط');selectedLabel.prepend(selectedOnly);
-filterBar.append(reviewLabel,selectedLabel);panel.append(filterBar);
+filterBar.append(reviewLabel,selectedLabel,ignoredLabel);panel.append(filterBar);
 const grid=el('div');panel.append(grid);
-const applyFilters=()=>{const q=search.value.trim().toLowerCase();grid.querySelectorAll('tr[data-search]').forEach(row=>{const matched=row.dataset.status==='matched';row.hidden=(!showReview.checked&&!matched)||(selectedOnly.checked&&!row.querySelector('input[type=checkbox]')?.checked)||(!!q&&!row.dataset.search.includes(q))})};
-showReview.onchange=applyFilters;selectedOnly.onchange=applyFilters;search.oninput=applyFilters;
+const applyFilters=()=>{const q=search.value.trim().toLowerCase();grid.querySelectorAll('tr[data-search]').forEach(row=>{const matched=row.dataset.status==='matched';row.hidden=(!showIgnored.checked&&ignored.has(Number(row.dataset.line)))||(!showReview.checked&&!matched)||(selectedOnly.checked&&!row.querySelector('input[type=checkbox]')?.checked)||(!!q&&!row.dataset.search.includes(q))})};
+showReview.onchange=applyFilters;selectedOnly.onchange=applyFilters;showIgnored.onchange=applyFilters;search.oninput=applyFilters;
 // Changing the source file or markup invalidates every prior approval token.
 let previewVersion=0;
-const invalidatePreview=()=>{previewVersion++;preview=[];approveBtn.disabled=true;grid.replaceChildren();summary.textContent='';status.textContent='تغيرت بيانات البرايس؛ اضغط معاينة الأسعار مجدداً قبل الاعتماد.'};
+const invalidatePreview=()=>{ignored.clear();previewVersion++;preview=[];approveBtn.disabled=true;grid.replaceChildren();summary.textContent='';status.textContent='تغيرت بيانات البرايس؛ اضغط معاينة الأسعار مجدداً قبل الاعتماد.'};
 file.addEventListener('change',invalidatePreview);
 pct.addEventListener('input',invalidatePreview);
 const csvParse=(txt)=>{
@@ -59,11 +62,11 @@ previewBtn.onclick=async()=>{if(approvalPending)return;const version=++previewVe
  if(version!==previewVersion)return;
  preview=Array.isArray(data.rows)?data.rows:[];grid.replaceChildren();approveBtn.disabled=true;
  const table=el('table');table.style.width='100%';
- const tr=el('tr');['اعتماد','الصنف','الحالة','سعر الشراء الجديد','سعر البيع السابق','سعر البيع المقترح'].forEach(h=>tr.append(el('th',h)));table.append(tr);
+ const tr=el('tr');['اعتماد','الصنف','الحالة','سعر الشراء الجديد','سعر البيع السابق','سعر البيع المقترح','إجراء'].forEach(h=>tr.append(el('th',h)));table.append(tr);
  const matches=preview.filter(r=>r.status==='matched').length;
  summary.textContent='إجمالي صفوف البرايس '+preview.length+' · مطابق '+matches+' · يحتاج مراجعة '+(preview.length-matches)+' · غير المطابق مخفي افتراضياً. تنبيه: المطابقة الحالية ليست فلترة مؤكدة لرصيد المخزون.';
- preview.forEach(r=>{const line=el('tr');line.dataset.status=r.status;line.dataset.search=String(r.name||'').toLowerCase()+' '+String(r.status||'').toLowerCase();const td=el('td');const cb=el('input');cb.type='checkbox';cb.checked=!!r.selected;cb.disabled=r.status!=='matched';r._checkbox=cb;cb.onchange=()=>{approveBtn.disabled=!preview.some(item=>item.status==='matched'&&item._checkbox?.checked);applyFilters()};td.append(cb);line.append(td);
- [r.name,r.status,r.purchase_price,r.old_sale_price??'-',r.proposed_sale_price??'-'].forEach(v=>line.append(el('td',String(v))));table.append(line)});
+ preview.forEach(r=>{const line=el('tr');line.dataset.status=r.status;line.dataset.line=String(r.line);line.dataset.search=String(r.name||'').toLowerCase()+' '+String(r.status||'').toLowerCase();const td=el('td');const cb=el('input');cb.type='checkbox';cb.checked=!!r.selected;cb.disabled=r.status!=='matched';r._checkbox=cb;cb.onchange=()=>{approveBtn.disabled=!preview.some(item=>item.status==='matched'&&item._checkbox?.checked);applyFilters()};td.append(cb);line.append(td);
+ [r.name,r.status,r.purchase_price,r.old_sale_price??'-',r.proposed_sale_price??'-'].forEach(v=>line.append(el('td',String(v))));const action=el('td');if(r.status!=='matched'){const skip=el('button','استبعاد من المراجعة');skip.type='button';skip.onclick=()=>{ignored.add(Number(r.line));applyFilters()};action.append(skip)}line.append(action);table.append(line)});
  grid.append(table);applyFilters();approveBtn.disabled=!preview.some(item=>item.status==='matched'&&item._checkbox?.checked);status.textContent='المعاينة فقط؛ لم يتم تعديل أي سعر.';
  }catch(e){if(version!==previewVersion)return;preview=[];approveBtn.disabled=true;summary.textContent='';status.textContent=e.message}finally{if(version===previewVersion&&!approvalPending)previewBtn.disabled=false}};
 let approvalPending=false;
