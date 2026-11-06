@@ -10,7 +10,16 @@ on:
       - '.github/ci/audit_commercial_pharmacy_assets.py'
       - '.github/ci/locate_commercial_integration_points.py'
       - '.github/ci/nova_batch16_return_status.py'
+      - '.github/ci/nova_batch12_insurance.py'
+      - '.github/ci/nova_batch15_bulk_prices.py'
       - '.github/ci/nova_bulk_prices_ui.js'
+      - '.github/ci/nova_manual_price_editor.js'
+      - '.github/ci/test_nova_manual_price.py'
+      - '.github/ci/test_nova_bulk_price_integration.py'
+      - 'pharmacy/static/nova_batch09_pos.js'
+      - 'pharmacy/static/nova_batch09_pos.css'
+      - 'pharmacy/static/nova_batch12_insurance.js'
+      - 'pharmacy/static/nova_batch12_insurance.css'
       - '.github/ci/test_commercial_latest_sync.py'
       - '.github/ci/patch_commercial_insurance.py'
       - '.github/ci/patch_commercial_brand.py'
@@ -128,6 +137,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "NOVA Batch15 integration preflight failed" }
           python .github/ci/nova_batch15_bulk_prices.py
           if ($LASTEXITCODE -ne 0) { throw "NOVA Batch15 bulk prices failed" }
+          # Main NOVA price-editor and supplier price regressions run on
+          # generated pharmacy source and synthetic data only.
+          python -m pip install --disable-pip-version-check 'openpyxl>=3.1,<4'
+          if ($LASTEXITCODE -ne 0) { throw 'Excel test prerequisite install failed' }
+          node --check pharmacy/static/nova_manual_price_editor.js
+          if ($LASTEXITCODE -ne 0) { throw 'Individual price editor JavaScript invalid' }
+          node --check pharmacy/static/nova_bulk_prices_ui.js
+          if ($LASTEXITCODE -ne 0) { throw 'Supplier price editor JavaScript invalid' }
+          python .github/ci/test_nova_manual_price.py
+          if ($LASTEXITCODE -ne 0) { throw 'Individual price edit regression failed' }
+          python .github/ci/test_nova_bulk_price_integration.py
+          if ($LASTEXITCODE -ne 0) { throw 'Supplier price stock/expiry or rollback regression failed' }
       - name: Apply latest approved NOVA sale-return status without changing POS
         shell: pwsh
         run: |

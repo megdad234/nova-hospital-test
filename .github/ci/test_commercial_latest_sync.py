@@ -19,4 +19,16 @@ assert "panel.hidden=true" in price_ui and "panel.style.display='none'" in price
 assert "overscroll-behavior:contain" in price_ui, "Price overlay scrolling protection missing"
 assert "nova-price-list-approve" in app and "nova-price-list-rollback" in app, "Price audit endpoints missing"
 assert "nova_bulk_prices_ui.js" in html, "Supplier price UI not connected to pharmacy"
+assert "def nova_manual_sale_price(" in app, "Missing latest manual sale-price edit"
+assert "nova-manual-sale-price" in app and "nova-sale-price-catalog" in app, "Manual sale-price endpoints missing"
+assert "def nova_price_list_preview(" in app and "confirmed_matches" in app, "Manual supplier candidate matching missing"
+assert "l.qty_base>0" in app and "l.status='sellable'" in app, "Supplier preview stock restriction missing"
+assert "السعر أو الرصيد تغير" in app, "Supplier approval must recheck current sellable stock"
+assert "nova_manual_price_editor.js" in html, "Manual price editor not included in standalone pharmacy"
+assert (root / "pharmacy/static/nova_manual_price_editor.js").is_file(), "Manual price editor asset not staged"
+insurance_js=(root / "pharmacy/static/nova_pharmacy_batch08.js").read_text(encoding="utf-8")
+assert "nova-admin-insured-enroll" in app and "nova-admin-patient-search" in app, "Insurance admin registration routes missing"
+assert "nova-admin-insured-enroll" in insurance_js, "Advance beneficiary registration UI missing"
+assert "commercial_pharmacy_patients" in app, "New enrollment must use independent pharmacy patient records"
+assert "nova-hospital-patient-search" not in insurance_js, "Standalone POS still calls hospital patient search"
 print("COMMERCIAL_MODERN_NOVA_SYNC_VALIDATED")

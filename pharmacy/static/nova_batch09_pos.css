@@ -22,8 +22,80 @@
 @media(max-width:950px){.salearea{grid-template-columns:minmax(0,1fr)!important}.salearea>.nova-holdbar{grid-column:1!important}.salearea>.panel.nova-pos-search{grid-column:1!important;grid-row:2!important}.salearea>.panel.nova-pos-checkout{grid-column:1!important;grid-row:3!important}.salearea>.nova-pos-search .sale-catalog{max-height:230px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media print{.salearea>.panel.nova-pos-checkout,.salearea>.panel.nova-pos-search{max-height:none!important;overflow:visible!important}}
 
-/* NOVA approved POS: five-row invoice viewport and uncluttered checkout. */
-.salearea>.nova-pos-checkout .sale-cart-list{height:clamp(220px,34vh,310px)!important;max-height:310px!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-gutter:stable!important}
-.salearea>.nova-pos-search input#pos-scan{width:100%!important;min-height:42px!important}
-.salearea>.nova-pos-checkout .pay-buttons{display:flex!important;flex-wrap:wrap!important;gap:6px!important}
-@media(max-width:950px){.salearea>.nova-pos-checkout .sale-cart-list{height:auto!important;max-height:290px!important}}
+/* NOVA POS: single authoritative cart viewport and payment controls.
+   Layout remains responsive; the pharmacy receipt print rules above are untouched. */
+@media screen{
+ .salearea>.nova-pos-search input#pos-scan{width:100%!important;min-height:42px!important}
+ .salearea>.nova-pos-checkout .sale-cart-list{
+   height:clamp(170px,30vh,280px)!important;
+   max-height:280px!important;min-height:0!important;
+   overflow-y:auto!important;overscroll-behavior:contain!important;
+   scrollbar-gutter:stable!important
+ }
+ .salearea>.nova-pos-checkout .pay-buttons{
+   display:flex!important;flex-wrap:wrap!important;
+   align-items:center!important;gap:8px!important;margin:8px 0!important
+ }
+ .salearea>.nova-pos-checkout .pay-buttons button,
+ .salearea>.nova-pos-checkout .pay-buttons label{
+   display:inline-flex;align-items:center;justify-content:center;
+   min-height:42px;padding:8px 14px;border-radius:10px;font-weight:650
+ }
+}
+@media screen and (max-width:950px){
+ .salearea>.nova-pos-checkout .sale-cart-list{height:clamp(150px,26vh,240px)!important;max-height:240px!important}
+}
+
+/* Cashier viewport polish: only on-screen POS, never thermal print. */
+@media screen{
+ .salearea .nova-holdbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+ .salearea .nova-held-count{font-weight:700;font-variant-numeric:tabular-nums}
+ .salearea>.nova-pos-checkout{min-width:0}
+ .salearea>.nova-pos-checkout .sale-cart-list{scrollbar-width:thin;scrollbar-color:#88b7ae transparent}
+ .salearea>.nova-pos-checkout button:focus-visible,.salearea>.nova-pos-search input:focus-visible{outline:3px solid #087f8c;outline-offset:2px}
+ .salearea>.nova-pos-checkout .pay-buttons button{flex:1 1 112px;white-space:normal;line-height:1.35}
+}
+@media screen and (max-width:650px){
+ .salearea>.nova-pos-checkout .pay-buttons button{flex-basis:calc(50% - 8px)}
+}
+
+/* The cart viewport is always visible, including an empty invoice.
+   Scroll only the medicine rows, not the payment controls below them. */
+@media screen{
+ .salearea>.nova-pos-checkout .sale-cart-list{
+   display:block!important;
+   box-sizing:border-box!important;
+   height:clamp(148px,23vh,210px)!important;
+   min-height:148px!important;
+   max-height:210px!important;
+   overflow-y:auto!important;
+   overflow-x:hidden!important;
+   border:1px solid #d6e4e7!important;
+   border-radius:12px!important;
+   background:#fff!important;
+   padding:8px!important;
+ }
+ .salearea>.nova-pos-checkout [hidden],
+ .salearea>.nova-pos-checkout label[hidden],
+ .salearea>.nova-pos-checkout .field[hidden]{display:none!important}
+ .salearea>.nova-pos-checkout .pay-buttons{margin-top:4px!important}
+}
+
+/* NOVA POS final compact layout: no giant empty medicines block. */
+@media screen{
+ .salearea>.panel.nova-pos-search{padding:12px!important}
+ .salearea>.panel.nova-pos-search .panel-head{margin-bottom:8px!important}
+ .salearea>.nova-pos-search .sale-catalog{max-height:clamp(180px,36vh,340px)!important;overflow-y:auto!important}
+ .salearea>.panel.nova-pos-checkout{padding:12px 14px!important}
+ .salearea>.nova-pos-checkout .sale-cart-list{
+   height:auto!important;min-height:74px!important;max-height:210px!important;
+   overflow-y:auto!important;padding:7px!important
+ }
+ .salearea>.nova-pos-checkout .sale-cart-list:empty{min-height:74px!important}
+ .salearea>.nova-pos-checkout .section{margin-top:6px!important}
+ .salearea>.nova-pos-checkout .divider{margin:6px 0!important}
+}
+@media screen and (max-width:950px){
+ .salearea>.nova-pos-search .sale-catalog{max-height:240px!important}
+ .salearea>.nova-pos-checkout .sale-cart-list{max-height:180px!important}
+}

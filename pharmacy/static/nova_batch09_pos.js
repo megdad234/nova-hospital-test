@@ -37,31 +37,53 @@
       document.querySelectorAll('[data-delete-held]').forEach(btn=>btn.onclick=()=>novaRemoveHeld(Number(btn.dataset.deleteHeld)));
     }catch(e){toast('فشل عرض الفواتير المعلقة: '+e.message,true)}
   };
+  let resumedHeldId=null;
+  let checkoutPending=false;
+  let holdPending=false;
+  let resumePending=false;
+  async function saveCurrentAsHeld(label){
+    const items=state.saleRows.map(r=>({package_id:Number(r.package_id),qty:Number(r.qty)}));
+    if(!items.length)return null;
+    const result=await api('hold-sale',{
+      label,items,partner_id:state.customerId||null,
+      authority_id:state.authorityId||null,coverage:state.coverage||0,
+      pay_mode:state.payMode,insurance_contract_id:state.insuranceContractId||null
+    });
+    if(!result?.held_id)throw Error('لم يؤكد السيرفر حفظ الفاتورة المعلقة');
+    return Number(result.held_id);
+  }
   window.novaHoldNow=async function(){
+    if(holdPending||resumePending||checkoutPending)return;
     if(!state.saleRows.length){toast('أضف دواءً للسلة قبل التعليق',true);return}
     const label=prompt('اسم الفاتورة المعلقة','فاتورة معلقة');
     if(label===null)return;
+    holdPending=true;
     try{
-      const itemSnapshot=state.saleRows.map(r=>({package_id:Number(r.package_id),qty:Number(r.qty)}));
-      const result=await api('hold-sale',{
-        label,items:itemSnapshot,partner_id:state.customerId||null,
-        authority_id:state.authorityId||null,coverage:state.coverage||0,
-        pay_mode:state.payMode,insurance_contract_id:state.insuranceContractId||null
-      });
-      if(!result?.held_id)throw Error('لم يؤكد السيرفر حفظ الفاتورة المعلقة');
-      state.saleRows=[];state.idempotency=token();nav('pos');
-      toast('تم تعليق الفاتورة وحفظها في السيرفر برقم '+result.held_id+' دون خصم المخزون');
+      const id=await saveCurrentAsHeld(label);
+      state.saleRows=[];resumedHeldId=null;state.idempotency=token();
+      state.customerId='';state.authorityId='';state.insuranceContractId='';state.coverage=0;
+      state.novaInsuredMember=null;state.novaInsuranceVerified=false;
+      nav('pos');
+      toast('تم تعليق الفاتورة وحفظها برقم '+id+' دون خصم المخزون');
       await novaShowHeld();
-    }catch(e){toast('تعذر تعليق الفاتورة: '+e.message,true)}
+    }catch(e){toast('تعذر تعليق الفاتورة: '+e.message,true)}finally{holdPending=false}
   };
   window.novaResumeHeld=async function(id){
+    if(resumePending||holdPending||checkoutPending)return;
+    resumePending=true;
     try{
       const row=(await held()).find(r=>Number(r.id)===Number(id));
       if(!row||!Array.isArray(row.cart?.items)||!row.cart.items.length)throw Error('الفاتورة غير موجودة أو بلا أصناف');
-      if(state.saleRows.length&&!confirm('هناك فاتورة جارية. استرجاع المعلقة سيستبدل السلة الحالية، هل تتابع؟'))return;
       const products=row.cart.items.map(r=>({package_id:Number(r.package_id),qty:Number(r.qty)}));
       const bad=products.find(p=>!Number.isSafeInteger(p.package_id)||!Number.isSafeInteger(p.qty)||p.qty<1);
       if(bad)throw Error('محتوى فاتورة معلقة غير صالح');
+      if(state.saleRows.length){
+        if(!confirm('سيتم تعليق الفاتورة المفتوحة تلقائياً ثم استرجاع الفاتورة المختارة. متابعة؟'))return;
+        const saved=await saveCurrentAsHeld('فاتورة معلقة تلقائياً قبل استرجاع #'+id);
+        if(!saved)throw Error('تعذر حفظ الفاتورة المفتوحة');
+      }
+      // A held cart is not proof of current insurance eligibility: reselect and verify the beneficiary.
+      state.novaInsuredMember=null;state.novaInsuranceVerified=false;
       state.saleRows=products;
       state.customerId=row.cart.partner_id||'';
       state.authorityId=row.cart.authority_id||'';
@@ -69,14 +91,41 @@
       state.insuranceContractId=String(row.cart.insurance_contract_id||'');
       state.payMode=['cash','bank','mixed','credit'].includes(row.cart.pay_mode)?row.cart.pay_mode:'cash';
       state.idempotency=token();
+      resumedHeldId=Number(id);
       closeModal();nav('pos');
       toast('تم استرجاع '+products.length+' صنف. راجع الأسعار والرصيد قبل تأكيد البيع.');
-      // Keep saved cart until actual checkout succeeds or the user deletes it.
       const basket=document.querySelector('.salearea .sale-cart-list');
       if(basket)basket.setAttribute('aria-label','السلة المسترجعة: '+row.label);
-    }catch(e){toast('فشل الاسترجاع: '+e.message,true)}
+    }catch(e){toast('فشل استرجاع الفاتورة: '+e.message,true)}finally{resumePending=false}
+  };
+  // Keep the original checkout, insurance validations, and invoice printing.
+  // Only act after its idempotency token confirms the server accepted the sale.
+  const confirmSaleBeforeHeldCleanup=confirmSale;
+  confirmSale=async function(){
+    if(checkoutPending||holdPending||resumePending)return;
+    checkoutPending=true;
+    const before=state.idempotency;
+    const heldId=resumedHeldId;
+    try{
+      await confirmSaleBeforeHeldCleanup();
+      if(before!==state.idempotency){
+        state.saleRows=[];
+        resumedHeldId=null;
+        if(heldId!==null){
+          try{
+            const removed=await api('held-sale-delete',{held_id:heldId});
+            if(!removed?.deleted)throw Error('لم يؤكد السيرفر حذف المعلقة');
+          }catch(e){
+            toast('تم البيع بنجاح لكن تعذر إزالة الفاتورة من المعلقات: '+e.message,true);
+          }
+        }
+        nav('pos');
+      }
+    }finally{checkoutPending=false}
   };
   window.novaRemoveHeld=async function(id){
+    if(checkoutPending||holdPending||resumePending)return;
+    if(Number(id)===resumedHeldId){toast('هذه الفاتورة مفتوحة حالياً؛ أكمل البيع أو علّق السلة قبل حذفها',true);return}
     if(!confirm('حذف الفاتورة المعلقة من السيرفر؟ لن تُخصم أي كمية من المخزون.'))return;
     try{const result=await api('held-sale-delete',{held_id:Number(id)});
       if(!result?.deleted)throw Error('لم يؤكد السيرفر الحذف');

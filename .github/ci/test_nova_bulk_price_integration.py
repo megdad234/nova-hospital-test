@@ -18,6 +18,8 @@ c.executescript("""
 CREATE TABLE products(id INTEGER PRIMARY KEY,name TEXT,strength TEXT,form TEXT,manufacturer TEXT,active INTEGER);
 CREATE TABLE packages(id INTEGER PRIMARY KEY,product_id INTEGER,factor INTEGER,sale_price INTEGER,barcode TEXT,unit_name TEXT);
 CREATE TABLE purchase_lines(id INTEGER PRIMARY KEY,package_id INTEGER,amount INTEGER,qty INTEGER,bonus INTEGER,received INTEGER);
+CREATE TABLE lots(id INTEGER PRIMARY KEY,product_id INTEGER,status TEXT,qty_base INTEGER,expiry TEXT);
+INSERT INTO lots VALUES(1,1,'sellable',20,'');
 CREATE TABLE audit(id INTEGER PRIMARY KEY,created_at TEXT,user_id INTEGER,action TEXT,details TEXT);
 INSERT INTO products VALUES(1,'Paracetamol','500mg','tablet','Acme',1);
 INSERT INTO packages VALUES(1,1,10,6000,'ABC','box');
@@ -34,9 +36,42 @@ approve=namespace["nova_price_list_approve"]
 history=namespace["nova_price_list_history"]
 undo=namespace["nova_price_list_rollback"]
 row={"name":"Paracetamol","strength":"500mg","pack":"box","barcode":"ABC","purchase_price":"7000"}
+# A registered medicine without available stock must not be repriced.
+c.execute("UPDATE lots SET qty_base=0 WHERE id=1")
+without_stock=preview(c,{"rows":[row]})["rows"][0]
+assert without_stock["status"]=="review" and not without_stock["candidates"] and not without_stock["suggestions"],without_stock
+c.execute("UPDATE lots SET qty_base=20,expiry='2000-01-01' WHERE id=1")
+expired=preview(c,{"rows":[row]})["rows"][0]
+assert expired["status"]=="review" and not expired["candidates"],expired
+c.execute("UPDATE lots SET expiry='' WHERE id=1")
+c.execute("UPDATE lots SET qty_base=20 WHERE id=1")
 result=preview(c,{"rows":[row]})["rows"][0]
 assert result["status"]=="matched" and result["proposed_sale_price"]==8400,result
 assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==6000
+# Human-confirmed spelling variation: preview only, no price/stock write.
+suggested=preview(c,{"rows":[{"name":"Paracetmol","strength":"500mg","pack":"box","purchase_price":"7000","line":17}]})["rows"][0]
+assert suggested["status"]=="review" and suggested["suggestions"],suggested
+confirmed=preview(c,{"rows":[{"name":"Paracetmol","strength":"500mg","pack":"box","purchase_price":"7000","line":17}],"confirmed_matches":{"17":1}})["rows"][0]
+assert confirmed["status"]=="matched" and confirmed["confirmed_manually"] and confirmed["package_id"]==1,confirmed
+assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==6000
+try:
+ preview(c,{"rows":[{"name":"Paracetmol","strength":"1000mg","pack":"box","purchase_price":"7000","line":18}],"confirmed_matches":{"18":1}})
+ raise AssertionError("different strength was accepted")
+except ValueError:pass
+# A signed preview cannot update a medicine that sells out or expires before approval.
+c.execute("UPDATE lots SET qty_base=0 WHERE id=1")
+try:
+ approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":8400,"approval_token":result["approval_token"]}]},1)
+ raise AssertionError("sold-out medicine was repriced")
+except ValueError:pass
+assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==6000
+c.execute("UPDATE lots SET qty_base=20,expiry='2000-01-01' WHERE id=1")
+try:
+ approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":8400,"approval_token":result["approval_token"]}]},1)
+ raise AssertionError("expired medicine was repriced")
+except ValueError:pass
+assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==6000
+c.execute("UPDATE lots SET expiry='' WHERE id=1")
 approved=approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":8400,"approval_token":result["approval_token"]}]},1)
 assert approved["updated"]==1
 assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==8400
