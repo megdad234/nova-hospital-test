@@ -369,4 +369,100 @@
       document.body.appendChild(frame);
     }catch(e){toast(e.message,true)}
   }
+  // Administration-only beneficiary enrollment. Reuses the same validated
+  // backend enrollment as the POS, without touching checkout state or invoices.
+  function novaAdminEnrollPanel(page){
+    if(page!=='claims'&&page!=='partners')return;
+    const host=page==='claims'
+      ?document.querySelector('.nova-insurance-statement')?.parentElement
+      :document.querySelector('main');
+    if(!host||host.querySelector('.nova-admin-insured-enrollment'))return;
+    const contracts=(state.insurance||[]).filter(x=>x.active!==0&&x.active!==false);
+    const panel=document.createElement('section');
+    panel.className='panel nova-admin-insured-enrollment';
+    panel.innerHTML='<div class="panel-head"><h2>تسجيل مستفيد تأمين مسبقاً</h2></div>'+
+      '<p class="help">تسجيل المستفيد وربطه بملف المريض والبطاقة قبل البيع، بدون إنشاء فاتورة.</p>'+
+      '<label>عقد التأمين<select class="nova-admin-contract">'+
+      '<option value="">اختر العقد</option>'+
+      contracts.map(x=>'<option value="'+Number(x.id)+'">'+safe(x.name||x.contract_no||x.id)+'</option>').join('')+
+      '</select></label>'+
+      '<label>البحث عن ملف مريض موجود<input class="nova-admin-patient-query" maxlength="80"></label>'+
+      '<button type="button" class="btn outline nova-admin-find">بحث عن المريض</button>'+
+      '<div class="nova-admin-patient-results"></div>'+
+      '<div class="nova-admin-selected"></div>'+
+      '<div class="formgrid"><label>اسم المريض<input class="nova-admin-name" maxlength="160"></label>'+
+      '<label>الهاتف<input class="nova-admin-phone" maxlength="35"></label>'+
+      '<label>رقم بطاقة التأمين<input class="nova-admin-card" maxlength="100"></label>'+
+      '<label>نوع المستفيد<select class="nova-admin-relation">'+
+      [['primary','مشترك أساسي'],['spouse','زوج / زوجة'],['child','ابن / ابنة'],['father','أب'],['mother','أم']].map(([v,t])=>'<option value="'+v+'">'+t+'</option>').join('')+
+      '</select></label></div>'+
+      '<label><input type="checkbox" class="nova-admin-eligibility"> تم التحقق من هوية المستفيد والبطاقة وأهلية التأمين</label>'+
+      '<button type="button" class="btn nova-admin-save">حفظ المستفيد</button>';
+    host.appendChild(panel);
+    const field=sel=>panel.querySelector(sel);
+    let selected=null;
+    let searchVersion=0;
+    field('.nova-admin-find').onclick=async()=>{
+      try{
+        const q=field('.nova-admin-patient-query').value.trim();
+        if(!q)throw Error('أدخل اسم المريض أو رقم الملف');
+        const version=++searchVersion;
+        const data=await api('nova-admin-patient-search?q='+encodeURIComponent(q));
+        if(version!==searchVersion||!panel.isConnected)return;
+        const rows=Array.isArray(data)?data:[];
+        const results=field('.nova-admin-patient-results');
+        results.replaceChildren();
+        if(!rows.length){results.textContent='لا يوجد ملف مطابق؛ يمكن تسجيل مريض جديد.';return;}
+        rows.forEach(p=>{
+          const button=document.createElement('button');
+          button.type='button';button.className='btn outline small';
+          button.textContent=p.full_name+' — '+p.patient_no;
+          button.onclick=()=>{
+            selected=p;
+            field('.nova-admin-selected').textContent='الملف المختار: '+p.full_name+' — '+p.patient_no;
+            field('.nova-admin-name').value=p.full_name;
+            field('.nova-admin-phone').value=p.phone||'';
+          };
+          results.appendChild(button);
+        });
+      }catch(e){toast('بحث المرضى: '+e.message,true);}
+    };
+    field('.nova-admin-patient-query').addEventListener('input',()=>{
+      searchVersion++;selected=null;field('.nova-admin-selected').textContent='';
+    });
+    field('.nova-admin-save').onclick=async()=>{
+      const button=field('.nova-admin-save');
+      if(button.disabled)return;
+      try{
+        const contractId=Number(field('.nova-admin-contract').value);
+        const card=field('.nova-admin-card').value.trim();
+        if(!contractId)throw Error('اختر عقد التأمين');
+        if(!card)throw Error('أدخل رقم بطاقة التأمين');
+        if(!field('.nova-admin-eligibility').checked)throw Error('أكد مراجعة البطاقة والأهلية');
+        const fullName=field('.nova-admin-name').value.trim();
+        if(!selected&&!fullName)throw Error('أدخل اسم المريض أو اختر ملفاً موجوداً');
+        button.disabled=true;
+        await api('nova-admin-insured-enroll',{
+          contract_id:contractId,patient_id:selected?.id||null,
+          full_name:selected?.full_name||fullName,
+          phone:selected?.phone||field('.nova-admin-phone').value.trim(),
+          card_no:card,relation:field('.nova-admin-relation').value,
+          eligibility_confirmed:true
+        });
+        toast('تم تسجيل المستفيد وربطه بالتأمين؛ يمكن البحث عنه أثناء البيع');
+        field('.nova-admin-card').value='';
+        field('.nova-admin-eligibility').checked=false;
+        selected=null;
+        field('.nova-admin-selected').textContent='';
+        await refresh();
+      }catch(e){toast('تعذر حفظ المستفيد: '+e.message,true)}
+      finally{button.disabled=false;}
+    };
+  }
+  const novaAdminOriginalNav=nav;
+  nav=function(page){
+    novaAdminOriginalNav(page);
+    novaAdminEnrollPanel(page);
+  };
+
 })();
