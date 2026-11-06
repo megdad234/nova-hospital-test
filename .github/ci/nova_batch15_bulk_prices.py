@@ -82,6 +82,8 @@ def nova_price_list_preview(c,p):
         pr.name,pr.strength,pr.form,pr.manufacturer,pk.unit_name
         FROM packages pk JOIN products pr ON pr.id=pk.product_id
         WHERE pr.active=1""").fetchall()
+    # Review-only fuzzy suggestions. They never authorize a price update.
+    from difflib import SequenceMatcher
     result=[]
     for i,row in enumerate(rows):
         if not isinstance(row,dict):raise ValueError('صف غير صالح')
@@ -100,8 +102,22 @@ def nova_price_list_preview(c,p):
             if strength and norm(pk['strength'])!=strength:continue
             if pack and norm(pk['unit_name'])!=pack:continue
             hits.append(pk)
+        # Suggestions are limited to the same strength and pack when supplied.
+        # A different strength is never presented as an interchangeable drug.
+        suggested=[]
+        if len(hits)!=1:
+            for pk in catalog_rows:
+                if strength and norm(pk['strength'])!=strength:continue
+                if pack and norm(pk['unit_name'])!=pack:continue
+                similarity=SequenceMatcher(None,norm(name),norm(pk['name'])).ratio()
+                if similarity>=0.65:
+                    suggested.append((similarity,pk))
+            suggested.sort(key=lambda item:(-item[0],int(item[1]['id'])))
         record={'line':row.get('line',i+1),'name':name,'purchase_price':str(price),
-                'status':'review','selected':False,'candidates':[int(x['id']) for x in hits[:10]]}
+                'status':'review','selected':False,'candidates':[int(x['id']) for x in hits[:10]],
+                'suggestions':[{'package_id':int(pk['id']),'name':str(pk['name']),
+                    'strength':str(pk['strength'] or ''),'pack':str(pk['unit_name'] or ''),
+                    'similarity':round(score,2)} for score,pk in suggested[:5]]}
         if len(hits)==1 and (barcode or (strength and pack)):
             pk=hits[0]
             # Actual purchase history, never previously imported price lists.
