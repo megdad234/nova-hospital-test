@@ -274,9 +274,17 @@ def nova_price_list_approve(c,p,uid):
             if not _nova_hmac.compare_digest(signature,expected):
                 raise ValueError('يجب معاينة الأسعار أولاً قبل اعتمادها')
             if new<=0 or new>1000000000000:raise ValueError('سعر بيع غير صالح')
-            changed=c.execute('UPDATE packages SET sale_price=? WHERE id=? AND sale_price=?',
+            # Recheck current stock at approval time: an item may have sold out
+            # or expired between preview and the user's confirmation.
+            changed=c.execute("""UPDATE packages SET sale_price=?
+                WHERE id=? AND sale_price=?
+                AND EXISTS (SELECT 1 FROM products pr JOIN lots l
+                    ON l.product_id=pr.id
+                    WHERE pr.id=packages.product_id AND pr.active=1
+                    AND l.status='sellable' AND l.qty_base>0
+                    AND (l.expiry='' OR l.expiry>=date('now')))""",
                 (new,pid,old)).rowcount
-            if changed!=1:raise ValueError('السعر تغير بعد المراجعة؛ أعد المعاينة')
+            if changed!=1:raise ValueError('السعر أو الرصيد تغير بعد المراجعة؛ أعد المعاينة')
             updates.append({'package_id':pid,'old':old,'new':new})
         audit(c,uid,'bulk_supplier_price_list_approved',{'updates':updates})
         finish(c)
