@@ -81,7 +81,7 @@ def nova_price_list_preview(c,p):
     catalog_rows=c.execute("""SELECT pk.id,pk.factor,pk.sale_price,pk.barcode,
         pr.name,pr.strength,pr.form,pr.manufacturer,pk.unit_name
         FROM packages pk JOIN products pr ON pr.id=pk.product_id
-        WHERE pr.active=1""").fetchall()
+        WHERE pr.active=1 AND EXISTS (SELECT 1 FROM lots l WHERE l.product_id=pr.id AND l.status='sellable' AND l.qty_base>0 AND (l.expiry='' OR l.expiry>=date('now')))""").fetchall()
     # Review-only fuzzy suggestions. They never authorize a price update.
     from difflib import SequenceMatcher
     overrides=p.get('confirmed_matches') or {}
