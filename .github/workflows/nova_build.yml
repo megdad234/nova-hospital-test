@@ -215,7 +215,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'NOVA12 insurance patch failed; installer blocked' }
           python -m compileall -q pharmacy hospital
           node --check pharmacy/static/nova_pharmacy_batch08.js
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA12 combined POS and insurance JS syntax invalid; installer blocked' }
           node --check pharmacy/static/app.js
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA12 pharmacy app JS syntax invalid; installer blocked' }
           $env:PYTHONPATH = 'pharmacy;.'
           python -m unittest -q pharmacy.tests.test_nova_batch12
           if ($LASTEXITCODE -ne 0) { throw 'NOVA12 insurance tests failed; installer blocked' }
