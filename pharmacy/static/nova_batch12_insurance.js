@@ -29,7 +29,8 @@
   }
   const oldConfirmSale=confirmSale;
   confirmSale=async function(){
-    if(state.authorityId&&Number(state.coverage)>0 || state.insuranceContractId){
+    if(insuranceModeOpen&&!state.authorityId&&!state.insuranceContractId)return toast('اختر جهة التأمين وعقدها أو ارجع إلى البيع المباشر',true);
+    if((state.authorityId&&Number(state.coverage)>0) || state.insuranceContractId){
       if(!contractChoice())return toast('اختر عقد التأمين أولاً',true);
       if(!currentInsured())return toast('اختر اسم المستفيد ورقم بطاقته قبل إتمام البيع',true);
       if(state.novaInsuranceVerified!==true)return toast('أكد مراجعة بطاقة المستفيد وأهلية العلاج قبل الحفظ',true);
@@ -46,6 +47,7 @@
       state.authorityId='';
       state.insuranceContractId='';
       state.coverage=0;
+      insuranceModeOpen=false;
       nav('pos');
     }
   };
@@ -72,7 +74,7 @@
     mode.querySelector('#nova-insurance-mode').onclick=()=>{
       insuranceModeOpen=true;
       nav('pos');
-      const fields=panel.querySelector('#pos-authority')||panel.querySelector('#pos-insurance');
+      const fields=document.querySelector('.salearea #pos-authority')||document.querySelector('.salearea #pos-insurance');
       if(fields){fields.focus();fields.scrollIntoView({block:'nearest'});}
       else toast('اختر جهة التأمين وعقدها من بيانات الفاتورة',true);
     };
