@@ -18,7 +18,7 @@ assert "function pos()" in js and js.index("function pos()") < js.index("functio
 assert "panel.hidden=true" in price_ui and "panel.hidden=false" in price_ui, "Supplier price overlay must be hidden by default and toggle explicitly"
 assert "close.onclick" in price_ui and "launch.onclick" in price_ui, "Price overlay close/open wiring missing"
 assert "display:block" not in price_ui.split("panel.style.cssText=",1)[1].split(";",1)[0], "Price overlay must not override hidden display on startup"
-assert "overscroll-behavior:contain" in price_ui, "Price overlay scrolling protection missing"
+assert "overflow:auto" in price_ui and "position:fixed" in price_ui, "Supplier price overlay requires independent scrolling"
 assert "nova-price-list-approve" in app and "nova-price-list-rollback" in app, "Price audit endpoints missing"
 assert "nova_bulk_prices_ui.js" in html, "Supplier price UI not connected to pharmacy"
 assert "def nova_manual_sale_price(" in app, "Missing latest manual sale-price edit"
