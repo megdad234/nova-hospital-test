@@ -246,8 +246,7 @@ s=s.replace(anchor2,"'/api/v1/nova-price-list-parse':('prices',lambda:nova_price
                      '/api/v1/nova-manual-sale-price':('prices',lambda:nova_manual_sale_price(c,data,u['id'])),\n                     "+anchor2)
 get_anchor="'/api/v1/products':lambda:catalog(c),"
 assert s.count(get_anchor)==1
-s=s.replace(get_anchor,"'/api/v1/nova-sale-price-catalog':lambda:nova_sale_price_catalog(c,parse_qs(urlparse(self.path).query) if False else {'q':parse_qs(urlparse(self.path).query).get('q',[''])[0]}),
-                     '/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\n                     "+get_anchor)
+s=s.replace(get_anchor,"'/api/v1/nova-sale-price-catalog':lambda:nova_sale_price_catalog(c,{'q':parse_qs(urlparse(self.path).query).get('q',[''])[0]}),\n                     '/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\n                     "+get_anchor)
 permission_anchor="'/api/v1/products':'catalog'"
 assert s.count(permission_anchor)>=1
 s=s.replace(permission_anchor,"'/api/v1/nova-sale-price-catalog':'prices','/api/v1/nova-price-list-history':'prices',"+permission_anchor,1)
