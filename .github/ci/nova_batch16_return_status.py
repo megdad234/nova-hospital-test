@@ -33,6 +33,9 @@ new=new.replace("+(can('refund')?", "+(novaReturnState==='full'?'':(can('refund'
 new=new.replace("مرتجع</button>`:'')", "مرتجع</button>`:''))", 1)
 new=new.replace('\x60))}', '\x60;}))}',1)
 assert new!=old and 'novaReturnDisplayStatus(s)' in new
+assert "novaReturnState==='full'?'':(can('refund')?" in new, 'Fully returned invoice must not show refund action'
+assert new.count('onclick="returnModal(${s.id})"')==1, 'Refund handler must remain unchanged'
+assert new.count('onclick="showReceipt(${s.id})"')==1, 'Receipt action must remain unchanged'
 s=s[:start]+status+new+s[end:]
 p.write_text(s,encoding='utf-8')
 print('NOVA_RETURN_HISTORY_DISPLAY_ONLY')
