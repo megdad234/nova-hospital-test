@@ -27,3 +27,20 @@
 /* Respect the actual insurance-mode toggle: display:grid above must not override hidden. */
 .nova-insured-panel[hidden]{display:none!important}
 .nova-sale-mode-switch .btn:focus-visible,.nova-insured-panel input:focus-visible{outline:3px solid #0b8791;outline-offset:2px}
+
+/* NOVA compact insurance checkout: preserve all existing form handlers. */
+.salearea .nova-sale-mode-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:5px;margin:8px 0 10px;border:1px solid #d6e4e7;background:#f8fafb;border-radius:13px}
+.salearea .nova-sale-mode-switch .btn{min-width:0;min-height:39px;padding:8px 10px;font-size:13px}
+.salearea .nova-insured-panel{padding:12px 14px;margin:6px 0 10px;gap:8px;border:1px solid #d4e5e0;background:#fbfdfc;box-shadow:none;max-width:100%;overflow:hidden}
+.salearea .nova-insured-title{align-items:center}
+.salearea .nova-insured-title b{font-size:14px}
+.salearea .nova-insured-title small{font-size:11px;line-height:1.5}
+.salearea .nova-insured-search{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px}
+.salearea .nova-insured-search input{width:100%;min-width:0;min-height:38px}
+.salearea .nova-insured-search .btn{padding:7px 10px;min-height:38px;white-space:nowrap}
+.salearea .nova-insured-selected{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;padding:10px}
+.salearea .nova-insured-selected>b{grid-column:1/-1}
+.salearea .nova-insured-selected span{overflow-wrap:anywhere}
+.salearea .nova-insured-verify{font-size:12px;line-height:1.65;padding:8px 10px;background:#edf7f1;border-radius:8px}
+.salearea .nova-insured-panel .muted-note{margin:0;font-size:12px;line-height:1.65}
+@media(max-width:650px){.salearea .nova-insured-search{grid-template-columns:1fr 1fr}.salearea .nova-insured-search input{grid-column:1/-1}.salearea .nova-insured-selected{grid-template-columns:1fr}}
