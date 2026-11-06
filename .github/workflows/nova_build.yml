@@ -191,6 +191,8 @@ jobs:
         run: |
           python .github/ci/nova_batch09_pos_admin.py
           if ($LASTEXITCODE -ne 0) { throw 'Batch09 failed; installer blocked' }
+          node --check hospital/static/admin-ui.js
+          if ($LASTEXITCODE -ne 0) { throw 'Batch09 admin collections JavaScript syntax invalid; installer blocked' }
       - name: Unify thermal cashier receipts with pharmacy style
         shell: pwsh
         run: |
