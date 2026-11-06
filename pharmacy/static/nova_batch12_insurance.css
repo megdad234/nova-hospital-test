@@ -44,3 +44,9 @@
 .salearea .nova-insured-verify{font-size:12px;line-height:1.65;padding:8px 10px;background:#edf7f1;border-radius:8px}
 .salearea .nova-insured-panel .muted-note{margin:0;font-size:12px;line-height:1.65}
 @media(max-width:650px){.salearea .nova-insured-search{grid-template-columns:1fr 1fr}.salearea .nova-insured-search input{grid-column:1/-1}.salearea .nova-insured-selected{grid-template-columns:1fr}}
+
+/* Single insurance workflow: insurer/contract controls now live in one panel. */
+.salearea .nova-insurance-contract-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
+.salearea .nova-insurance-contract-fields>label,.salearea .nova-insurance-contract-fields>.field{min-width:0;margin:0}
+.salearea .nova-insurance-contract-fields select{width:100%;max-width:100%}
+@media(max-width:650px){.salearea .nova-insurance-contract-fields{grid-template-columns:1fr}}
