@@ -50,6 +50,8 @@ on:
       - '.github/ci/nova_batch15_integration_audit.py'
       - '.github/ci/nova_batch15_bulk_prices.py'
       - '.github/ci/nova_bulk_prices_ui.js'
+      - '.github/ci/nova_manual_price_editor.js'
+      - '.github/ci/test_nova_manual_price.py'
       - '.github/ci/test_nova_bulk_price_integration.py'
       - '.github/ci/nova_batch14_pos_discount.py'
       - '.github/ci/nova_batch14_finance_tests.py'
