@@ -50,6 +50,7 @@
     }
   };
 
+  let insuranceModeOpen=false;
   function insuredPanel(){
     const area=document.querySelector('.salearea');
     if(!area)return;
@@ -60,15 +61,17 @@
     panel.querySelectorAll('.nova-insured-panel,.nova-sale-mode-switch').forEach(el=>el.remove());
     const mode=document.createElement('div');
     mode.className='nova-sale-mode-switch';
-    const isInsurance=Boolean(state.authorityId||state.insuranceContractId);
+    const isInsurance=insuranceModeOpen||Boolean(state.authorityId||state.insuranceContractId);
     mode.innerHTML='<button type="button" class="btn '+(!isInsurance?'':'outline')+'" id="nova-direct-mode">بيع مباشر</button>'+
       '<button type="button" class="btn '+(isInsurance?'':'outline')+'" id="nova-insurance-mode">بيع بالتأمين</button>';
     head.insertAdjacentElement('afterend',mode);
     mode.querySelector('#nova-direct-mode').onclick=()=>{
       state.authorityId='';state.insuranceContractId='';state.coverage=0;
-      state.novaInsuredMember=null;state.novaInsuranceVerified=false;nav('pos');
+      state.novaInsuredMember=null;state.novaInsuranceVerified=false;insuranceModeOpen=false;nav('pos');
     };
     mode.querySelector('#nova-insurance-mode').onclick=()=>{
+      insuranceModeOpen=true;
+      nav('pos');
       const fields=panel.querySelector('#pos-authority')||panel.querySelector('#pos-insurance');
       if(fields){fields.focus();fields.scrollIntoView({block:'nearest'});}
       else toast('اختر جهة التأمين وعقدها من بيانات الفاتورة',true);
@@ -77,6 +80,7 @@
     const authorized=!!state.authorityId;
     const node=document.createElement('div');
     node.className='nova-insured-panel';
+    node.hidden=!isInsurance;
     node.innerHTML='<div class="nova-insured-title"><b>صرف الأدوية بالتأمين</b>'+
       '<small>رقم البطاقة وملف المريض محفوظان في فاتورة البيع</small></div>'+
       (!authorized?'<p class="muted-note">للبيع العادي ما مطلوب تسجيل المريض. اختر جهة تأمين أسفل السلة لتفعيل بيانات المستفيد.</p>':
