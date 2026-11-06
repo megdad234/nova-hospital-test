@@ -2,21 +2,23 @@
 (()=>{'use strict';
 let preview=[];
 const el=(tag,txt)=>{const e=document.createElement(tag);if(txt!==undefined)e.textContent=txt;return e};
-const panel=el('section');panel.id='nova-price-list-panel';panel.hidden=true;
+const panel=el('section');panel.id='nova-price-list-panel';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','مراجعة برايس الموردين');
 panel.style.cssText='position:fixed;inset:6% 5%;z-index:9999;background:#fff;color:#153b43;overflow:auto;border:2px solid #0b8791;border-radius:16px;padding:22px;box-shadow:0 12px 50px #0006;direction:rtl';
 const heading=el('h2','مراجعة برايس الموردين وتحديث أسعار البيع');panel.append(heading);
-const close=el('button','إغلاق');close.onclick=()=>panel.hidden=true;panel.append(close);
+const close=el('button','إغلاق');close.type='button';close.onclick=()=>{if(approvalPending)return;invalidatePreview();panel.hidden=true};panel.append(close);
 panel.append(el('p','ارفع CSV أو Excel: الأعمدة name,purchase_price,strength,pack,barcode. لا يتم تعديل المخزون أو المشتريات.'));
-const file=el('input');file.type='file';file.accept='.csv,.xlsx,text/csv';panel.append(file);
-const pct=el('input');pct.type='number';pct.min='0';pct.max='1000';pct.placeholder='نسبة ربح جديدة (اختياري: اتركها للمحافظة على هامش الربح)';panel.append(pct);
+const file=el('input');file.type='file';file.accept='.csv,.xlsx,text/csv';file.setAttribute('aria-label','ملف برايس المورد');panel.append(file);
+const pct=el('input');pct.type='number';pct.min='0';pct.max='1000';pct.step='0.01';pct.setAttribute('aria-label','نسبة الربح الاختيارية');pct.placeholder='نسبة ربح جديدة (اختياري: اتركها للمحافظة على هامش الربح)';panel.append(pct);
 const previewBtn=el('button','معاينة الأسعار');panel.append(previewBtn);
 const approveBtn=el('button','اعتماد الأصناف المحددة');approveBtn.disabled=true;panel.append(approveBtn);
 const historyBtn=el('button','سجل الاعتماد والتراجع');panel.append(historyBtn);
-const status=el('p');panel.append(status);
+const status=el('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');panel.append(status);
+const summary=el('p');summary.style.cssText='font-weight:700;margin:12px 0';panel.append(summary);
+const search=el('input');search.type='search';search.placeholder='بحث داخل نتائج المعاينة بالاسم أو الحالة';search.setAttribute('aria-label','بحث في نتائج البرايس');search.style.cssText='width:100%;max-width:440px;padding:10px;border:1px solid #bdd3d7;border-radius:10px;margin:8px 0';panel.append(search);
 const grid=el('div');panel.append(grid);
 // Changing the source file or markup invalidates every prior approval token.
 let previewVersion=0;
-const invalidatePreview=()=>{previewVersion++;preview=[];approveBtn.disabled=true;grid.replaceChildren();status.textContent='تغيرت بيانات البرايس؛ اضغط معاينة الأسعار مجدداً قبل الاعتماد.'};
+const invalidatePreview=()=>{previewVersion++;preview=[];approveBtn.disabled=true;grid.replaceChildren();summary.textContent='';status.textContent='تغيرت بيانات البرايس؛ اضغط معاينة الأسعار مجدداً قبل الاعتماد.'};
 file.addEventListener('change',invalidatePreview);
 pct.addEventListener('input',invalidatePreview);
 const csvParse=(txt)=>{
@@ -36,8 +38,9 @@ const request=async(path,body)=>{
  const res=await fetch('/api/v1/'+path,{credentials:'same-origin',method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
  const data=await res.json();if(!res.ok||data.error)throw Error(data.error||'تعذر الاتصال');return data;
 };
-previewBtn.onclick=async()=>{const version=++previewVersion;preview=[];approveBtn.disabled=true;grid.replaceChildren();try{
- if(!file.files[0])throw Error('اختر ملف CSV أولاً');
+previewBtn.onclick=async()=>{if(approvalPending)return;const version=++previewVersion;preview=[];approveBtn.disabled=true;grid.replaceChildren();summary.textContent='';previewBtn.disabled=true;status.textContent='جارٍ فحص ملف المورد ومطابقة الأسعار...';try{
+ if(!file.files[0])throw Error('اختر ملف CSV أو Excel أولاً');
+ if(pct.value!==''&&(!Number.isFinite(Number(pct.value))||Number(pct.value)<0||Number(pct.value)>1000))throw Error('نسبة الربح يجب أن تكون بين 0 و1000');
  if(file.files[0].size>6*1024*1024)throw Error('الملف كبير');
  const bytes=new Uint8Array(await file.files[0].arrayBuffer());let binary='';
  for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
@@ -49,19 +52,21 @@ previewBtn.onclick=async()=>{const version=++previewVersion;preview=[];approveBt
  preview=Array.isArray(data.rows)?data.rows:[];grid.replaceChildren();approveBtn.disabled=true;
  const table=el('table');table.style.width='100%';
  const tr=el('tr');['اعتماد','الصنف','الحالة','سعر الشراء الجديد','سعر البيع السابق','سعر البيع المقترح'].forEach(h=>tr.append(el('th',h)));table.append(tr);
- preview.forEach(r=>{const line=el('tr');const td=el('td');const cb=el('input');cb.type='checkbox';cb.checked=!!r.selected;cb.disabled=r.status!=='matched';r._checkbox=cb;cb.onchange=()=>{approveBtn.disabled=!preview.some(item=>item.status==='matched'&&item._checkbox?.checked)};td.append(cb);line.append(td);
+ const matches=preview.filter(r=>r.status==='matched').length;
+ summary.textContent='إجمالي '+preview.length+' صنف · مطابق '+matches+' · يحتاج مراجعة '+(preview.length-matches);
+ preview.forEach(r=>{const line=el('tr');line.dataset.search=String(r.name||'').toLowerCase()+' '+String(r.status||'').toLowerCase();const td=el('td');const cb=el('input');cb.type='checkbox';cb.checked=!!r.selected;cb.disabled=r.status!=='matched';r._checkbox=cb;cb.onchange=()=>{approveBtn.disabled=!preview.some(item=>item.status==='matched'&&item._checkbox?.checked)};td.append(cb);line.append(td);
  [r.name,r.status,r.purchase_price,r.old_sale_price??'-',r.proposed_sale_price??'-'].forEach(v=>line.append(el('td',String(v))));table.append(line)});
- grid.append(table);approveBtn.disabled=!preview.some(item=>item.status==='matched'&&item._checkbox?.checked);status.textContent='المعاينة فقط؛ لم يتم تعديل أي سعر.';
- }catch(e){if(version!==previewVersion)return;preview=[];approveBtn.disabled=true;status.textContent=e.message}};
+ grid.append(table);search.oninput=()=>{const q=search.value.trim().toLowerCase();[...table.querySelectorAll('tr[data-search]')].forEach(row=>row.hidden=!!q&&!row.dataset.search.includes(q))};search.oninput();approveBtn.disabled=!preview.some(item=>item.status==='matched'&&item._checkbox?.checked);status.textContent='المعاينة فقط؛ لم يتم تعديل أي سعر.';
+ }catch(e){if(version!==previewVersion)return;preview=[];approveBtn.disabled=true;summary.textContent='';status.textContent=e.message}finally{if(version===previewVersion&&!approvalPending)previewBtn.disabled=false}};
 let approvalPending=false;
 approveBtn.onclick=async()=>{if(approvalPending)return;try{
  const items=preview.filter(r=>r._checkbox?.checked&&r.status==='matched').map(r=>({package_id:r.package_id,old_sale_price:r.old_sale_price,proposed_sale_price:r.proposed_sale_price,approval_token:r.approval_token}));
  if(!items.length)throw Error('حدد صنفاً واحداً على الأقل');
  if(!confirm('اعتماد '+items.length+' سعر بيع؟'))return;
- approvalPending=true;approveBtn.disabled=true;previewBtn.disabled=true;file.disabled=true;pct.disabled=true;
+ approvalPending=true;approveBtn.disabled=true;previewBtn.disabled=true;historyBtn.disabled=true;close.disabled=true;file.disabled=true;pct.disabled=true;status.textContent='جارٍ اعتماد الأسعار المحددة...';
  const data=await request('nova-price-list-approve',{items});invalidatePreview();status.textContent='تم اعتماد '+data.updated+' سعر. راجع السجل للتراجع.';
- }catch(e){status.textContent=e.message}finally{approvalPending=false;previewBtn.disabled=false;file.disabled=false;pct.disabled=false}};
-historyBtn.onclick=async()=>{invalidatePreview();try{
+ }catch(e){status.textContent=e.message}finally{approvalPending=false;previewBtn.disabled=false;historyBtn.disabled=false;close.disabled=false;file.disabled=false;pct.disabled=false}};
+historyBtn.onclick=async()=>{if(approvalPending)return;invalidatePreview();summary.textContent='سجل اعتماد وتراجع الأسعار';try{
  const data=await request('nova-price-list-history');grid.replaceChildren();
  const records=Array.isArray(data)?data:(data.rows||[]);
  records.forEach(r=>{const div=el('div',r.created_at+' · '+r.action+' · #'+r.id+' ');if(r.action==='bulk_supplier_price_list_approved'){
@@ -73,7 +78,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const launch=el('button','تحديث الأسعار من برايس');
   launch.id='nova-price-list-launch';
   launch.className='btn outline small';
-  launch.onclick=()=>{invalidatePreview();panel.hidden=false};
+  launch.onclick=()=>{invalidatePreview();panel.hidden=false;file.focus()};
   document.body.append(panel);
   const previousNav=nav;
   nav=function(page){
