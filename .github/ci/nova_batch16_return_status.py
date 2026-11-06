@@ -27,6 +27,10 @@ assert new!=old, 'Sales history row template changed'
 old_button="can('refund')?\x60<button class=\"btn danger small\" onclick=\"returnModal(${s.id})\">مرتجع</button>\x60:''"
 new_button="novaReturnState==='full'?\x60<span style=\"color:#b91c1c;font-weight:700\">تم الاسترجاع</span>\x60:(novaReturnState==='partial'?\x60<span style=\"color:#a16207;font-weight:700\">مرتجع جزئي</span>\x60:'')+(can('refund')?\x60<button class=\"btn danger small\" onclick=\"returnModal(${s.id})\">مرتجع</button>\x60:'')"
 new=new.replace(old_button,new_button,1)
+# Do not offer a second refund when every sold unit has already been returned.
+# Only change the rendered action; original refund permissions and handler remain.
+new=new.replace("+(can('refund')?", "+(novaReturnState==='full'?'':(can('refund')?", 1)
+new=new.replace("مرتجع</button>`:'')", "مرتجع</button>`:''))", 1)
 new=new.replace('\x60))}', '\x60;}))}',1)
 assert new!=old and 'novaReturnDisplayStatus(s)' in new
 s=s[:start]+status+new+s[end:]
