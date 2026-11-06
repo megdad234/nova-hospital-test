@@ -263,6 +263,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Manual price editor syntax failed' }
           python .github/ci/test_nova_bulk_price_integration.py
           if ($LASTEXITCODE -ne 0) { throw 'Bulk price integration regression failed' }
+          python .github/ci/test_nova_manual_price.py
+          if ($LASTEXITCODE -ne 0) { throw 'Manual medicine price regression failed' }
       - name: Apply presentation-only refund history status
         shell: pwsh
         run: |
