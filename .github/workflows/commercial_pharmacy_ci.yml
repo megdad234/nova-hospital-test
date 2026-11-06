@@ -383,7 +383,15 @@ jobs:
           }
           if (Test-Path (Join-Path $target 'hospital_reference')) { throw 'Hospital reference shipped inside installer' }
           $service = Get-Service -Name NOVACommercialPharmacyServer -ErrorAction SilentlyContinue
-          if (!$service -or $service.Status -ne 'Running') { throw 'Installer did not automatically start commercial pharmacy service' }
+          if (!$service -or $service.Status -ne 'Running') {
+            Write-Host 'COMMERCIAL_INSTALLER_DIAGNOSTICS_BEGIN'
+            if (Test-Path $log) { Get-Content $log -Tail 100 | ForEach-Object { Write-Host $_ } }
+            Get-Service -Name NOVACommercialPharmacyServer -ErrorAction SilentlyContinue | Format-List * | Out-String | Write-Host
+            if (Test-Path (Join-Path $target 'nssm.exe')) {
+              & (Join-Path $target 'nssm.exe') dump NOVACommercialPharmacyServer 2>&1 | Out-String | Write-Host
+            }
+            throw 'Installer did not automatically start commercial pharmacy service'
+          }
           $ready = $false
           for ($attempt=0; $attempt -lt 30; $attempt++) {
             try {
