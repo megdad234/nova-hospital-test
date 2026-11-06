@@ -86,6 +86,14 @@ def nova_price_list_preview(c,p):
     from difflib import SequenceMatcher
     overrides=p.get('confirmed_matches') or {}
     if not isinstance(overrides,dict):raise ValueError('اختيارات المطابقة غير صحيحة')
+    # Index exact names/barcodes once: large supplier files should not
+    # scan every in-stock medicine for every row.
+    by_name={}
+    by_barcode={}
+    for item in catalog_rows:
+        by_name.setdefault(norm(item['name']),[]).append(item)
+        if item['barcode']:
+            by_barcode.setdefault(str(item['barcode']),[]).append(item)
     result=[]
     for i,row in enumerate(rows):
         if not isinstance(row,dict):raise ValueError('صف غير صالح')
@@ -94,16 +102,9 @@ def nova_price_list_preview(c,p):
         if not price.is_finite() or price<=0 or price>1000000000000:raise ValueError('سعر شراء غير صالح')
         strength=norm(row.get('strength'));pack=norm(row.get('pack'))
         barcode=str(row.get('barcode') or '').strip()
-        hits=[]
-        for pk in catalog_rows:
-            if barcode and pk['barcode'] and barcode==str(pk['barcode']):
-                if strength and norm(pk['strength'])!=strength:continue
-                if pack and norm(pk['unit_name'])!=pack:continue
-                hits.append(pk);continue
-            if norm(pk['name'])!=norm(name):continue
-            if strength and norm(pk['strength'])!=strength:continue
-            if pack and norm(pk['unit_name'])!=pack:continue
-            hits.append(pk)
+        pool=by_barcode.get(barcode,[]) if barcode and barcode in by_barcode else by_name.get(norm(name),[])
+        hits=[pk for pk in pool if (not strength or norm(pk['strength'])==strength)
+              and (not pack or norm(pk['unit_name'])==pack)]
         # Suggestions are limited to the same strength and pack when supplied.
         # A different strength is never presented as an interchangeable drug.
         suggested=[]
