@@ -45,3 +45,16 @@
 @media screen and (max-width:950px){
  .salearea>.nova-pos-checkout .sale-cart-list{height:clamp(150px,26vh,240px)!important;max-height:240px!important}
 }
+
+/* Cashier viewport polish: only on-screen POS, never thermal print. */
+@media screen{
+ .salearea .nova-holdbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+ .salearea .nova-held-count{font-weight:700;font-variant-numeric:tabular-nums}
+ .salearea>.nova-pos-checkout{min-width:0}
+ .salearea>.nova-pos-checkout .sale-cart-list{scrollbar-width:thin;scrollbar-color:#88b7ae transparent}
+ .salearea>.nova-pos-checkout button:focus-visible,.salearea>.nova-pos-search input:focus-visible{outline:3px solid #087f8c;outline-offset:2px}
+ .salearea>.nova-pos-checkout .pay-buttons button{flex:1 1 112px;white-space:normal;line-height:1.35}
+}
+@media screen and (max-width:650px){
+ .salearea>.nova-pos-checkout .pay-buttons button{flex-basis:calc(50% - 8px)}
+}
