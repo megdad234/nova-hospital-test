@@ -15,7 +15,8 @@ const historyBtn=el('button','سجل الاعتماد والتراجع');panel.a
 const status=el('p');panel.append(status);
 const grid=el('div');panel.append(grid);
 // Changing the source file or markup invalidates every prior approval token.
-const invalidatePreview=()=>{preview=[];approveBtn.disabled=true;grid.replaceChildren();status.textContent='تغيرت بيانات البرايس؛ اضغط معاينة الأسعار مجدداً قبل الاعتماد.'};
+let previewVersion=0;
+const invalidatePreview=()=>{previewVersion++;preview=[];approveBtn.disabled=true;grid.replaceChildren();status.textContent='تغيرت بيانات البرايس؛ اضغط معاينة الأسعار مجدداً قبل الاعتماد.'};
 file.addEventListener('change',invalidatePreview);
 pct.addEventListener('input',invalidatePreview);
 const csvParse=(txt)=>{
@@ -35,7 +36,7 @@ const request=async(path,body)=>{
  const res=await fetch('/api/v1/'+path,{credentials:'same-origin',method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
  const data=await res.json();if(!res.ok||data.error)throw Error(data.error||'تعذر الاتصال');return data;
 };
-previewBtn.onclick=async()=>{preview=[];approveBtn.disabled=true;grid.replaceChildren();try{
+previewBtn.onclick=async()=>{const version=++previewVersion;preview=[];approveBtn.disabled=true;grid.replaceChildren();try{
  if(!file.files[0])throw Error('اختر ملف CSV أولاً');
  if(file.files[0].size>6*1024*1024)throw Error('الملف كبير');
  const bytes=new Uint8Array(await file.files[0].arrayBuffer());let binary='';
@@ -44,13 +45,14 @@ previewBtn.onclick=async()=>{preview=[];approveBtn.disabled=true;grid.replaceChi
  const rows=parsed.rows;
  const payload={rows};if(pct.value!=='')payload.markup_percent=pct.value;
  const data=await request('nova-price-list-preview',payload);
+ if(version!==previewVersion)return;
  preview=Array.isArray(data.rows)?data.rows:[];grid.replaceChildren();approveBtn.disabled=true;
  const table=el('table');table.style.width='100%';
  const tr=el('tr');['اعتماد','الصنف','الحالة','سعر الشراء الجديد','سعر البيع السابق','سعر البيع المقترح'].forEach(h=>tr.append(el('th',h)));table.append(tr);
  preview.forEach(r=>{const line=el('tr');const td=el('td');const cb=el('input');cb.type='checkbox';cb.checked=!!r.selected;cb.disabled=r.status!=='matched';r._checkbox=cb;cb.onchange=()=>{approveBtn.disabled=!preview.some(item=>item.status==='matched'&&item._checkbox?.checked)};td.append(cb);line.append(td);
  [r.name,r.status,r.purchase_price,r.old_sale_price??'-',r.proposed_sale_price??'-'].forEach(v=>line.append(el('td',String(v))));table.append(line)});
  grid.append(table);approveBtn.disabled=!preview.some(item=>item.status==='matched'&&item._checkbox?.checked);status.textContent='المعاينة فقط؛ لم يتم تعديل أي سعر.';
- }catch(e){preview=[];approveBtn.disabled=true;status.textContent=e.message}};
+ }catch(e){if(version!==previewVersion)return;preview=[];approveBtn.disabled=true;status.textContent=e.message}};
 approveBtn.onclick=async()=>{try{
  const items=preview.filter(r=>r._checkbox?.checked&&r.status==='matched').map(r=>({package_id:r.package_id,old_sale_price:r.old_sale_price,proposed_sale_price:r.proposed_sale_price,approval_token:r.approval_token}));
  if(!items.length)throw Error('حدد صنفاً واحداً على الأقل');
