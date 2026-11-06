@@ -318,12 +318,21 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          choco install nssm --yes --no-progress
-          if ($LASTEXITCODE -ne 0) { throw 'NSSM installation failed' }
-          $binary = 'C:/ProgramData/chocolatey/bin/nssm.exe'
-          if (!(Test-Path $binary)) { throw 'NSSM binary missing' }
-          Copy-Item $binary dist/commercial/nssm.exe
-          & dist/commercial/nssm.exe version
+          $payload = (Resolve-Path 'dist/commercial').Path
+          Push-Location $env:RUNNER_TEMP
+          try {
+            choco install nssm --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'NSSM installation failed' }
+          } finally { Pop-Location }
+          $candidates = @(
+            'C:/ProgramData/chocolatey/bin/nssm.exe',
+            'C:/ProgramData/chocolatey/lib/nssm/tools/nssm.exe',
+            'C:/ProgramData/chocolatey/lib/NSSM/tools/nssm.exe'
+          )
+          $binary = $candidates | Where-Object { Test-Path $_ -PathType Leaf } | Select-Object -First 1
+          if (!$binary) { throw 'NSSM executable missing from Chocolatey package' }
+          Copy-Item -LiteralPath $binary -Destination (Join-Path $payload 'nssm.exe')
+          & (Join-Path $payload 'nssm.exe') version
       - name: Upload tested standalone payload candidate
         uses: actions/upload-artifact@v4
         with:
