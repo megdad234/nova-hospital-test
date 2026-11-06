@@ -314,6 +314,16 @@ jobs:
         run: |
           & ./commercial_pharmacy/windows/assemble-standalone-payload.ps1 -SourceStage (Resolve-Path commercial_pharmacy_stage).Path -PythonRuntimeDirectory "$env:RUNNER_TEMP/NOVACommercialEmbeddedPython" -LaunchersDirectory (Resolve-Path commercial_launchers).Path -Destination (Join-Path (Get-Location).Path 'dist/commercial')
           if ($LASTEXITCODE -ne 0) { throw 'Standalone commercial pharmacy assembly failed' }
+      - name: Bundle hospital-style NSSM service wrapper
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          choco install nssm --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'NSSM installation failed' }
+          $binary = 'C:/ProgramData/chocolatey/bin/nssm.exe'
+          if (!(Test-Path $binary)) { throw 'NSSM binary missing' }
+          Copy-Item $binary dist/commercial/nssm.exe
+          & dist/commercial/nssm.exe version
       - name: Upload tested standalone payload candidate
         uses: actions/upload-artifact@v4
         with:
