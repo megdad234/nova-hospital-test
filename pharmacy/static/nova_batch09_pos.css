@@ -22,37 +22,26 @@
 @media(max-width:950px){.salearea{grid-template-columns:minmax(0,1fr)!important}.salearea>.nova-holdbar{grid-column:1!important}.salearea>.panel.nova-pos-search{grid-column:1!important;grid-row:2!important}.salearea>.panel.nova-pos-checkout{grid-column:1!important;grid-row:3!important}.salearea>.nova-pos-search .sale-catalog{max-height:230px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media print{.salearea>.panel.nova-pos-checkout,.salearea>.panel.nova-pos-search{max-height:none!important;overflow:visible!important}}
 
-/* NOVA approved POS: five-row invoice viewport and uncluttered checkout. */
-.salearea>.nova-pos-checkout .sale-cart-list{height:clamp(220px,34vh,310px)!important;max-height:310px!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-gutter:stable!important}
-.salearea>.nova-pos-search input#pos-scan{width:100%!important;min-height:42px!important}
-.salearea>.nova-pos-checkout .pay-buttons{display:flex!important;flex-wrap:wrap!important;gap:6px!important}
-@media(max-width:950px){.salearea>.nova-pos-checkout .sale-cart-list{height:auto!important;max-height:290px!important}}
-
-
-/* NOVA approved cashier usability: the invoice lines scroll independently.
-   Payment options and sale confirmation remain in normal view; no logic changes. */
-@media screen and (min-width:951px){
-  .salearea>.panel.nova-pos-checkout{align-self:start!important;min-height:0!important}
-  .salearea>.nova-pos-checkout .sale-cart-list{
-    height:clamp(150px,28vh,260px)!important;
-    max-height:260px!important;
-    overflow-y:auto!important;
-    overscroll-behavior:contain!important;
-    scrollbar-gutter:stable!important;
-  }
-  .salearea>.nova-pos-checkout .pay-buttons{
-    display:flex!important;flex-wrap:wrap!important;align-items:center!important;
-    gap:8px!important;position:relative!important;
-  }
-  .salearea>.nova-pos-checkout .pay-buttons button,
-  .salearea>.nova-pos-checkout .pay-buttons label{
-    display:inline-flex;align-items:center;justify-content:center;
-    min-height:40px;padding:8px 14px;border-radius:10px;
-  }
+/* NOVA POS: single authoritative cart viewport and payment controls.
+   Layout remains responsive; the pharmacy receipt print rules above are untouched. */
+@media screen{
+ .salearea>.nova-pos-search input#pos-scan{width:100%!important;min-height:42px!important}
+ .salearea>.nova-pos-checkout .sale-cart-list{
+   height:clamp(170px,30vh,280px)!important;
+   max-height:280px!important;min-height:0!important;
+   overflow-y:auto!important;overscroll-behavior:contain!important;
+   scrollbar-gutter:stable!important
+ }
+ .salearea>.nova-pos-checkout .pay-buttons{
+   display:flex!important;flex-wrap:wrap!important;
+   align-items:center!important;gap:8px!important;margin:8px 0!important
+ }
+ .salearea>.nova-pos-checkout .pay-buttons button,
+ .salearea>.nova-pos-checkout .pay-buttons label{
+   display:inline-flex;align-items:center;justify-content:center;
+   min-height:42px;padding:8px 14px;border-radius:10px;font-weight:650
+ }
 }
 @media screen and (max-width:950px){
-  .salearea>.nova-pos-checkout .sale-cart-list{
-    height:clamp(130px,25vh,220px)!important;max-height:220px!important;
-    overflow-y:auto!important;overscroll-behavior:contain!important;
-  }
+ .salearea>.nova-pos-checkout .sale-cart-list{height:clamp(150px,26vh,240px)!important;max-height:240px!important}
 }
