@@ -116,6 +116,19 @@
        '> راجعت البطاقة والأهلية والوصفة والأدوية المشمولة في العقد قبل الصرف</label>':
        '<p class="muted-note">اختر بطاقة من نتائج البحث. لا تكفي كتابة نسبة تغطية يدوياً.</p>'));
     head.insertAdjacentElement('afterend',node);
+    // Consolidate original insurer and contract controls in this one panel.
+    // Move, never duplicate: event listeners and state bindings stay intact.
+    const contractFields=document.createElement('div');
+    contractFields.className='nova-insurance-contract-fields';
+    for(const id of ['pos-authority','pos-insurance']){
+      const field=area.querySelector('#'+id);
+      const wrapper=fieldWrap(field);
+      if(wrapper&&wrapper!==area&&wrapper!==panel){
+        wrapper.hidden=!isInsurance;
+        contractFields.appendChild(wrapper);
+      }
+    }
+    node.insertBefore(contractFields,node.children[1]||null);
     const search=$('nova-insured-search');
     if(search){search.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();novaSearchInsured()}};
       $('nova-insured-find').onclick=novaSearchInsured;
