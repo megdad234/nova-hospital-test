@@ -1,4 +1,4 @@
-"""Static regression checks for non-destructive commercial service upgrades."""
+"""NSSM commercial service upgrade contract."""
 from pathlib import Path
 import unittest
 
@@ -9,27 +9,27 @@ class CommercialServiceUpgradeContract(unittest.TestCase):
     def setUpClass(cls):
         cls.source = SCRIPT.read_text(encoding="utf-8")
 
-    def test_existing_service_is_reused_not_deleted(self):
-        section = self.source.split("if ($existingService) {", 1)[1].split(
-            '$fullExe =', 1)[0]
-        self.assertIn("COMMERCIAL_PHARMACY_EXISTING_SERVICE_REUSED", section)
-        self.assertNotIn("sc.exe delete", section)
-        self.assertNotIn("Stop-Service", section)
+    def test_nssm_runtime_is_bundled_and_isolated(self):
+        for expected in ("nssm.exe", "runtime/python.exe", "pharmacy/server_host.py",
+                         "NOVACommercialPharmacyServer", "SERVICE_AUTO_START",
+                         "AppDirectory", "AppExit Default Restart"):
+            self.assertIn(expected, self.source)
 
-    def test_existing_service_command_and_port_are_checked(self):
-        self.assertIn('$expectedCommand', self.source)
-        self.assertIn('$configuredExe.Trim() -ne $expectedCommand', self.source)
+    def test_previous_service_migration_is_explicit(self):
+        self.assertIn("Get-CimInstance Win32_Service", self.source)
+        self.assertIn("if ($config.PathName -notmatch 'nssm.exe')", self.source)
+        self.assertIn("Old service pending deletion", self.source)
 
-    def test_lan_rule_supported_during_upgrade(self):
-        section = self.source.split("if ($existingService) {", 1)[1].split(
-            "COMMERCIAL_PHARMACY_EXISTING_SERVICE_REUSED", 1)[0]
-        self.assertIn("New-NetFirewallRule", section)
-        self.assertIn("-Profile Private", section)
-
-    def test_hospital_port_and_identity_are_not_used(self):
+    def test_firewall_is_private_and_port_independent(self):
+        self.assertIn("New-NetFirewallRule", self.source)
+        self.assertIn("-Profile Private", self.source)
+        self.assertIn("$Port -eq 8765", self.source)
         self.assertIn("$Port -eq 10080", self.source)
-        self.assertIn("'NOVACommercialPharmacyServer'", self.source)
-        self.assertNotIn("sc.exe delete NOVAHospital", self.source)
+
+    def test_http_readiness_and_hospital_isolation(self):
+        self.assertIn("Invoke-WebRequest", self.source)
+        self.assertIn("COMMERCIAL_NSSM_HTTP_READY", self.source)
+        self.assertNotIn("NOVA_Hospital_Server", self.source)
 
 if __name__ == "__main__":
     unittest.main()
