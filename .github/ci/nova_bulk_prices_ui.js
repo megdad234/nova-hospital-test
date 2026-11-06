@@ -53,12 +53,14 @@ previewBtn.onclick=async()=>{const version=++previewVersion;preview=[];approveBt
  [r.name,r.status,r.purchase_price,r.old_sale_price??'-',r.proposed_sale_price??'-'].forEach(v=>line.append(el('td',String(v))));table.append(line)});
  grid.append(table);approveBtn.disabled=!preview.some(item=>item.status==='matched'&&item._checkbox?.checked);status.textContent='المعاينة فقط؛ لم يتم تعديل أي سعر.';
  }catch(e){if(version!==previewVersion)return;preview=[];approveBtn.disabled=true;status.textContent=e.message}};
-approveBtn.onclick=async()=>{try{
+let approvalPending=false;
+approveBtn.onclick=async()=>{if(approvalPending)return;try{
  const items=preview.filter(r=>r._checkbox?.checked&&r.status==='matched').map(r=>({package_id:r.package_id,old_sale_price:r.old_sale_price,proposed_sale_price:r.proposed_sale_price,approval_token:r.approval_token}));
  if(!items.length)throw Error('حدد صنفاً واحداً على الأقل');
  if(!confirm('اعتماد '+items.length+' سعر بيع؟'))return;
- const data=await request('nova-price-list-approve',{items});status.textContent='تم اعتماد '+data.updated+' سعر. راجع السجل للتراجع.';approveBtn.disabled=true;
- }catch(e){status.textContent=e.message}};
+ approvalPending=true;approveBtn.disabled=true;previewBtn.disabled=true;file.disabled=true;pct.disabled=true;
+ const data=await request('nova-price-list-approve',{items});invalidatePreview();status.textContent='تم اعتماد '+data.updated+' سعر. راجع السجل للتراجع.';
+ }catch(e){status.textContent=e.message}finally{approvalPending=false;previewBtn.disabled=false;file.disabled=false;pct.disabled=false}};
 historyBtn.onclick=async()=>{try{
  const data=await request('nova-price-list-history');grid.replaceChildren();
  const records=Array.isArray(data)?data:(data.rows||[]);
