@@ -80,6 +80,18 @@
       if(fields){fields.focus();fields.scrollIntoView({block:'nearest'});}
       else toast('اختر جهة التأمين وعقدها من بيانات الفاتورة',true);
     };
+    // Keep the direct-sale counter uncluttered; preserve existing inputs and their handlers.
+    // Credit customers remain selectable because an account is required for credit sales.
+    const fieldWrap=input=>input?.closest('label,.field,.form-field')||input?.parentElement;
+    const directCredit=state.payMode==='credit';
+    const customerInput=area.querySelector('#pos-customer');
+    const customerWrap=fieldWrap(customerInput);
+    if(customerWrap)customerWrap.hidden=!isInsurance&&!directCredit;
+    for(const selector of ['#pos-authority','#pos-insurance','#pos-coverage']){
+      const input=area.querySelector(selector);
+      const wrapper=fieldWrap(input);
+      if(wrapper)wrapper.hidden=!isInsurance;
+    }
     const customer=currentInsured();
     const authorized=!!state.authorityId;
     const node=document.createElement('div');
