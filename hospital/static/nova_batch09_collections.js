@@ -176,17 +176,25 @@
    if(!container||container.querySelector('#nova-period-thermal'))return;
    const table=container.querySelector('table');
    if(!table)return;
+   const headings=[...table.querySelectorAll('th')].map(x=>x.textContent.trim());
+   if(!table.querySelector('tbody tr')&&!table.querySelectorAll('tr').length)return;
    const button=document.createElement('button');button.id='nova-period-thermal';button.type='button';
    button.className='outline no-print';button.textContent='طباعة حرارية — تحصيل الفترة';
    title.insertAdjacentElement('afterend',button);
    button.onclick=()=>{
      const rows=[...table.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(td=>td.textContent.trim())).filter(x=>x.length);
      if(!rows.length)return;
+     const expected=['نقدي','بنكي','مرتجع','الصافي'];
+     const snapshot=rows.flat().join(' ');
+     if(!expected.every(term=>snapshot.includes(term))){
+       window.alert('تعذر تحديد ملخص التحصيل الصحيح. لم تُرسل أي بيانات للطابعة.');return;
+     }
      const period=[...container.querySelectorAll('input[type="date"]')].map(e=>e.value).filter(Boolean).join(' — ')||
        [document.querySelector('#admin-from')?.value,document.querySelector('#admin-to')?.value].filter(Boolean).join(' — ');
      const name=document.title||'NOVA Hospital';
+     const capturedAt=new Date().toLocaleString('ar-SD');
      const body='<h2>'+escapeHtml(name)+'</h2><h3>تحصيل الفترة</h3>'+
-       '<p>'+escapeHtml(period)+'</p><table>'+rows.map(cells=>'<tr>'+cells.map(cell=>'<td>'+escapeHtml(cell)+'</td>').join('')+'</tr>').join('')+'</table>'+
+       '<p>'+escapeHtml(period)+'</p><p>وقت الطباعة: '+escapeHtml(capturedAt)+'</p><table>'+rows.map(cells=>'<tr>'+cells.map(cell=>'<td>'+escapeHtml(cell)+'</td>').join('')+'</tr>').join('')+'</table>'+
        '<p class="foot">المبالغ كما تظهر في تقرير الإدارة — الجنيه السوداني</p>';
      document.querySelector('#nova-period-thermal-preview')?.remove();
      const overlay=document.createElement('div');overlay.id='nova-period-thermal-preview';
