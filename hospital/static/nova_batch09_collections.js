@@ -161,3 +161,56 @@
    }catch(e){notice('فشل إعداد PDF: '+e.message,true)}
  }
 })();
+
+
+/* Period collection thermal preview: reads the existing rendered admin figures.
+   No accounting recalculation and no change to pharmacy receipt engine. */
+(function(){
+ 'use strict';
+ const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function install(){
+   const root=document.querySelector('#app')||document.body;
+   const title=[...root.querySelectorAll('h1,h2,h3,h4,th,strong')].find(e=>e.textContent.trim()==='تحصيل الفترة');
+   if(!title)return;
+   const container=title.closest('section,.panel,.card')||title.parentElement?.parentElement;
+   if(!container||container.querySelector('#nova-period-thermal'))return;
+   const table=container.querySelector('table');
+   if(!table)return;
+   const button=document.createElement('button');button.id='nova-period-thermal';button.type='button';
+   button.className='outline no-print';button.textContent='طباعة حرارية — تحصيل الفترة';
+   title.insertAdjacentElement('afterend',button);
+   button.onclick=()=>{
+     const rows=[...table.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(td=>td.textContent.trim())).filter(x=>x.length);
+     if(!rows.length)return;
+     const period=[...container.querySelectorAll('input[type="date"]')].map(e=>e.value).filter(Boolean).join(' — ')||
+       [document.querySelector('#admin-from')?.value,document.querySelector('#admin-to')?.value].filter(Boolean).join(' — ');
+     const name=document.title||'NOVA Hospital';
+     const body='<h2>'+escapeHtml(name)+'</h2><h3>تحصيل الفترة</h3>'+
+       '<p>'+escapeHtml(period)+'</p><table>'+rows.map(cells=>'<tr>'+cells.map(cell=>'<td>'+escapeHtml(cell)+'</td>').join('')+'</tr>').join('')+'</table>'+
+       '<p class="foot">المبالغ كما تظهر في تقرير الإدارة — الجنيه السوداني</p>';
+     document.querySelector('#nova-period-thermal-preview')?.remove();
+     const overlay=document.createElement('div');overlay.id='nova-period-thermal-preview';
+     overlay.style.cssText='position:fixed;inset:0;z-index:999999;background:#101e2bbd;display:grid;place-items:center;padding:16px;direction:rtl';
+     const panel=document.createElement('div');panel.style.cssText='background:white;border-radius:14px;padding:16px;max-height:90vh;overflow:auto;width:min(420px,100%)';
+     const controls=document.createElement('div');controls.style.cssText='display:flex;gap:8px;margin-bottom:12px';
+     const print=document.createElement('button');print.textContent='طباعة 80 مم';print.type='button';print.className='primary';
+     const close=document.createElement('button');close.textContent='إغلاق المعاينة';close.type='button';close.className='outline';
+     const preview=document.createElement('div');preview.style.cssText='width:80mm;max-width:100%;margin:auto;background:white;color:black;padding:8px;font:12px Tahoma,Arial;box-sizing:border-box';
+     preview.innerHTML=body;preview.querySelectorAll('table').forEach(t=>t.style.cssText='width:100%;border-collapse:collapse');
+     preview.querySelectorAll('td').forEach(td=>td.style.cssText='border-bottom:1px dashed #bbb;padding:5px 2px;overflow-wrap:anywhere');
+     controls.append(print,close);panel.append(controls,preview);overlay.append(panel);document.body.append(overlay);
+     close.onclick=()=>overlay.remove();
+     overlay.onclick=e=>{if(e.target===overlay)overlay.remove()};
+     print.onclick=()=>{
+       const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-9999px;top:0;width:80mm;height:400px;border:0';
+       frame.srcdoc='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>@page{size:80mm auto;margin:3mm}body{font:11px Tahoma,Arial;color:#000;margin:0}h2,h3,p{text-align:center;margin:5px 0}table{width:100%;border-collapse:collapse}td{padding:5px 2px;border-bottom:1px dashed #999;overflow-wrap:anywhere}.foot{font-size:10px}</style></head><body>'+body+'</body></html>';
+       frame.onload=()=>{frame.contentWindow.focus();frame.contentWindow.print()};
+       document.body.append(frame);
+       frame.contentWindow?.addEventListener('afterprint',()=>frame.remove(),{once:true});
+     };
+   };
+ }
+ const observer=new MutationObserver(()=>install());
+ const start=()=>{install();observer.observe(document.body,{childList:true,subtree:true})};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
