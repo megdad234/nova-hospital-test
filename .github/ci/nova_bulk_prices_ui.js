@@ -60,5 +60,23 @@ historyBtn.onclick=async()=>{try{
  const b=el('button','تراجع');b.onclick=async()=>{if(!confirm('استرجاع جميع أسعار هذه العملية؟'))return;try{await request('nova-price-list-rollback',{audit_id:r.id});status.textContent='تم التراجع';historyBtn.click()}catch(e){status.textContent=e.message}};div.append(b)}
  grid.append(div)});
  }catch(e){status.textContent=e.message}};
-document.addEventListener('DOMContentLoaded',()=>{const launch=el('button','تحديث الأسعار من برايس');launch.style.cssText='position:fixed;bottom:16px;left:16px;z-index:9998;background:#087b87;color:white;padding:12px;border:0;border-radius:12px';launch.onclick=()=>panel.hidden=false;document.body.append(launch,panel)});
+document.addEventListener('DOMContentLoaded',()=>{
+  // Price-list upload belongs to the existing prices screen, never to checkout.
+  const launch=el('button','تحديث الأسعار من برايس');
+  launch.id='nova-price-list-launch';
+  launch.className='btn outline small';
+  launch.onclick=()=>panel.hidden=false;
+  document.body.append(panel);
+  const previousNav=nav;
+  nav=function(page){
+    previousNav(page);
+    launch.remove();
+    if(page!=='prices')return;
+    const main=document.querySelector('main')||document.querySelector('#app');
+    const target=main?.querySelector('.panel-head')||main?.querySelector('.panel');
+    if(target)target.append(launch);
+  };
+  const active=document.querySelector('[data-page="prices"].active');
+  if(active)nav('prices');
+});
 })();
