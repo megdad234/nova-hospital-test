@@ -35,28 +35,35 @@ if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
   Start-Sleep -Seconds 2
   if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) { throw 'Previous commercial service is still registered; retry after reboot' }
 }
-$fullExe = (Resolve-Path -LiteralPath $ExecutablePath).Path
-if ($fullExe -match '[\x00-\x1f]') { throw 'Invalid executable path' }
-$binaryPath = ('"{0}" --service --port {1}' -f $fullExe, $Port)
-& sc.exe create $serviceName binPath= $binaryPath start= auto DisplayName= $displayName
-if ($LASTEXITCODE -ne 0) { throw 'Windows service registration failed' }
-& sc.exe description $serviceName 'Independent NOVA Commercial Pharmacy server; no NOVA Hospital service dependency.'
-if ($LASTEXITCODE -ne 0) { & sc.exe delete $serviceName | Out-Null; throw 'Windows service description failed' }
-$firewallRuleCreated = $false
+$nssm = Join-Path $installedRoot 'nssm.exe'
+if (!(Test-Path $nssm)) { throw 'Commercial service manager missing' }
+$entry = Join-Path $runtimeRoot 'pharmacy/server_host.py'
+& $nssm install $serviceName $runtimePython $entry
+if ($LASTEXITCODE -ne 0) { throw 'Commercial service registration failed' }
+& $nssm set $serviceName AppDirectory $runtimeRoot
+& $nssm set $serviceName AppEnvironmentExtra "NOVA_COMMERCIAL_PORT=$Port"
+& $nssm set $serviceName Start SERVICE_AUTO_START
+& $nssm set $serviceName DisplayName $displayName
+& $nssm set $serviceName AppExit Default Restart
 try {
-if ($OpenLanFirewall) {
-  $ruleName = 'NOVA Commercial Pharmacy LAN'
-  if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
-    New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort $Port -Profile Private | Out-Null
-    $firewallRuleCreated = $true
+  if ($OpenLanFirewall) {
+    $ruleName = 'NOVA Commercial Pharmacy LAN'
+    if (!(Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
+      New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort $Port -Profile Private | Out-Null
+    }
   }
-}
-  Start-Service -Name $serviceName -ErrorAction Stop
-  $service = Get-Service -Name $serviceName -ErrorAction Stop
-  $service.WaitForStatus("Running", [TimeSpan]::FromSeconds(30))
+  Start-Service $serviceName -ErrorAction Stop
+  (Get-Service $serviceName).WaitForStatus('Running',[TimeSpan]::FromSeconds(30))
+  $ready = $false
+  for ($i=0; $i -lt 30; $i++) {
+    try {
+      if ((Invoke-WebRequest "http://127.0.0.1:$Port/" -TimeoutSec 3).StatusCode -eq 200) { $ready=$true; break }
+    } catch { Start-Sleep -Seconds 1 }
+  }
+  if (!$ready) { throw 'Commercial HTTP server not ready' }
 } catch {
-  if ($firewallRuleCreated) { Remove-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue }
-  & sc.exe delete $serviceName | Out-Null
-  throw "Commercial pharmacy service failed to start; registration rolled back: $_"
+  & $nssm stop $serviceName confirm | Out-Null
+  & $nssm remove $serviceName confirm | Out-Null
+  throw
 }
-Write-Host "COMMERCIAL_PHARMACY_SERVICE_RUNNING $serviceName"
+Write-Host 'COMMERCIAL_NSSM_SERVICE_HTTP_READY'
