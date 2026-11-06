@@ -256,14 +256,17 @@ s=s.replace(rollback_anchor,rollback_anchor+"\n                     '/api/v1/nov
 # Ship the price-list screen with the installed offline pharmacy client.
 ui=Path(".github/ci/nova_bulk_prices_ui.js").read_text(encoding="utf-8")
 Path("pharmacy/static/nova_bulk_prices_ui.js").write_text(ui,encoding="utf-8")
+manual_ui=Path('.github/ci/nova_manual_price_editor.js').read_text(encoding='utf-8')
+Path('pharmacy/static/nova_manual_price_editor.js').write_text(manual_ui,encoding='utf-8')
 static_anchor="'/static/nova_pharmacy_batch08.js','/static/logo.png'"
 assert s.count(static_anchor)==1
-s=s.replace(static_anchor,"'/static/nova_pharmacy_batch08.js','/static/nova_bulk_prices_ui.js','/static/logo.png'")
+s=s.replace(static_anchor,"'/static/nova_pharmacy_batch08.js','/static/nova_bulk_prices_ui.js','/static/nova_manual_price_editor.js','/static/logo.png'")
 index=Path("pharmacy/static/index.html")
 html=index.read_text(encoding="utf-8")
 script_anchor='<script src="/static/nova_pharmacy_batch08.js"></script>'
 assert html.count(script_anchor)==1
 html=html.replace(script_anchor,script_anchor+'<script src="/static/nova_bulk_prices_ui.js"></script>')
+html=html.replace('<script src="/static/nova_bulk_prices_ui.js"></script>','<script src="/static/nova_bulk_prices_ui.js"></script><script src="/static/nova_manual_price_editor.js"></script>')
 index.write_text(html,encoding="utf-8")
 p.write_text(s,encoding="utf-8")
 print("NOVA_PRICE_LIST_BACKEND_INTEGRATED")
