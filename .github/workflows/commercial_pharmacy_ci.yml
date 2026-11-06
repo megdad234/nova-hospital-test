@@ -397,6 +397,20 @@ jobs:
           Write-Host 'AUTOMATIC_COMMERCIAL_SERVICE_AND_HTTP_PASSED'
           & (Join-Path $target 'runtime/python.exe') -m commercial_pharmacy.launch --source-root $target --preflight-only
           if ($LASTEXITCODE -ne 0) { throw 'Installed commercial pharmacy failed preflight' }
+          # Upgrade-in-place acceptance: ensure persistent commercial data survives setup rerun.
+          $dataRoot = Join-Path $env:ProgramData 'NOVACommercialPharmacy'
+          New-Item -ItemType Directory -Force -Path $dataRoot | Out-Null
+          $marker = Join-Path $dataRoot 'ci-upgrade-preservation-marker.txt'
+          $sentinel = 'NOVA_COMMERCIAL_UPGRADE_PRESERVATION'
+          [System.IO.File]::WriteAllText($marker, $sentinel)
+          $upgrade = Start-Process -FilePath $installer.FullName -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$target","/LOG=$log") -Wait -PassThru
+          if ($upgrade.ExitCode -ne 0) { throw "Commercial upgrade failed: $($upgrade.ExitCode)" }
+          if (!(Test-Path $marker) -or [System.IO.File]::ReadAllText($marker) -ne $sentinel) { throw 'Commercial data lost during upgrade' }
+          $upgradedService = Get-Service NOVACommercialPharmacyServer -ErrorAction SilentlyContinue
+          if (!$upgradedService -or $upgradedService.Status -ne 'Running') { throw 'Commercial service not running after upgrade' }
+          $upgradeHttp = Invoke-WebRequest 'http://127.0.0.1:18763/' -TimeoutSec 12
+          if ($upgradeHttp.StatusCode -ne 200) { throw 'Commercial HTTP failed after upgrade' }
+          Write-Host 'COMMERCIAL_IN_PLACE_UPGRADE_PRESERVED_DATA_AND_HTTP'
           $uninstaller = Get-ChildItem $target -Filter 'unins*.exe' | Select-Object -First 1
           if (!$uninstaller) { throw 'Inno Setup uninstaller missing' }
           $uninstall = Start-Process -FilePath $uninstaller.FullName -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -Wait -PassThru
