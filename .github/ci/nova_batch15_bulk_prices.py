@@ -84,6 +84,8 @@ def nova_price_list_preview(c,p):
         WHERE pr.active=1""").fetchall()
     # Review-only fuzzy suggestions. They never authorize a price update.
     from difflib import SequenceMatcher
+    overrides=p.get('confirmed_matches') or {}
+    if not isinstance(overrides,dict):raise ValueError('اختيارات المطابقة غير صحيحة')
     result=[]
     for i,row in enumerate(rows):
         if not isinstance(row,dict):raise ValueError('صف غير صالح')
@@ -118,7 +120,21 @@ def nova_price_list_preview(c,p):
                 'suggestions':[{'package_id':int(pk['id']),'name':str(pk['name']),
                     'strength':str(pk['strength'] or ''),'pack':str(pk['unit_name'] or ''),
                     'similarity':round(score,2)} for score,pk in suggested[:5]]}
-        if len(hits)==1 and (barcode or (strength and pack)):
+        # A manual choice is allowed only from the explicitly suggested
+        # candidates, with matching supplied strength/pack. It is still
+        # read-only until a second, signed price approval.
+        chosen=overrides.get(str(row.get('line',i+1)))
+        if chosen is not None:
+            try:chosen=int(chosen)
+            except (TypeError,ValueError):raise ValueError('اختيار مطابقة غير صالح')
+            options=[pk for pk in catalog_rows if int(pk['id'])==chosen]
+            if len(options)!=1 or (strength and norm(options[0]['strength'])!=strength) or (pack and norm(options[0]['unit_name'])!=pack):
+                raise ValueError('المطابقة المختارة تخالف التركيز أو العبوة')
+            if not any(int(pk['id'])==chosen for _,pk in suggested) and not any(int(pk['id'])==chosen for pk in hits):
+                raise ValueError('المطابقة المختارة غير موجودة ضمن الاقتراحات')
+            hits=options
+            record['confirmed_manually']=True
+        if len(hits)==1 and (chosen is not None or barcode or (strength and pack)):
             pk=hits[0]
             # Actual purchase history, never previously imported price lists.
             last=c.execute("""SELECT pl.id,pl.amount,pl.qty,pl.bonus,pl.received,src.factor
