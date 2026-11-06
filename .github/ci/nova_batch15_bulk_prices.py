@@ -178,6 +178,20 @@ def nova_sale_price_catalog(c,p):
         ORDER BY pr.name,pk.id LIMIT 60""",(pattern,pattern)).fetchall()
     return {'rows':[dict(r) for r in rows],'count':len(rows)}
 
+def nova_manual_price_history(c):
+    """Last 100 individual price changes, read-only and permission-gated."""
+    import json as _json
+    rows=c.execute("""SELECT id,created_at,user_id,details FROM audit
+        WHERE action='manual_sale_price_update'
+        ORDER BY id DESC LIMIT 100""").fetchall()
+    result=[]
+    for r in rows:
+        d=_json.loads(r['details'])
+        result.append({'id':r['id'],'created_at':r['created_at'],
+                       'user_id':r['user_id'],'package_id':d.get('package_id'),
+                       'old':d.get('old'),'new':d.get('new')})
+    return {'rows':result}
+
 def nova_manual_sale_price(c,p,uid):
     """Update a package selling price only, with an atomic audit record."""
     from decimal import Decimal, InvalidOperation
@@ -245,10 +259,10 @@ assert s.count(anchor2)==1
 s=s.replace(anchor2,"'/api/v1/nova-price-list-parse':('prices',lambda:nova_price_list_file_rows(data)),\n                     '/api/v1/nova-price-list-preview':('prices',lambda:nova_price_list_preview(c,data)),\n                     '/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),\n                     '/api/v1/nova-manual-sale-price':('prices',lambda:nova_manual_sale_price(c,data,u['id'])),\n                     "+anchor2)
 get_anchor="'/api/v1/products':lambda:catalog(c),"
 assert s.count(get_anchor)==1
-s=s.replace(get_anchor,"'/api/v1/nova-sale-price-catalog':lambda:nova_sale_price_catalog(c,{'q':parse_qs(urlparse(self.path).query).get('q',[''])[0]}),\n                     '/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\n                     "+get_anchor)
+s=s.replace(get_anchor,"'/api/v1/nova-sale-price-catalog':lambda:nova_sale_price_catalog(c,{'q':parse_qs(urlparse(self.path).query).get('q',[''])[0]}),\n                     '/api/v1/nova-manual-price-history':lambda:nova_manual_price_history(c),\n                     '/api/v1/nova-price-list-history':lambda:nova_price_list_history(c),\n                     "+get_anchor)
 permission_anchor="'/api/v1/products':'catalog'"
 assert s.count(permission_anchor)>=1
-s=s.replace(permission_anchor,"'/api/v1/nova-sale-price-catalog':'prices','/api/v1/nova-price-list-history':'prices',"+permission_anchor,1)
+s=s.replace(permission_anchor,"'/api/v1/nova-sale-price-catalog':'prices','/api/v1/nova-manual-price-history':'prices','/api/v1/nova-price-list-history':'prices',"+permission_anchor,1)
 rollback_anchor="'/api/v1/nova-price-list-approve':('prices',lambda:nova_price_list_approve(c,data,u['id'])),"
 assert s.count(rollback_anchor)==1
 s=s.replace(rollback_anchor,rollback_anchor+"\n                     '/api/v1/nova-price-list-rollback':('prices',lambda:nova_price_list_rollback(c,data,u['id'])),")
