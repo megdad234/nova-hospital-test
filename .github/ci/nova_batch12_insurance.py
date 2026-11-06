@@ -74,6 +74,7 @@ def patch_backend(s):
     s=one(s,
       "'/api/v1/insurance-member':('claims',lambda:insurance_member_create(c,data,u['id'])),",
       """'/api/v1/nova-insured-enroll':('sale',lambda:nova_insured_enroll(c,data,u['id'])),
+                     '/api/v1/nova-admin-insured-enroll':('claims',lambda:nova_insured_enroll(c,data,u['id'])),
                      '/api/v1/insurance-member':('claims',lambda:insurance_member_create(c,data,u['id'])),""",
       'POST enrollment')
     if 'NOVA_BATCH12_INSURED_PATIENT' in s:raise RuntimeError('Batch12 already present')
