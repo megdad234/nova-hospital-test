@@ -37,6 +37,16 @@ row={"name":"Paracetamol","strength":"500mg","pack":"box","barcode":"ABC","purch
 result=preview(c,{"rows":[row]})["rows"][0]
 assert result["status"]=="matched" and result["proposed_sale_price"]==8400,result
 assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==6000
+# Human-confirmed spelling variation: preview only, no price/stock write.
+suggested=preview(c,{"rows":[{"name":"Paracetmol","strength":"500mg","pack":"box","purchase_price":"7000","line":17}]})["rows"][0]
+assert suggested["status"]=="review" and suggested["suggestions"],suggested
+confirmed=preview(c,{"rows":[{"name":"Paracetmol","strength":"500mg","pack":"box","purchase_price":"7000","line":17}],"confirmed_matches":{"17":1}})["rows"][0]
+assert confirmed["status"]=="matched" and confirmed["confirmed_manually"] and confirmed["package_id"]==1,confirmed
+assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==6000
+try:
+ preview(c,{"rows":[{"name":"Paracetmol","strength":"1000mg","pack":"box","purchase_price":"7000","line":18}],"confirmed_matches":{"18":1}})
+ raise AssertionError("different strength was accepted")
+except ValueError:pass
 approved=approve(c,{"items":[{"package_id":1,"old_sale_price":6000,"proposed_sale_price":8400,"approval_token":result["approval_token"]}]},1)
 assert approved["updated"]==1
 assert c.execute("SELECT sale_price FROM packages").fetchone()[0]==8400
