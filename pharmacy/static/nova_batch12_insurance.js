@@ -6,6 +6,8 @@
   state.novaInsuranceVerified=false;
   let insuranceSearchRows=[];
   let hospitalSearchRows=[];
+  let insuredSearchVersion=0;
+  let patientSearchVersion=0;
   let selectedHospitalPatient=null;
   let lastMonthlyStatement=null;
   const safe=value=>esc(String(value??''));
@@ -106,10 +108,12 @@
       $('nova-insured-new').onclick=novaOpenInsuredEnrollment;}
     $('nova-insured-verify')?.addEventListener('change',e=>{state.novaInsuranceVerified=e.target.checked});
     $('pos-insurance')?.addEventListener('change',()=>{
+       insuredSearchVersion++;
        state.novaInsuredMember=null;state.novaInsuranceVerified=false;
        nav('pos');
     });
     $('pos-authority')?.addEventListener('change',()=>{
+       insuredSearchVersion++;
        state.novaInsuredMember=null;state.novaInsuranceVerified=false;
     });
   }
@@ -118,9 +122,12 @@
       const q=$('nova-insured-search')?.value.trim()||'';
       if(!q)throw Error('أدخل اسم المستفيد أو رقم بطاقته');
       if(!state.insuranceContractId)throw Error('اختر عقد التأمين');
+      const version=++insuredSearchVersion;
+      const contractId=String(state.insuranceContractId);
       const data=await api('nova-insured-search?contract_id='+
-           encodeURIComponent(state.insuranceContractId)+'&q='+encodeURIComponent(q));
-      insuranceSearchRows=data||[];
+           encodeURIComponent(contractId)+'&q='+encodeURIComponent(q));
+      if(version!==insuredSearchVersion||String(state.insuranceContractId)!==contractId)return;
+      insuranceSearchRows=Array.isArray(data)?data:[];
       const holder=$('nova-insured-results');
       if(!holder)return;
       holder.innerHTML=insuranceSearchRows.length?insuranceSearchRows.map((r,i)=>
@@ -147,6 +154,8 @@
   function novaOpenInsuredEnrollment(){
     if(!contractChoice())return toast('اختر عقد التأمين أولاً',true);
     selectedHospitalPatient=null;
+    patientSearchVersion++;
+    hospitalSearchRows=[];
     modal('تسجيل مستفيد تأمين مرتبط بملف المريض',
       '<div class="nova-insured-enroll"><p class="help">ابحث عن ملف المريض الموجود أولاً. لو ماف ملف، أدخل الاسم وسينشئ NOVA ملفاً واحداً في قاعدة المستشفى المركزية.</p>'+
       '<label>بحث عن مريض مسجل بالاسم أو رقم الملف أو الهاتف</label>'+
@@ -171,7 +180,10 @@
     try{
       const term=$('nova-hospital-patient-q')?.value.trim()||'';
       if(!term)throw Error('اكتب الاسم أو رقم الملف');
-      hospitalSearchRows=await api('nova-hospital-patient-search?q='+encodeURIComponent(term));
+      const version=++patientSearchVersion;
+      const result=await api('nova-hospital-patient-search?q='+encodeURIComponent(term));
+      if(version!==patientSearchVersion)return;
+      hospitalSearchRows=Array.isArray(result)?result:[];
       const host=$('nova-hospital-patient-results');
       if(!host)return;
       host.innerHTML=hospitalSearchRows.length?hospitalSearchRows.map((p,i)=>
