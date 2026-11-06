@@ -23,3 +23,7 @@
 /* Direct / insurance mode selector: clear cashier-facing actions. */
 .nova-sale-mode-switch{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;padding:8px;border:1px solid #d4e5df;border-radius:12px;background:#f6faf9}
 .nova-sale-mode-switch .btn{min-height:42px;padding:9px 18px;border-radius:9px;font-weight:700}
+
+/* Respect the actual insurance-mode toggle: display:grid above must not override hidden. */
+.nova-insured-panel[hidden]{display:none!important}
+.nova-sale-mode-switch .btn:focus-visible,.nova-insured-panel input:focus-visible{outline:3px solid #0b8791;outline-offset:2px}
