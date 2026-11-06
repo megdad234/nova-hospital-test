@@ -29,11 +29,22 @@ if (-not (Test-Path -LiteralPath $ExecutablePath -PathType Leaf)) {
 if ($Port -lt 1024 -or $Port -gt 65535 -or $Port -eq 10080) {
   throw 'Invalid or hospital-reserved commercial pharmacy port'
 }
-if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
-  Stop-Service -Name $serviceName -ErrorAction SilentlyContinue
-  & sc.exe delete $serviceName | Out-Null
-  Start-Sleep -Seconds 2
-  if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) { throw 'Previous commercial service is still registered; retry after reboot' }
+# Upgrades must never delete a healthy service registration. Inno Setup may
+# replace the binaries in place; retain the SCM identity and configuration.
+$existingService = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+if ($existingService) {
+  $serviceConfig = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction Stop
+  $expectedExe = (Resolve-Path -LiteralPath $ExecutablePath).Path
+  $configuredExe = [string]$serviceConfig.PathName
+  if ($configuredExe -notmatch [regex]::Escape($expectedExe)) {
+    throw 'Existing commercial service points to a different executable. Refusing to modify it.'
+  }
+  if ($existingService.Status -ne 'Running') {
+    Start-Service -Name $serviceName -ErrorAction Stop
+    (Get-Service -Name $serviceName).WaitForStatus('Running', [TimeSpan]::FromSeconds(30))
+  }
+  Write-Host "COMMERCIAL_PHARMACY_EXISTING_SERVICE_REUSED $serviceName"
+  return
 }
 $fullExe = (Resolve-Path -LiteralPath $ExecutablePath).Path
 if ($fullExe -match '[\x00-\x1f]') { throw 'Invalid executable path' }
