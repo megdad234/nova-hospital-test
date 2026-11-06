@@ -36,8 +36,15 @@ if ($existingService) {
   $serviceConfig = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction Stop
   $expectedExe = (Resolve-Path -LiteralPath $ExecutablePath).Path
   $configuredExe = [string]$serviceConfig.PathName
-  if ($configuredExe -notmatch [regex]::Escape($expectedExe)) {
-    throw 'Existing commercial service points to a different executable. Refusing to modify it.'
+  $expectedCommand = ('"{0}" --service --port {1}' -f $expectedExe, $Port)
+  if ($configuredExe.Trim() -ne $expectedCommand) {
+    throw 'Existing commercial service command or port differs from the requested configuration. Refusing unsafe replacement.'
+  }
+  if ($OpenLanFirewall) {
+    $ruleName = 'NOVA Commercial Pharmacy LAN'
+    if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
+      New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort $Port -Profile Private | Out-Null
+    }
   }
   if ($existingService.Status -ne 'Running') {
     Start-Service -Name $serviceName -ErrorAction Stop
