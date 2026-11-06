@@ -385,6 +385,7 @@ jobs:
           foreach ($item in @('NOVACommercialPharmacy.exe','NOVACommercialPharmacyServer.exe','runtime/python.exe','pharmacy/app.py','pharmacy/server_host.py','commercial_pharmacy/launch.py')) {
             if (!(Test-Path -LiteralPath (Join-Path $target $item) -PathType Leaf)) { throw "Installed file missing: $item" }
           }
+          if (!(Test-Path (Join-Path $target 'nssm.exe'))) { throw 'Hospital-style NSSM manager missing from installed package' }
           if (Test-Path (Join-Path $target 'hospital_reference')) { throw 'Hospital reference shipped inside installer' }
           $service = Get-Service -Name NOVACommercialPharmacyServer -ErrorAction SilentlyContinue
           if (!$service -or $service.Status -ne 'Running') {
@@ -396,6 +397,8 @@ jobs:
             }
             throw 'Installer did not automatically start commercial pharmacy service'
           }
+          $serviceConfig = Get-CimInstance Win32_Service -Filter "Name='NOVACommercialPharmacyServer'"
+          if ($serviceConfig.PathName -notmatch 'nssm.exe') { throw 'Commercial service is not using NSSM' }
           $ready = $false
           for ($attempt=0; $attempt -lt 30; $attempt++) {
             try {
