@@ -43,3 +43,23 @@ Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile
 
 [UninstallRun]
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\maintenance\uninstall-commercial-service.ps1"" -RemoveLanFirewallRule"; Flags: runhidden waituntilterminated
+
+; Stop only the commercial service before overwriting its locked executable.
+; The post-install registration script restarts the same service identity.
+[Code]
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+begin
+  Result := '';
+  if not Exec(ExpandConstant('{sys}\sc.exe'), 'query NOVACommercialPharmacyServer', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    Exit;
+  if ResultCode <> 0 then
+    Exit;
+  if not Exec(ExpandConstant('{sys}\sc.exe'), 'stop NOVACommercialPharmacyServer', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := 'Could not stop the commercial pharmacy service before upgrade.';
+    Exit;
+  end;
+  Sleep(2000);
+end;
