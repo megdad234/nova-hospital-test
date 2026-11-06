@@ -31,7 +31,7 @@ const request=async(path,body)=>{
  const res=await fetch('/api/v1/'+path,{credentials:'same-origin',method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
  const data=await res.json();if(!res.ok||data.error)throw Error(data.error||'تعذر الاتصال');return data;
 };
-previewBtn.onclick=async()=>{try{
+previewBtn.onclick=async()=>{preview=[];approveBtn.disabled=true;grid.replaceChildren();try{
  if(!file.files[0])throw Error('اختر ملف CSV أولاً');
  if(file.files[0].size>6*1024*1024)throw Error('الملف كبير');
  const bytes=new Uint8Array(await file.files[0].arrayBuffer());let binary='';
@@ -40,13 +40,13 @@ previewBtn.onclick=async()=>{try{
  const rows=parsed.rows;
  const payload={rows};if(pct.value!=='')payload.markup_percent=pct.value;
  const data=await request('nova-price-list-preview',payload);
- preview=data.rows;grid.replaceChildren();approveBtn.disabled=false;
+ preview=Array.isArray(data.rows)?data.rows:[];grid.replaceChildren();approveBtn.disabled=!preview.some(r=>r.status==='matched'&&r.selected);
  const table=el('table');table.style.width='100%';
  const tr=el('tr');['اعتماد','الصنف','الحالة','سعر الشراء الجديد','سعر البيع السابق','سعر البيع المقترح'].forEach(h=>tr.append(el('th',h)));table.append(tr);
  preview.forEach(r=>{const line=el('tr');const td=el('td');const cb=el('input');cb.type='checkbox';cb.checked=!!r.selected;cb.disabled=r.status!=='matched';r._checkbox=cb;td.append(cb);line.append(td);
  [r.name,r.status,r.purchase_price,r.old_sale_price??'-',r.proposed_sale_price??'-'].forEach(v=>line.append(el('td',String(v))));table.append(line)});
  grid.append(table);status.textContent='المعاينة فقط؛ لم يتم تعديل أي سعر.';
- }catch(e){status.textContent=e.message}};
+ }catch(e){preview=[];approveBtn.disabled=true;status.textContent=e.message}};
 approveBtn.onclick=async()=>{try{
  const items=preview.filter(r=>r._checkbox?.checked&&r.status==='matched').map(r=>({package_id:r.package_id,old_sale_price:r.old_sale_price,proposed_sale_price:r.proposed_sale_price,approval_token:r.approval_token}));
  if(!items.length)throw Error('حدد صنفاً واحداً على الأقل');
