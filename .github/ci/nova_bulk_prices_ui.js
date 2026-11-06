@@ -14,6 +14,10 @@ const approveBtn=el('button','اعتماد الأصناف المحددة');appro
 const historyBtn=el('button','سجل الاعتماد والتراجع');panel.append(historyBtn);
 const status=el('p');panel.append(status);
 const grid=el('div');panel.append(grid);
+// Changing the source file or markup invalidates every prior approval token.
+const invalidatePreview=()=>{preview=[];approveBtn.disabled=true;grid.replaceChildren();status.textContent='تغيرت بيانات البرايس؛ اضغط معاينة الأسعار مجدداً قبل الاعتماد.'};
+file.addEventListener('change',invalidatePreview);
+pct.addEventListener('input',invalidatePreview);
 const csvParse=(txt)=>{
  const rows=[];let row=[],field='',quoted=false;
  for(let i=0;i<txt.length;i++){const c=txt[i];if(c==='"'){if(quoted&&txt[i+1]==='"'){field+='"';i++}else quoted=!quoted}
