@@ -402,6 +402,7 @@
       '<label>نوع المستفيد<select class="nova-admin-relation">'+
       [['primary','مشترك أساسي'],['spouse','زوج / زوجة'],['child','ابن / ابنة'],['father','أب'],['mother','أم']].map(([v,t])=>'<option value="'+v+'">'+t+'</option>').join('')+
       '</select></label></div>'+
+      '<p class="help nova-admin-coverage-note" role="status" aria-live="polite"></p>'+
       '<label><input type="checkbox" class="nova-admin-eligibility"> تم التحقق من هوية المستفيد والبطاقة وأهلية التأمين</label>'+
       '<button type="button" class="btn nova-admin-save">حفظ المستفيد</button>';
     // Keep advance enrollment closed by default; do not overwhelm claims reports.
@@ -434,7 +435,18 @@
         note.disabled=true;contractSelect.add(note);
       }
     };
-    details.addEventListener('toggle',()=>{if(details.open)syncContracts()});
+    const explainCoverage=()=>{
+      const contract=(state.insurance||[]).find(x=>String(x.id)===contractSelect.value);
+      const note=field('.nova-admin-coverage-note');
+      if(!contract){note.textContent='اختر عقداً لعرض التغطية الأساسية. صلة القرابة هنا لا تغيّر النسبة تلقائياً في صيدلية NOVA.';return;}
+      const relation=field('.nova-admin-relation').selectedOptions[0]?.textContent||'';
+      const base=contract.coverage_default==null?'غير محددة':contract.coverage_default+'%';
+      note.textContent='المستفيد: '+relation+' — تغطية العقد الأساسية: '+base+
+        '. قد توجد نسبة خاصة محفوظة للمستفيد؛ لا يتم تغيير التغطية لمجرد اختيار صلة القرابة.';
+    };
+    contractSelect.addEventListener('change',explainCoverage);
+    field('.nova-admin-relation').addEventListener('change',explainCoverage);
+    details.addEventListener('toggle',()=>{if(details.open){syncContracts();explainCoverage()}});
     let selected=null;
     let searchVersion=0;
     field('.nova-admin-find').onclick=async()=>{
