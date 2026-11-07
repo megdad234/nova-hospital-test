@@ -29,9 +29,9 @@ ROWS=[
 ("BRUCELLA","BRUCELLA",15000,"Brucella","Serology"),
 ("ICT_TYPHOID","ICT_TYPHOID",15000,"ICT Typhoid","Serology"),
 ("DENGUE","DENGUE",25000,"Dengue fever AG/AB","Serology"),
-("HP_STOOL","H_PYLORI",15000,"Stool H.Pylori","Serology"),
+("HP_STOOL","HP_STOOL",15000,"Stool H.Pylori","Serology"),
 ("HP_SERUM","HP_SERUM",15000,"Serum H.Pylori","Serology"),
-("HIV_BC_VDRL","HIV_BC_VDRL",0,"HIV & B & C & VDRL (15,000 per unit)","Serology"),
+
 ("HBS_ELISA","HBS_ELISA",83000,"ELISA for HBsAg","Serology"),
 ("RBG","RBS",8000,"Random Blood Glucose","Chemistry"),
 ("RFT","RFT",20000,"Renal Function Tests","Chemistry"),
@@ -51,7 +51,7 @@ ROWS=[
 ("C_PEPTIDE","C_PEPTIDE",50000,"C-Peptide","Hormones"),
 ("FERTILITY","FERTILITY",120000,"Fertility Profile","Hormones"),
 ("BHCG","BHCG",50000,"Beta-hCG Quantitative","Hormones"),
-("HCG","PREG",10000,"Pregnancy Test","Serology"),
+("HCG","HCG",10000,"Pregnancy Test","Serology"),
 ("VIT_D","VITD",70000,"Vitamin D","Chemistry"),
 ("VIT_B12","B12",70000,"Vitamin B12","Chemistry"),
 ("PTH","PTH",80000,"PTH","Hormones"),
@@ -66,11 +66,12 @@ ROWS=[
 ("AFP","AFP",80000,"AFP","Tumor markers"),
 ("SEMEN","SEMEN",30000,"Semen Analysis","Andrology"),
 ]
-assert len(ROWS)==48 and len({x[0] for x in ROWS})==48
+assert len(ROWS)==47 and len({x[0] for x in ROWS})==47
 # These are conservative exact mappings; the uncertain names stay distinct.
-# HIV group is NOT a 15,000 SDG package: disabled for billing until component selection.
+# HIV/B/C/VDRL group excluded from auto-seed: 15,000 SDG is per unit, not package.
 # Other ambiguous tests have independent codes, with no fabricated medical reference ranges.
-existing={row[0] for row in ast.literal_eval(catalog.split("TESTS = ",1)[1].split("\n\nPOPULAR",1)[0])}
+tree=ast.parse(catalog)
+existing={item.elts[0].value for node in tree.body if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=="TESTS" for t in node.targets) for item in node.value.elts}
 extra=[]
 for src,code,price,name,category in ROWS:
     if code not in existing:
