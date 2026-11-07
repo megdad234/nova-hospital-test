@@ -65,6 +65,26 @@ class NovaPharmacyInsuranceAcceptance(unittest.TestCase):
         if extra:payload.update(extra)
         return app.sell(self.c,payload,self.uid)
 
+    def test_contract_relationship_rate_and_member_override(self):
+        card=self.enroll('0000777')
+        self.assertEqual(card['coverage'],80)
+        rate=app.nova_pharmacy_set_relation_rate(self.c,{
+            'contract_id':self.contract,'relation':'father','coverage':70},self.uid)
+        self.assertEqual(rate['coverage'],70)
+        self.c.execute('UPDATE insurance_members SET relation=? WHERE id=?',('father',card['member_id']))
+        found=app.nova_insured_search(self.c,self.contract,'0000777')
+        self.assertEqual(found[0]['coverage'],70)
+        with self.assertRaisesRegex(ValueError,'نسبة التأمين'):
+            self.sale(card,coverage=80)
+        sale=self.sale(card,coverage=70)
+        self.assertEqual(sale['covered'],700)
+        self.c.execute('UPDATE insurance_members SET coverage_override=? WHERE id=?',(90,card['member_id']))
+        self.assertEqual(app.nova_insured_search(self.c,self.contract,'0000777')[0]['coverage'],90)
+        app.nova_pharmacy_set_relation_rate(self.c,{
+            'contract_id':self.contract,'relation':'father','inherit':True},self.uid)
+        self.assertEqual(app.nova_insured_search(self.c,self.contract,'0000777')[0]['coverage'],90)
+        self.assertEqual(next(x for x in app.sales(self.c) if x['id']==sale['id'])['insurance_details']['coverage'],70)
+
     def test_existing_patient_card_sale_and_immutable_history(self):
         card=self.enroll()
         self.assertEqual(card['card_no'],'0000123')
