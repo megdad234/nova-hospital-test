@@ -50,3 +50,16 @@
 .salearea .nova-insurance-contract-fields>label,.salearea .nova-insurance-contract-fields>.field{min-width:0;margin:0}
 .salearea .nova-insurance-contract-fields select{width:100%;max-width:100%}
 @media(max-width:650px){.salearea .nova-insurance-contract-fields{grid-template-columns:1fr}}
+
+/* Claims administration only: clearly separate the monthly report from optional enrollment. */
+.nova-insurance-statement{min-width:0}
+.nova-insurance-statement .nova-claim-table{border:1px solid #dbe7e4;border-radius:10px}
+.nova-insurance-statement .nova-claim-table table{font-variant-numeric:tabular-nums}
+.nova-admin-insured-enrollment{margin:14px 0;border:1px solid #d6e5e1;border-radius:12px;background:#fbfdfc;overflow:hidden}
+.nova-admin-insured-enrollment>summary{cursor:pointer;padding:14px 16px;font-weight:700;list-style-position:inside;color:#245c56}
+.nova-admin-insured-enrollment[open]>summary{border-bottom:1px solid #d6e5e1;background:#f0f8f5}
+.nova-admin-insured-enrollment>.panel{margin:0;border:0;box-shadow:none}
+.nova-admin-insured-enrollment .nova-admin-patient-results{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.nova-admin-insured-enrollment .nova-admin-selected{font-weight:700;color:#245c56}
+.nova-admin-insured-enrollment select,.nova-admin-insured-enrollment input:not([type=checkbox]){max-width:100%}
+@media(max-width:650px){.nova-insurance-statement-toolbar label{min-width:100%;flex:1}.nova-admin-insured-enrollment>summary{padding:12px}}
