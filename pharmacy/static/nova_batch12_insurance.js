@@ -382,7 +382,9 @@
     if(page!=='claims')return;
     const host=document.querySelector('.nova-insurance-statement')?.parentElement;
     if(!host||host.querySelector('.nova-admin-insured-enrollment'))return;
-    const contracts=(state.insurance||[]).filter(x=>x.active!==0&&x.active!==false);
+    // Read the same live contract collection as the working POS, but do not
+    // exclude records just because the API uses a different active encoding.
+    const contracts=(state.insurance||[]).filter(x=>x.active!==0&&x.active!==false&&x.active!=='0');
     const panel=document.createElement('section');
     panel.className='panel nova-admin-insured-enrollment';
     panel.innerHTML='<div class="panel-head"><h2>تسجيل مستفيد تأمين مسبقاً</h2></div>'+
@@ -403,8 +405,29 @@
       '</select></label></div>'+
       '<label><input type="checkbox" class="nova-admin-eligibility"> تم التحقق من هوية المستفيد والبطاقة وأهلية التأمين</label>'+
       '<button type="button" class="btn nova-admin-save">حفظ المستفيد</button>';
-    host.appendChild(panel);
+    // Keep advance enrollment closed by default; do not overwhelm claims reports.
+    const details=document.createElement('details');
+    details.className='nova-admin-insured-enrollment';
+    const summary=document.createElement('summary');
+    summary.textContent='إضافة مستفيد تأمين مسبقاً';
+    details.appendChild(summary);
+    panel.classList.remove('nova-admin-insured-enrollment');
+    details.appendChild(panel);
+    host.appendChild(details);
     const field=sel=>panel.querySelector(sel);
+    const contractSelect=field('.nova-admin-contract');
+    const syncContracts=()=>{
+      const previous=contractSelect.value;
+      const list=(state.insurance||[]).filter(x=>x.active!==0&&x.active!==false&&x.active!=='0');
+      contractSelect.replaceChildren(new Option('اختر العقد',''));
+      list.forEach(x=>contractSelect.add(new Option(String(x.name||x.code||x.contract_no||x.id),String(x.id))));
+      if(list.some(x=>String(x.id)===previous))contractSelect.value=previous;
+      if(!list.length){
+        const note=new Option('العقود لم تُحمّل بعد — أعد فتح إدارة التأمين','');
+        note.disabled=true;contractSelect.add(note);
+      }
+    };
+    details.addEventListener('toggle',()=>{if(details.open)syncContracts()});
     let selected=null;
     let searchVersion=0;
     field('.nova-admin-find').onclick=async()=>{
@@ -460,6 +483,8 @@
         selected=null;
         field('.nova-admin-selected').textContent='';
         await refresh();
+        // Refresh the administrative view without affecting the POS.
+        nav('claims');
       }catch(e){toast('تعذر حفظ المستفيد: '+e.message,true)}
       finally{button.disabled=false;}
     };
