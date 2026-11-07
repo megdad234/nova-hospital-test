@@ -342,8 +342,7 @@
     try{
       const rows=novaMonthlyRows();
       const metadata=[['شركة التأمين',lastMonthlyStatement.authority_name],['الفترة',lastMonthlyStatement.period],['عدد الفواتير',lastMonthlyStatement.invoice_count],['إجمالي حصة التأمين',lastMonthlyStatement.covered_invoices_total]];
-      const csv='\ufeff'+[...metadata,[],...rows].map(row=>row.map(escapeCSV).join(',')).join('\r
-');
+      const csv='\ufeff'+[...metadata,[],...rows].map(row=>row.map(escapeCSV).join(',')).join('\\r\\n');
       const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
       const a=document.createElement('a');a.href=url;
       a.download='NOVA_Pharmacy_Insurance_'+lastMonthlyStatement.period+'.csv';
