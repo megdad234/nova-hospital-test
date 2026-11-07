@@ -307,11 +307,13 @@
       if(!authority||!period)throw Error('حدد الشركة والشهر');
       const data=await api('nova-insurance-monthly-detail?authority_id='+
         encodeURIComponent(authority)+'&period='+encodeURIComponent(period));
-      lastMonthlyStatement=data;
+      // Never export a statement for a different insurer/month after changing filters.
+      lastMonthlyStatement={...data,authority_id:String(authority),period:String(period),authority_name:(state.partners||[]).find(p=>String(p.id)===String(authority))?.name||''};
       const root=$('nova-claim-detail-results');if(!root)return;
       const names=['الفاتورة','التاريخ','المريض','رقم البطاقة','الدواء','الوحدة',
         'الكمية','مرتجع','السعر','الإجمالي','حصة التأمين (مرة واحدة)','حالة المطالبة'];
-      root.innerHTML='<p><b>عدد الفواتير: '+safe(data.invoice_count)+
+      root.innerHTML='<p><b>شركة التأمين: '+safe(lastMonthlyStatement.authority_name)+' · الفترة: '+safe(period)+'</b></p>'+
+        '<p><b>عدد الفواتير: '+safe(data.invoice_count)+
         '</b> · حصة التأمين: <b>'+fmt(data.covered_invoices_total)+' ج.س</b></p>'+
         '<div class="nova-claim-table">'+table(names,data.rows.map(row=>
           '<tr><td dir="ltr">'+safe(row.ref)+'</td>'+
@@ -326,7 +328,7 @@
     }catch(e){lastMonthlyStatement=null;toast('تعذر تحميل كشف التأمين: '+e.message,true)}
   }
   function novaMonthlyRows(){
-    if(!lastMonthlyStatement)throw Error('اعرض الكشف أولاً');
+    if(!lastMonthlyStatement || String($('nova-claim-detail-authority')?.value)!==String(lastMonthlyStatement.authority_id) || String($('nova-claim-detail-month')?.value)!==String(lastMonthlyStatement.period))throw Error('اضغط عرض الكشف بعد تحديد الشركة والفترة، قبل التصدير أو الطباعة');
     const cols=['رقم الفاتورة','التاريخ','اسم المريض','رقم الملف','رقم البطاقة',
       'الدواء','وحدة التعبئة','الكمية','المرتجع','سعر الوحدة',
       'قيمة السطر','حصة التأمين للفاتورة','رقم المطالبة'];
@@ -334,12 +336,14 @@
       r.ref,r.created_at,r.patient_name||'غير موثق تاريخياً',r.patient_no||'',
       r.card_no||'غير مسجل',r.medicine,r.unit_name,r.qty,r.returned_qty,
       r.unit_price,r.line_total,r.covered_invoice_once,r.claim_id||'']);
-    return [cols,...rows];
+    return [cols,...rows, ['الإجمالي','','','','','','','','','','',lastMonthlyStatement.covered_invoices_total,'']];
   }
   function novaExportMonthly(){
     try{
       const rows=novaMonthlyRows();
-      const csv='\ufeff'+rows.map(row=>row.map(escapeCSV).join(',')).join('\r\n');
+      const metadata=[['شركة التأمين',lastMonthlyStatement.authority_name],['الفترة',lastMonthlyStatement.period],['عدد الفواتير',lastMonthlyStatement.invoice_count],['إجمالي حصة التأمين',lastMonthlyStatement.covered_invoices_total]];
+      const csv='\ufeff'+[...metadata,[],...rows].map(row=>row.map(escapeCSV).join(',')).join('\r
+');
       const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
       const a=document.createElement('a');a.href=url;
       a.download='NOVA_Pharmacy_Insurance_'+lastMonthlyStatement.period+'.csv';
@@ -354,6 +358,7 @@
       const frame=document.createElement('iframe');frame.id='nova-claim-print-frame';
       frame.style.cssText='position:fixed;left:-15000px;top:0;width:1100px;height:900px;border:0';
       const body='<h2>NOVA — كشف مطالبة أدوية التأمين '+safe(lastMonthlyStatement.period)+'</h2>'+
+        '<p>شركة التأمين: '+safe(lastMonthlyStatement.authority_name)+'</p>'+
         '<p>عدد الفواتير '+safe(lastMonthlyStatement.invoice_count)+
         ' — حصة التأمين '+fmt(lastMonthlyStatement.covered_invoices_total)+' ج.س</p>'+
         '<table><thead><tr>'+rows[0].map(x=>'<th>'+safe(x)+'</th>').join('')+
