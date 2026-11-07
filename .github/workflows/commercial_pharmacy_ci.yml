@@ -475,4 +475,10 @@ jobs:
           if ($uninstall.ExitCode -ne 0) { throw "Uninstall failed: $($uninstall.ExitCode)" }
           if (Test-Path (Join-Path $target 'pharmacy/app.py')) { throw 'Uninstall left commercial program source behind' }
           if (Get-Service NOVACommercialPharmacyServer -ErrorAction SilentlyContinue) { throw 'Uninstall left commercial service registered' }
+          if (!(Test-Path $sqliteProbe)) { throw 'Uninstall deleted persistent commercial SQLite database' }
+          $sqliteBytes = [System.IO.File]::ReadAllBytes($sqliteProbe)
+          $header = [System.Text.Encoding]::ASCII.GetString($sqliteBytes, 0, 16)
+          if ($header -ne "SQLite format 3`0") { throw 'Commercial SQLite file header invalid after uninstall' }
+          Write-Host 'COMMERCIAL_SQLITE_DATA_SURVIVED_UNINSTALL'
+
           Write-Host 'COMMERCIAL_INSTALL_UNINSTALL_STRUCTURE_ACCEPTED_NO_POS_OR_SERVICE_ACCEPTANCE'
