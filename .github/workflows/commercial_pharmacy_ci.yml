@@ -190,6 +190,23 @@ jobs:
         run: |
           python .github/ci/patch_commercial_server_host.py
           if ($LASTEXITCODE -ne 0) { throw 'Commercial server host isolation failed' }
+      - name: Preserve exact hospital installer sources for reproducible comparison
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path hospital-installer-reference | Out-Null
+          foreach ($file in @('windows/build-windows.ps1','windows/ci-acceptance.ps1')) {
+            if (!(Test-Path $file)) { throw "Original hospital installer reference missing: $file" }
+            Copy-Item -LiteralPath $file -Destination (Join-Path 'hospital-installer-reference' (Split-Path $file -Leaf))
+            Write-Host "ORIGINAL_HOSPITAL_INSTALLER_SHA256 $file $((Get-FileHash $file -Algorithm SHA256).Hash)"
+          }
+      - name: Upload original hospital installer scripts as comparison evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: Original-NOVA-Hospital-Installer-Scripts-Reference
+          path: hospital-installer-reference/
+          retention-days: 7
+          if-no-files-found: error
       - name: Compare working NOVA Hospital Windows installer and service boot contract
         shell: pwsh
         run: |
