@@ -372,10 +372,10 @@
   // Administration-only beneficiary enrollment. Reuses the same validated
   // backend enrollment as the POS, without touching checkout state or invoices.
   function novaAdminEnrollPanel(page){
-    if(page!=='claims'&&page!=='partners')return;
-    const host=page==='claims'
-      ?document.querySelector('.nova-insurance-statement')?.parentElement
-      :document.querySelector('main');
+    // This form belongs ONLY to the insurance administration page.
+    // Never attach it to <main>: that leaked it into every unrelated page.
+    if(page!=='claims')return;
+    const host=document.querySelector('.nova-insurance-statement')?.parentElement;
     if(!host||host.querySelector('.nova-admin-insured-enrollment'))return;
     const contracts=(state.insurance||[]).filter(x=>x.active!==0&&x.active!==false);
     const panel=document.createElement('section');
@@ -462,6 +462,11 @@
   const novaAdminOriginalNav=nav;
   nav=function(page){
     novaAdminOriginalNav(page);
+    // Remove stale panels created by earlier navigation or other page renderers.
+    if(page!=='claims'){
+      document.querySelectorAll('.nova-admin-insured-enrollment').forEach(el=>el.remove());
+      return;
+    }
     novaAdminEnrollPanel(page);
   };
 
