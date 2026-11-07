@@ -11,8 +11,9 @@ if ($Port -lt 1024 -or $Port -gt 65535 -or $Port -eq 8765 -or $Port -eq 10080) {
 $svc=Get-Service $name -ErrorAction SilentlyContinue
 if ($svc) {
   $config=Get-CimInstance Win32_Service -Filter "Name='$name'"
+  if (!$config) { throw 'Commercial service configuration unavailable' }
   if ($config.PathName -notmatch 'nssm.exe') {
-    if ($svc.Status -ne 'Stopped') { Stop-Service $name -ErrorAction Stop }
+    if ($svc.Status -ne 'Stopped') { Stop-Service $name -ErrorAction Stop; (Get-Service $name).WaitForStatus('Stopped',[TimeSpan]::FromSeconds(30)) }
     & sc.exe delete $name | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Could not migrate previous commercial service' }
     Start-Sleep -Seconds 3
