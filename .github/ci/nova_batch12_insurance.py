@@ -38,7 +38,7 @@ def patch_backend(s):
         card=one(c,'SELECT patient_id FROM nova_pharmacy_insured_cards WHERE member_id=? AND contract_id=?',
                  (insured_member['id'],contract['id']))
         if not card:raise ValueError('المستفيد ليس له بطاقة مرتبطة بملف المريض')
-        expected=insured_member['coverage_override'] if insured_member['coverage_override'] is not None else contract['coverage_default']
+        expected=nova_pharmacy_member_coverage(c,insured_member,contract)
         if coverage!=expected:raise ValueError('نسبة التأمين تختلف عن العقد، أعد اختيار البطاقة')
     checked=[]
     rx_needed=False
@@ -62,11 +62,12 @@ def patch_backend(s):
     # normal POS load, searches require an intentional staff query.
     s=one(s,
       "'/api/v1/insurance':'claims',",
-      "'/api/v1/nova-admin-patient-search':'claims','/api/v1/nova-insured-search':'sale','/api/v1/nova-hospital-patient-search':'sale','/api/v1/nova-insurance-monthly-detail':'claims','/api/v1/insurance':'claims',",
+      "'/api/v1/nova-pharmacy-relation-rates':'claims','/api/v1/nova-admin-patient-search':'claims','/api/v1/nova-insured-search':'sale','/api/v1/nova-hospital-patient-search':'sale','/api/v1/nova-insurance-monthly-detail':'claims','/api/v1/insurance':'claims',",
       'GET permission')
     s=one(s,
       "'/api/v1/insurance':lambda:insurance_list(c),",
-      """'/api/v1/nova-insured-search':lambda:nova_insured_search(c,(parse_qs(urlparse(self.path).query).get('contract_id') or [''])[0],(parse_qs(urlparse(self.path).query).get('q') or [''])[0]),
+      """'/api/v1/nova-pharmacy-relation-rates':lambda:nova_pharmacy_relation_rates(c,(parse_qs(urlparse(self.path).query).get('contract_id') or [''])[0]),
+                     '/api/v1/nova-insured-search':lambda:nova_insured_search(c,(parse_qs(urlparse(self.path).query).get('contract_id') or [''])[0],(parse_qs(urlparse(self.path).query).get('q') or [''])[0]),
                      '/api/v1/nova-hospital-patient-search':lambda:nova_patient_search(c,(parse_qs(urlparse(self.path).query).get('q') or [''])[0]),
                      '/api/v1/nova-admin-patient-search':lambda:nova_patient_search(c,(parse_qs(urlparse(self.path).query).get('q') or [''])[0]),
                      '/api/v1/nova-insurance-monthly-detail':lambda:nova_insurance_monthly_detail(c,(parse_qs(urlparse(self.path).query).get('authority_id') or [''])[0],(parse_qs(urlparse(self.path).query).get('period') or [''])[0]),
@@ -76,6 +77,7 @@ def patch_backend(s):
       "'/api/v1/insurance-member':('claims',lambda:insurance_member_create(c,data,u['id'])),",
       """'/api/v1/nova-insured-enroll':('sale',lambda:nova_insured_enroll(c,data,u['id'])),
                      '/api/v1/nova-admin-insured-enroll':('claims',lambda:nova_insured_enroll(c,data,u['id'])),
+                     '/api/v1/nova-pharmacy-relation-rate':('claims',lambda:nova_pharmacy_set_relation_rate(c,data,u['id'])),
                      '/api/v1/insurance-member':('claims',lambda:insurance_member_create(c,data,u['id'])),""",
       'POST enrollment')
     if 'NOVA_BATCH12_INSURED_PATIENT' in s:raise RuntimeError('Batch12 already present')
