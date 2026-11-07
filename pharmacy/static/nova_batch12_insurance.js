@@ -275,6 +275,72 @@
       details+'<div class="receipt-divider"></div>');
   };
 
+  const novaRelationNames={primary:'المشترك الأساسي',spouse:'الزوج / الزوجة',child:'الأبناء',father:'الأب',mother:'الأم'};
+  const novaClaimsWithRelations=claims;
+  claims=function(){return novaClaimsWithRelations()+
+    '<details class="panel nova-pharmacy-relation-settings"><summary><b>نسب تغطية المستفيدين حسب صلة القرابة — عقود الصيدلية</b></summary>'+
+    '<p class="help">لكل عقد نسب مستقلة. الأولوية للنسبة الخاصة بالمستفيد، ثم نسبة القرابة، ثم نسبة العقد الأساسية. إعدادات المستشفى منفصلة، والفواتير السابقة لا تتغير.</p>'+
+    '<div class="formgrid"><label>العقد<select id="nova-relation-contract"><option value="">اختر العقد</option>'+
+    (state.insurance||[]).map(x=>'<option value="'+Number(x.id)+'">'+safe(x.code||x.name||x.contract_no||('عقد '+x.id))+'</option>').join('')+
+    '</select></label><label>صلة القرابة<select id="nova-relation-kind">'+
+    Object.entries(novaRelationNames).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+
+    '</select></label><label>نسبة التغطية %<input id="nova-relation-coverage" type="number" min="0" max="100" step="1"></label></div>'+
+    '<p id="nova-relation-default" class="help"></p><div class="actions">'+
+    '<button type="button" class="btn" id="nova-relation-save">حفظ نسبة القرابة</button> '+
+    '<button type="button" class="btn outline" id="nova-relation-inherit">إلغاء الاستثناء والعودة لنسبة العقد</button></div>'+
+    '<div id="nova-relation-list" aria-live="polite"></div></details>'};
+  let novaRelationRows=[];
+  async function novaRefreshRelations(){
+    const contractId=$('nova-relation-contract')?.value;
+    const out=$('nova-relation-list');
+    if(!contractId||!out)return;
+    const rows=await api('nova-pharmacy-relation-rates?contract_id='+encodeURIComponent(contractId));
+    if($('nova-relation-contract')?.value!==contractId)return;
+    novaRelationRows=Array.isArray(rows)?rows:[];
+    out.innerHTML='<p class="help">النسب الخاصة بهذا العقد:</p>'+
+      Object.entries(novaRelationNames).map(([kind,name])=>{
+        const found=novaRelationRows.find(x=>x.relation===kind);
+        return '<div class="nova-relation-row"><span>'+name+'</span><b>'+
+          (found?safe(found.coverage)+'%':'تغطية العقد الأساسية')+'</b></div>';
+      }).join('');
+    novaUpdateRelationChoice();
+  }
+  function novaUpdateRelationChoice(){
+    const id=$('nova-relation-contract')?.value;
+    const contract=(state.insurance||[]).find(x=>String(x.id)===id);
+    const kind=$('nova-relation-kind')?.value;
+    const found=novaRelationRows.find(x=>x.relation===kind);
+    const input=$('nova-relation-coverage');
+    if(input)input.value=found?String(found.coverage):'';
+    const note=$('nova-relation-default');
+    if(note)note.textContent=contract?'نسبة العقد الأساسية: '+contract.coverage_default+'%. اترك الاستثناء غير محدد ليتم اعتمادها.':'اختر عقد التأمين أولاً';
+  }
+  const novaRelationNav=nav;
+  nav=function(page){
+    novaRelationNav(page);
+    if(page!=='claims'||!$('nova-relation-contract'))return;
+    const contract=$('nova-relation-contract');
+    contract.onchange=()=>novaRefreshRelations().catch(e=>toast(e.message,true));
+    $('nova-relation-kind').onchange=novaUpdateRelationChoice;
+    $('nova-relation-save').onclick=async()=>{
+      try{
+        if(!contract.value)throw Error('اختر عقد التأمين');
+        const value=$('nova-relation-coverage').value.trim();
+        if(!/^(100|[1-9]?\\d)$/.test(value))throw Error('أدخل نسبة صحيحة بين 0 و100');
+        await api('nova-pharmacy-relation-rate',{contract_id:Number(contract.value),relation:$('nova-relation-kind').value,coverage:Number(value)});
+        toast('تم حفظ نسبة صلة القرابة');await novaRefreshRelations();
+      }catch(e){toast(e.message,true)}
+    };
+    $('nova-relation-inherit').onclick=async()=>{
+      try{
+        if(!contract.value)throw Error('اختر عقد التأمين');
+        if(!confirm('إلغاء النسبة الخاصة بهذه القرابة والعودة لنسبة العقد؟'))return;
+        await api('nova-pharmacy-relation-rate',{contract_id:Number(contract.value),relation:$('nova-relation-kind').value,inherit:true});
+        toast('تمت العودة لنسبة العقد');await novaRefreshRelations();
+      }catch(e){toast(e.message,true)}
+    };
+  };
+
   const oldClaims=claims;
   claims=function(){
     return oldClaims()+
