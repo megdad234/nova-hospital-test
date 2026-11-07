@@ -90,4 +90,12 @@ pos="DEFAULT_BRAND = "
 assert pos in source
 source=source.replace(pos,"# AL_SHARQ_LAB_SEED_V1: applies to first-time catalogue rows only.\nAL_SHARQ_LAB_SEED_V1 = "+repr(prices)+"\n\n"+pos,1)
 P.write_text(source,encoding="utf-8")
+# Original regression test assumed all brand-new lab prices are zero.
+# After intentional Al Sharq preload, CBC must be priced at 15,000 SDG.
+T=Path("tests/test_lab_complete.py")
+if T.exists():
+    test=T.read_text(encoding="utf-8")
+    old="self.assertEqual(cbc['price'],0)"
+    assert test.count(old)==1, "Unexpected CBC price assertion; review before changing tests"
+    T.write_text(test.replace(old,"self.assertEqual(cbc['price'],15000)"),encoding="utf-8")
 print("Al Sharq seed prepared:",len(ROWS),"prices;",len(extra),"new definitions")
