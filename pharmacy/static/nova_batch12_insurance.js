@@ -417,12 +417,20 @@
     const contractSelect=field('.nova-admin-contract');
     const syncContracts=()=>{
       const previous=contractSelect.value;
-      const list=(state.insurance||[]).filter(x=>x.active!==0&&x.active!==false&&x.active!=='0');
+      const todayLocal=today().slice(0,10);
+      const all=state.insurance||[];
+      const list=all.filter(x=>x.active!==0&&x.active!==false&&x.active!=='0'&&
+        (!x.starts||x.starts<=todayLocal)&&(!x.ends||x.ends>=todayLocal));
       contractSelect.replaceChildren(new Option('اختر العقد',''));
-      list.forEach(x=>contractSelect.add(new Option(String(x.name||x.code||x.contract_no||x.id),String(x.id))));
+      list.forEach(x=>{
+        const insurer=(state.partners||[]).find(p=>String(p.id)===String(x.authority_id));
+        const title=[insurer?.name,x.name||x.code||x.contract_no||('عقد '+x.id),
+          x.coverage_default==null?'':('التغطية الأساسية '+x.coverage_default+'%')].filter(Boolean).join(' — ');
+        contractSelect.add(new Option(title,String(x.id)));
+      });
       if(list.some(x=>String(x.id)===previous))contractSelect.value=previous;
       if(!list.length){
-        const note=new Option('العقود لم تُحمّل بعد — أعد فتح إدارة التأمين','');
+        const note=new Option(all.length?'لا توجد عقود سارية متاحة للتسجيل':'لا توجد عقود محمّلة — أعد فتح إدارة التأمين','');
         note.disabled=true;contractSelect.add(note);
       }
     };
