@@ -451,9 +451,19 @@ jobs:
           $marker = Join-Path $dataRoot 'ci-upgrade-preservation-marker.txt'
           $sentinel = 'NOVA_COMMERCIAL_UPGRADE_PRESERVATION'
           [System.IO.File]::WriteAllText($marker, $sentinel)
+          # Exercise actual SQLite storage, not only a marker file.
+          $sqliteProbe = Join-Path $dataRoot 'ci-upgrade-regression.sqlite3'
+          $python = Join-Path $target 'runtime/python.exe'
+          $sqlWrite = "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); c.execute('CREATE TABLE IF NOT EXISTS upgrade_probe (id INTEGER PRIMARY KEY, value TEXT NOT NULL)'); c.execute('INSERT OR REPLACE INTO upgrade_probe VALUES (1, ?)', ('NOVA_SQLITE_UPGRADE_PRESERVED',)); c.commit(); c.close()"
+          & $python -c $sqlWrite $sqliteProbe
+          if ($LASTEXITCODE -ne 0) { throw 'Could not create synthetic commercial SQLite upgrade probe' }
           $upgrade = Start-Process -FilePath $installer.FullName -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$target","/LOG=$log") -Wait -PassThru
           if ($upgrade.ExitCode -ne 0) { throw "Commercial upgrade failed: $($upgrade.ExitCode)" }
           if (!(Test-Path $marker) -or [System.IO.File]::ReadAllText($marker) -ne $sentinel) { throw 'Commercial data lost during upgrade' }
+          $sqlRead = "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); v=c.execute('SELECT value FROM upgrade_probe WHERE id=1').fetchone(); integrity=c.execute('PRAGMA integrity_check').fetchone()[0]; c.close(); assert v == ('NOVA_SQLITE_UPGRADE_PRESERVED',) and integrity == 'ok', (v,integrity)"
+          & $python -c $sqlRead $sqliteProbe
+          if ($LASTEXITCODE -ne 0) { throw 'Synthetic commercial SQLite database corrupted or lost during upgrade' }
+          Write-Host 'COMMERCIAL_SQLITE_UPGRADE_INTEGRITY_PASSED'
           $upgradedService = Get-Service NOVACommercialPharmacyServer -ErrorAction SilentlyContinue
           if (!$upgradedService -or $upgradedService.Status -ne 'Running') { throw 'Commercial service not running after upgrade' }
           $upgradeHttp = Invoke-WebRequest 'http://127.0.0.1:18763/' -TimeoutSec 12
