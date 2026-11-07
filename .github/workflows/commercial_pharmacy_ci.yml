@@ -325,9 +325,9 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw 'NSSM installation failed' }
           } finally { Pop-Location }
           $candidates = @(
-            'C:/ProgramData/chocolatey/bin/nssm.exe',
             'C:/ProgramData/chocolatey/lib/nssm/tools/nssm.exe',
-            'C:/ProgramData/chocolatey/lib/NSSM/tools/nssm.exe'
+            'C:/ProgramData/chocolatey/lib/NSSM/tools/nssm.exe',
+            'C:/ProgramData/chocolatey/bin/nssm.exe'
           )
           $binary = $candidates | Where-Object { Test-Path $_ -PathType Leaf } | Select-Object -First 1
           if (!$binary) { throw 'NSSM executable missing from Chocolatey package' }
