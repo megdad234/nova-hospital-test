@@ -207,6 +207,15 @@ jobs:
           path: hospital-installer-reference/
           retention-days: 7
           if-no-files-found: error
+      - name: Inspect full original hospital installer build and acceptance contracts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($file in @('windows/build-windows.ps1','windows/ci-acceptance.ps1')) {
+            Write-Host "HOSPITAL_ORIGINAL_SCRIPT_BEGIN $file"
+            Get-Content -LiteralPath $file | Select-Object -First 400 | ForEach-Object { Write-Host $_ }
+            Write-Host "HOSPITAL_ORIGINAL_SCRIPT_END $file"
+          }
       - name: Compare working NOVA Hospital Windows installer and service boot contract
         shell: pwsh
         run: |
