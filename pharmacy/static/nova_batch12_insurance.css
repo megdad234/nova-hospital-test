@@ -63,3 +63,11 @@
 .nova-admin-insured-enrollment .nova-admin-selected{font-weight:700;color:#245c56}
 .nova-admin-insured-enrollment select,.nova-admin-insured-enrollment input:not([type=checkbox]){max-width:100%}
 @media(max-width:650px){.nova-insurance-statement-toolbar label{min-width:100%;flex:1}.nova-admin-insured-enrollment>summary{padding:12px}}
+
+/* Pharmacy-only family coverage administration: never style the POS. */
+.nova-pharmacy-relation-settings{margin:14px 0;padding:0;overflow:hidden}
+.nova-pharmacy-relation-settings>summary{cursor:pointer;padding:14px 16px;font-weight:700}
+.nova-pharmacy-relation-settings[open]{padding:0 16px 16px}
+.nova-pharmacy-relation-settings[open]>summary{margin:0 -16px 12px;background:#f1f8f5;border-bottom:1px solid #d6e5e1}
+.nova-pharmacy-relation-settings .nova-relation-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid #e2eae8}
+.nova-pharmacy-relation-settings input,.nova-pharmacy-relation-settings select{max-width:100%;min-width:0}
