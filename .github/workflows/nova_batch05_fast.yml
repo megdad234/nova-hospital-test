@@ -59,6 +59,8 @@ jobs:
           python .github/ci/nova_batch02_patch.py
           python .github/ci/nova_batch03_patch.py
           python .github/ci/nova_batch04_lab_reception.py
+          python .github/ci/nova_alsharq_lab_seed.py
+          python -m py_compile hospital/lab.py hospital/lab_catalog.py
           python .github/ci/nova_batch05_cashier_pharmacy.py
           python .github/ci/nova_batch05_ui.py
           python .github/ci/nova_batch05_free_policy.py
