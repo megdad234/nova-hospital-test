@@ -63,7 +63,7 @@ migration='''def _nova_migrate_refund_ledger(c):
 s=s.replace(anchor,migration+anchor+'\n    _nova_migrate_refund_ledger(c)',1)
 start=s.index('def refund_invoice(c,actor,data):')
 end=s.index('\ndef void_invoice(',start)
-new='''def refund_invoice(c,actor,data):
+new="""def refund_invoice(c,actor,data):
     """Admin-only ledger refund: partial preserves service; full cancels unstarted service."""
     iid=num(data.get('invoice_id'),'الفاتورة',1)
     key=text(data,'idempotency_key',128,True)
@@ -131,7 +131,7 @@ new='''def refund_invoice(c,actor,data):
             'cash_amount':cash,'bank_amount':bank,'status':'void' if full else inv['status'],
             'remaining_refundable':available-cash-bank}
 
-'''
+"""
 s=s[:start]+new+s[end:]
 p.write_text(s,encoding='utf-8')
 print('NOVA_REPEATED_REFUNDS_BACKEND_APPLIED')
