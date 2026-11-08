@@ -39,6 +39,8 @@ on:
       - 'docs/NOVA_BATCH12_INSURANCE_PATIENT_LINK_AR.md'
       - '.github/ci/nova_batch13_purchase.py'
       - '.github/ci/nova_inventory_dashboard.py'
+      - '.github/ci/nova_admin_refunds.py'
+      - 'hospital/static/nova_admin_refunds.js'
       - 'pharmacy/static/nova_inventory_dashboard.js'
       - '.github/ci/nova_batch13_ui_smoke.js'
       - 'pharmacy/static/nova_batch13_purchase.js'
@@ -76,6 +78,9 @@ jobs:
           python .github/ci/nova_batch12_insurance.py
           python .github/ci/nova_batch13_purchase.py
           python .github/ci/nova_inventory_dashboard.py
+          python .github/ci/nova_admin_refunds.py
+          node --check hospital/static/app.js
+          node --check hospital/static/admin-ui.js
           node --check pharmacy/static/ux_v14.js
           python -m compileall -q pharmacy hospital
       - name: Display laboratory printer context
