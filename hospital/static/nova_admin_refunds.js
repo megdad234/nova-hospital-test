@@ -5,7 +5,7 @@ async function novaRefundAdminView(){
  window.novaRefundBanks=banks;
  const rows=invoices.filter(x=>Number(x.paid)>0).slice(0,200);window.novaRefundAllRows=rows;
  return '<div class="adm-page">'+panel('إدارة استردادات المرضى — المدير فقط',
- '<p class="help">الاسترداد الكامل فقط متاح في هذه المرحلة. الاسترداد الجزئي غير مفعّل حتى اكتمال مراجعة قاعدة البيانات والقيود. لا يُحذف أي إيصال أصلي.</p>'+
+ '<p class="help">الاسترداد الكامل أو الجزئي متاح بإذن المدير، وتُحفظ الإيصالات الأصلية وسجل كل عملية استرداد.</p>'+
  '<label>بحث برقم الفاتورة أو اسم المريض<input id="nova-refund-search" type="search" placeholder="بحث في الفواتير المحصلة"></label>'+
  '<div id="nova-refund-rows">'+novaRefundRows(rows)+'</div>')+
  '<div id="nova-refund-detail"></div></div>';
@@ -35,22 +35,22 @@ async function novaRefundOpen(id){
  '<div class="grid">'+stat('المبلغ المدفوع',money(inv.paid))+stat('المسترد سابقاً',money(inv.refunded))+stat('المتبقي من التحصيل',money(remaining))+'</div>'+
  table(['الخدمة','حصة المريض'],inv.lines.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+money(x.patient_part)+'</td></tr>'))+
  (inv.refunds.length?'<h3>سجل الاستردادات</h3>'+table(['الرقم','النقدي','البنكي','التاريخ'],inv.refunds.map(x=>'<tr><td>'+esc(x.refund_no)+'</td><td>'+money(x.cash_amount)+'</td><td>'+money(x.bank_amount)+'</td><td>'+esc(x.created_at)+'</td></tr>')):'')+
- (remaining>0&&inv.status!=='void'&&!inv.refunds.length?
- '<h3>استرداد كامل المبلغ — المدير فقط</h3><p class="help">سيتم إلغاء الفاتورة، وقد يُلغى طلب المعمل الذي لم يبدأ تنفيذه. العملية لا يمكن التراجع عنها من هذه الشاشة. يتم منع الاسترداد إذا بدأت خدمة المعمل أو معالجة مطالبة التأمين.</p>'+
+ (remaining>0&&inv.status!=='void'?
+ '<h3>استرداد جزئي أو كامل — المدير فقط</h3><p class="help">الاسترداد الجزئي لا يلغي الخدمات. إذا استرددت كامل الرصيد المتبقي فسيتم إلغاء الفاتورة والطلبات غير المنفذة، ويمنع النظام إلغاء فحص بدأ تنفيذه أو مطالبة تأمين بدأت إجراءاتها.</p>'+
  '<form id="nova-refund-full-form"><div class="form"><label>نقدي<input name="cash_amount" type="number" min="0" step="1" value="'+remaining+'" required></label>'+
  '<label>بنكي<input name="bank_amount" type="number" min="0" step="1" value="0" required></label>'+
  '<label>البنك<select name="bank_id"><option value="">بدون بنك</option>'+bankOptions+'</select></label>'+
  '<label>رقم مرجع التحويل البنكي<input name="bank_reference" maxlength="120"></label>'+
  '<label class="wide">سبب الاسترداد (إلزامي)<input name="note" maxlength="500" required placeholder="سبب الاسترداد واسم مستلم المبلغ"></label></div>'+
- '<div class="actions"><button class="primary" type="submit">تأكيد الاسترداد الكامل</button></div></form>':
+ '<div class="actions"><button class="primary" type="submit">تأكيد الاسترداد</button></div></form>':
  '<p class="help">لا يوجد استرداد كامل متاح لهذه الفاتورة. قد تكون ملغاة أو مستردة مسبقاً.</p>'));
  form('nova-refund-full-form',async f=>{
    const cash=Number(f.get('cash_amount')),bank=Number(f.get('bank_amount'));
-   if(!Number.isSafeInteger(cash)||!Number.isSafeInteger(bank)||cash<0||bank<0||cash+bank!==remaining)throw Error('يجب أن يساوي مجموع الاسترداد كامل المتبقي دون كسور');
+   if(!Number.isSafeInteger(cash)||!Number.isSafeInteger(bank)||cash<0||bank<0||cash+bank>remaining||cash+bank===0)throw Error('يجب أن يكون المبلغ موجباً ولا يتجاوز الرصيد المتاح دون كسور');
    if(bank>0&&!f.get('bank_id'))throw Error('اختر البنك للاسترداد البنكي');
    if(bank===0&&(f.get('bank_id')||f.get('bank_reference')))throw Error('احذف بيانات البنك عند الاسترداد النقدي');
    const note=String(f.get('note')||'').trim();if(note.length<5)throw Error('اكتب سبباً واضحاً للاسترداد');
-   if(!confirm('تأكيد استرداد كامل مبلغ '+money(remaining)+' وإلغاء الفاتورة '+inv.invoice_no+'؟ هذه عملية مالية فعلية.'))return;
+   if(!confirm('تأكيد استرداد '+money(cash+bank)+' من الفاتورة '+inv.invoice_no+(cash+bank===remaining?' وإلغاء الفاتورة عند اكتمال الاسترداد':' دون إلغاء الخدمات')+'؟ هذه عملية مالية فعلية.'))return;
    const result=await api('invoice-refund',{invoice_id:id,cash_amount:cash,bank_amount:bank,bank_id:Number(f.get('bank_id')||0),bank_reference:String(f.get('bank_reference')||''),note,idempotency_key:'nova-admin-refund-'+crypto.randomUUID()});
    notice('تم تسجيل الاسترداد: '+result.refund_no);
    await navigate('admin-refunds');
