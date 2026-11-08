@@ -67,6 +67,8 @@ on:
       - '.github/ci/test_nova_price_list_approval.py'
       - '.github/ci/nova_batch16_return_status.py'
       - '.github/ci/nova_batch13_purchase.py'
+      - '.github/ci/nova_inventory_dashboard.py'
+      - 'pharmacy/static/nova_inventory_dashboard.js'
       - '.github/ci/nova_batch13_ui_smoke.js'
       - 'pharmacy/static/nova_batch13_purchase.js'
       - 'pharmacy/static/nova_batch13_purchase.css'
