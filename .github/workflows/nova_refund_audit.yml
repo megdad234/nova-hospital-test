@@ -4,11 +4,14 @@ on:
   push:
     paths:
       - '.github/workflows/nova_refund_audit.yml'
+      - '.github/ci/nova_refund_migration_preflight.py'
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate partial-refund migration prerequisites without touching real data
+        run: python .github/ci/nova_refund_migration_preflight.py
       - run: |
           python - <<'PY'
           from pathlib import Path
