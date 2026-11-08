@@ -3,7 +3,7 @@ async function novaRefundAdminView(){
  if(state.role!=='admin')throw Error('هذه الشاشة للمدير فقط');
  const [invoices,banks]=await Promise.all([api('invoices'),api('banks')]);
  window.novaRefundBanks=banks;
- const rows=invoices.filter(x=>Number(x.paid)>0).slice(0,200);
+ const rows=invoices.filter(x=>Number(x.paid)>0).slice(0,200);window.novaRefundAllRows=rows;
  return '<div class="adm-page">'+panel('إدارة استردادات المرضى — المدير فقط',
  '<p class="help">الاسترداد الكامل فقط متاح في هذه المرحلة. الاسترداد الجزئي غير مفعّل حتى اكتمال مراجعة قاعدة البيانات والقيود. لا يُحذف أي إيصال أصلي.</p>'+
  '<label>بحث برقم الفاتورة أو اسم المريض<input id="nova-refund-search" type="search" placeholder="بحث في الفواتير المحصلة"></label>'+
@@ -11,14 +11,13 @@ async function novaRefundAdminView(){
  '<div id="nova-refund-detail"></div></div>';
 }
 function novaRefundRows(rows){
- window.novaRefundRowsData=rows;
  return table(['الفاتورة','المريض','المدفوع','المسترد','الحالة',''],rows.map(x=>'<tr><td dir="ltr">'+esc(x.invoice_no)+'</td><td>'+esc(x.patient_name)+'</td><td>'+money(x.paid)+'</td><td>'+money(x.refunded)+'</td><td>'+esc(x.status==='void'?'ملغاة / مستردة':x.status==='settled'?'مدفوعة':'جزئية التحصيل')+'</td><td><button class="outline" type="button" data-nova-refund-id="'+Number(x.id)+'">التفاصيل</button></td></tr>'));
 }
 function novaWireRefundAdmin(){
  const search=$('nova-refund-search');
  if(search)search.addEventListener('input',()=>{
    const q=search.value.trim().toLowerCase();
-   $('nova-refund-rows').innerHTML=novaRefundRows((window.novaRefundRowsData||[]).filter(x=>String(x.invoice_no+' '+x.patient_name).toLowerCase().includes(q)));
+   $('nova-refund-rows').innerHTML=novaRefundRows((window.novaRefundAllRows||[]).filter(x=>String(x.invoice_no+' '+x.patient_name).toLowerCase().includes(q)));
    novaWireRefundButtons();
  });
  novaWireRefundButtons();
