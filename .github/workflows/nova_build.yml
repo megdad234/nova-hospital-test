@@ -70,6 +70,7 @@ on:
       - '.github/ci/nova_inventory_dashboard.py'
       - '.github/ci/nova_admin_refunds.py'
       - '.github/ci/nova_partial_refunds.py'
+      - '.github/ci/test_nova_partial_refunds.py'
       - 'hospital/static/nova_admin_refunds.js'
       - 'pharmacy/static/nova_inventory_dashboard.js'
       - '.github/ci/nova_batch13_ui_smoke.js'
@@ -307,6 +308,8 @@ jobs:
           python .github/ci/nova_partial_refunds.py
           python -m py_compile hospital/finance.py
           if ($LASTEXITCODE -ne 0) { throw 'NOVA refund backend invalid' }
+          python .github/ci/test_nova_partial_refunds.py
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA refund synthetic regression failed' }
           node --check hospital/static/admin-ui.js
           if ($LASTEXITCODE -ne 0) { throw 'NOVA refund admin UI invalid' }
       - name: Build Windows installer freshly from fully patched source (no cached executable)
