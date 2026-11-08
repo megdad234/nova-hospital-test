@@ -23,8 +23,60 @@ def nova_insured_schema(c):
       eligibility_confirmed INTEGER NOT NULL CHECK(eligibility_confirmed=1),
       recorded_at TEXT NOT NULL);""")
 
+# Pharmacy contract relationship rates are independent of hospital insurer rates.
+def nova_pharmacy_relation_schema(c):
+    c.execute("""CREATE TABLE IF NOT EXISTS nova_pharmacy_contract_relation_rates(
+      contract_id INTEGER NOT NULL REFERENCES insurance_contracts(id),
+      relation TEXT NOT NULL CHECK(relation IN ('primary','spouse','child','father','mother')),
+      coverage INTEGER NOT NULL CHECK(coverage BETWEEN 0 AND 100),
+      PRIMARY KEY(contract_id,relation))""")
+
+def nova_pharmacy_member_coverage(c,member,contract):
+    if member['coverage_override'] is not None:
+        return member['coverage_override']
+    nova_pharmacy_relation_schema(c)
+    rate=one(c,'SELECT coverage FROM nova_pharmacy_contract_relation_rates WHERE contract_id=? AND relation=?',
+             (contract['id'],member['relation']))
+    return rate['coverage'] if rate else contract['coverage_default']
+
+def nova_pharmacy_relation_rates(c,contract_id):
+    nova_pharmacy_relation_schema(c)
+    contract_id=posint(contract_id,'عقد التأمين')
+    return query(c,'SELECT contract_id,relation,coverage FROM nova_pharmacy_contract_relation_rates WHERE contract_id=? ORDER BY relation',(contract_id,))
+
+def nova_pharmacy_set_relation_rate(c,p,uid):
+    nova_pharmacy_relation_schema(c)
+    contract_id=posint(p.get('contract_id'),'عقد التأمين')
+    relation=str(p.get('relation') or '')
+    if relation not in ('primary','spouse','child','father','mother'):
+        raise ValueError('صلة القرابة غير صحيحة')
+    contract=one(c,'SELECT id FROM insurance_contracts WHERE id=?',(contract_id,))
+    if not contract:raise ValueError('عقد التأمين غير موجود')
+    inherit=p.get('inherit') is True
+    coverage=None
+    if not inherit:
+        value=p.get('coverage')
+        if isinstance(value,bool) or not isinstance(value,int) or not 0<=value<=100:
+            raise ValueError('نسبة التغطية يجب أن تكون رقماً صحيحاً بين 0 و100')
+        coverage=value
+    begin(c)
+    try:
+        if inherit:
+            c.execute('DELETE FROM nova_pharmacy_contract_relation_rates WHERE contract_id=? AND relation=?',(contract_id,relation))
+        else:
+            c.execute("""INSERT INTO nova_pharmacy_contract_relation_rates(contract_id,relation,coverage)
+              VALUES(?,?,?) ON CONFLICT(contract_id,relation) DO UPDATE SET coverage=excluded.coverage""",
+              (contract_id,relation,coverage))
+        audit(c,uid,'pharmacy_insurance_relation_rate_changed',
+              {'contract_id':contract_id,'relation':relation,'coverage':coverage,'inherit':inherit})
+        finish(c)
+    except Exception:
+        rollback(c);raise
+    return {'contract_id':contract_id,'relation':relation,'coverage':coverage,'inherit':inherit}
+
 def nova_insured_search(c, contract_id, term):
     nova_insured_schema(c)
+    nova_pharmacy_relation_schema(c)
     contract=posint(contract_id,'عقد التأمين')
     term=str(term or '').strip()[:100]
     if not term:return []
@@ -47,8 +99,7 @@ def nova_insured_search(c, contract_id, term):
             OR hp.patient_no LIKE ? ESCAPE '\\' OR hp.phone LIKE ? ESCAPE '\\')
        ORDER BY hp.full_name LIMIT 50""",
        (contract,)+tuple('%'+term+'%' for _ in range(4)))
-    return [dict(r,coverage=(r['coverage_override'] if r['coverage_override'] is not None
-                       else r['coverage_default'])) for r in rows]
+    return [dict(r,coverage=nova_pharmacy_member_coverage(c,r,{'id':r['contract_id'],'coverage_default':r['coverage_default']})) for r in rows]
 
 def nova_patient_search(c,term):
     nova_insured_schema(c)
@@ -142,8 +193,7 @@ def nova_insured_enroll(c,p,uid):
       JOIN partners pa ON pa.id=ic.authority_id
       JOIN nova_pharmacy_insured_cards card ON card.member_id=im.id
       JOIN hospital_patients hp ON hp.id=card.patient_id WHERE im.id=?""",(member_id,))
-    return dict(row,coverage=row['coverage_override'] if row['coverage_override'] is not None
-                else row['coverage_default'])
+    return dict(row,coverage=nova_pharmacy_member_coverage(c,row,{'id':row['contract_id'],'coverage_default':row['coverage_default']}))
 
 def nova_insured_sale_snapshot(c,member,contract,uid,coverage,sale_id):
     card=one(c,"""SELECT card.card_no,hp.id patient_id,hp.patient_no,
