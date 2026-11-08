@@ -72,8 +72,7 @@ new="""def refund_invoice(c,actor,data):
     bank=num(data.get('bank_amount',0),'البنكي المسترجع')
     bank_id=num(data.get('bank_id',0) or 0,'البنك',0)
     ref=text(data,'bank_reference',120)
-    note=text(data,'note',500,True)
-    if len(note)<5:raise ValueError('سبب الاسترداد مطلوب')
+    note=text(data,'note',500)
     if cash+bank<=0:raise ValueError('لا يوجد مبلغ للاسترجاع')
     start(c)
     try:
@@ -97,6 +96,7 @@ new="""def refund_invoice(c,actor,data):
         if available<=0 or cash+bank>available:
             raise ValueError('المبلغ المسترجع أكبر من الرصيد المتاح')
         full=(cash+bank==available)
+        if not full and len(note.strip())<5:raise ValueError('سبب الاسترداد الجزئي مطلوب')
         if bank:
             if not bank_id:raise ValueError('اختر بنك إرجاع التحويل')
             b=pharmacy.one(c,'SELECT * FROM nova_banks WHERE id=? AND active=1',(bank_id,))
