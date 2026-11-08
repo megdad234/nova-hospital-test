@@ -190,6 +190,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Latest sale-return status patch rejected; commercial extraction blocked' }
           node --check pharmacy/static/app.js
           if ($LASTEXITCODE -ne 0) { throw 'Latest sale-return JavaScript invalid' }
+      - name: Apply latest pharmacy inventory dashboard and POS layout to commercial source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python .github/ci/nova_inventory_dashboard.py
+          if ($LASTEXITCODE -ne 0) { throw 'Latest pharmacy inventory dashboard update failed' }
+          python .github/ci/nova_batch17_pos_restore.py
+          if ($LASTEXITCODE -ne 0) { throw 'Latest pharmacy POS layout update failed' }
+          node --check pharmacy/static/app.js
+          if ($LASTEXITCODE -ne 0) { throw 'Updated commercial POS JavaScript invalid' }
+          node --check pharmacy/static/ux_v14.js
+          if ($LASTEXITCODE -ne 0) { throw 'Updated commercial inventory dashboard JavaScript invalid' }
       - name: Isolate pharmacy database globals from NOVA Hospital
         shell: pwsh
         run: |
