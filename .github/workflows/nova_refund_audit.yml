@@ -1,0 +1,28 @@
+name: NOVA Refund Readonly Audit
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/nova_refund_audit.yml'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+          z=zipfile.ZipFile('NOVA_Hospital_GitHub_Ready_Source.zip')
+          names=z.namelist()
+          for name in names:
+              if name.endswith(('hospital/finance.py','hospital/admin.py','hospital/static/admin-ui.js','nova_server.py')):
+                  s=z.read(name).decode('utf-8')
+                  lines=s.splitlines()
+                  print('FILE',name,'LINES',len(lines))
+                  for i,line in enumerate(lines):
+                      if any(t in line.lower() for t in ('refund','استرداد','/api/hospital/finance','require_role')):
+                          print(f'{i+1}: {line[:220]}')
+                          if 'def refund' in line or 'def create_refund' in line:
+                              print('BODY', '\n'.join(lines[i:i+65]))
+          PY
