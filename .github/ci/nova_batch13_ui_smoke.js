@@ -53,4 +53,12 @@ assert.equal(unitRule[0].unit_price,1667);
 assert.equal(env.window.nova13Barcodes([{
   package_id:11,nova13_barcode_dirty:true,nova13_barcode:'STOCK-NEW'
 }])[0].barcode,'STOCK-NEW');
+state.purchaseRows=[{package_id:11,qty:1,unit_cost:20000,nova13_unit_count:3,nova_sale_price:15000,nova_manual_sale_price:true}];
+const fake={value:'21000',closest(){return null}};
+env.window.nova13LivePackPrice(0,fake);
+assert.equal(state.purchaseRows[0].nova13_unit_sale_price,7000);
+assert.equal(state.purchaseRows[0].nova13_unit_manual,false);
+env.window.nova13LiveUnitPrice(0,{value:'5000',closest(){return null}});
+assert.equal(state.purchaseRows[0].nova_sale_price,15000);
+assert.equal(state.purchaseRows[0].nova13_unit_sale_price,5000);
 console.log('NOVA13_UI_SMOKE_OK: RTL split view, stock-first single search, barcode, editable strip prices');
