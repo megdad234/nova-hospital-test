@@ -5,11 +5,15 @@ on:
     paths:
       - '.github/workflows/nova_refund_audit.yml'
       - '.github/ci/nova_refund_migration_preflight.py'
+      - '.github/ci/nova_partial_refund_backend.py'
+      - '.github/ci/nova_partial_refund_wiring.py'
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Compile isolated partial refund implementation patches
+        run: python -m py_compile .github/ci/nova_partial_refund_backend.py .github/ci/nova_partial_refund_wiring.py
       - name: Validate partial-refund migration prerequisites without touching real data
         run: python .github/ci/nova_refund_migration_preflight.py
       - run: |
