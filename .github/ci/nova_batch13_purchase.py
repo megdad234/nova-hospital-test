@@ -26,6 +26,7 @@ def backend(s):
     # Checked BEFORE beginning a write transaction; all changes commit with the invoice.
     purchased_ids={int(t[0]['id']) for t in checked}
     nova_unit_changes=[]
+    nova_unit_promotions=[]
     seen_unit=set()
     unit_rules=p.get('nova_unit_rules') or []
     if not isinstance(unit_rules,list):raise ValueError('بيانات بيع الشرائط غير صحيحة')
@@ -38,9 +39,30 @@ def backend(s):
             raise ValueError('تعبئة الشرائط يجب أن تطابق صنفاً واحداً في الفاتورة')
         if count<2 or count>100:raise ValueError('عدد الشرائط خارج النطاق')
         main=one(c,'SELECT id,product_id,factor FROM packages WHERE id=?',(main_id,))
-        if main['factor']<count or main['factor']%count:
-            raise ValueError('معامل تعبئة العلبة لا يقبل عدد الشرائط؛ صحح التعبئة قبل الاستلام')
-        new_factor=main['factor']//count
+        # NOVA13_SAFE_CATALOG_PROMOTION: catalogue-only boxes may be defined as
+        # factor=1/base_uom=علبة. Convert BEFORE receiving, within this invoice.
+        # Historical products must never have their stock base unit reinterpreted.
+        if main['factor']==1 and count>1:
+            product=one(c,'SELECT base_uom FROM products WHERE id=?',(main['product_id'],))
+            packs=query(c,'SELECT id,unit_name,factor FROM packages WHERE product_id=?',(main['product_id'],))
+            history=any((
+                one(c,'SELECT id FROM '+table+' WHERE '+column+'=? LIMIT 1',(main['product_id'] if column=='product_id' else main_id,))
+                for table,column in [('lots','product_id'),('stock_moves','product_id'),
+                                     ('purchase_lines','package_id'),('sale_lines','package_id')]
+            ))
+            if (not product or product['base_uom'] not in ('علبة','حبة') or
+                len(packs)!=1 or packs[0]['id']!=main_id or packs[0]['unit_name']!='علبة' or history):
+                raise ValueError('للصنف حركات أو تعريف عبوات سابق؛ لا يمكن تحويل وحدته تلقائياً. استخدم إجراء تحويل مخزون معتمد')
+            nova_unit_promotions.append((main_id,main['product_id'],count))
+            for idx,entry in enumerate(checked):
+                if entry[0]['id']==main_id:
+                    changed=dict(entry[0]);changed['factor']=count
+                    checked[idx]=(changed,)+entry[1:]
+            new_factor=1
+        else:
+            if main['factor']<count or main['factor']%count:
+                raise ValueError('معامل تعبئة العلبة لا يقبل عدد الشرائط؛ صحح التعبئة قبل الاستلام')
+            new_factor=main['factor']//count
         strip=one(c,"SELECT * FROM packages WHERE product_id=? AND unit_name='شريط'",
                   (main['product_id'],))
         if strip and (strip['factor']!=new_factor or strip['id']==main_id):
@@ -98,6 +120,18 @@ def backend(s):
                       {'purchase_id':new,'package_id':pack_id,
                        'barcode_before':before['barcode'],'barcode_after':barcode})
 '''
+    # Promotions are applied atomically with purchase receipt, before stock lots.
+    s=one(s,
+      "        new=c.execute('INSERT INTO purchases(",
+      """        # NOVA13_SAFE_CATALOG_PROMOTION — no historical quantity reinterpretation.
+        for package_id,product_id,strip_count in nova_unit_promotions:
+            c.execute("UPDATE products SET base_uom='شريط' WHERE id=?",(product_id,))
+            c.execute("UPDATE packages SET factor=? WHERE id=?",(strip_count,package_id))
+            audit(c,uid,'nova_purchase_activate_strips',
+                  {'product_id':product_id,'package_id':package_id,'strips_per_box':strip_count})
+        new=c.execute('INSERT INTO purchases(""",
+      "promote untouched catalogue boxes inside purchase transaction")
+
     s=one(s,
       "        audit(c,uid,'purchase',{'id':new,'supplier':supplier,'invoice':ref,'total':total})",
       updates+"        audit(c,uid,'purchase',{'id':new,'supplier':supplier,'invoice':ref,'total':total})",
