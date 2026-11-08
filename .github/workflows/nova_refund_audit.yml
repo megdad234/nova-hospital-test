@@ -21,8 +21,9 @@ jobs:
                   lines=s.splitlines()
                   print('FILE',name,'LINES',len(lines))
                   for i,line in enumerate(lines):
-                      if any(t in line.lower() for t in ('refund','استرداد','/api/hospital/finance','require_role','admin-finance','create table nova_refunds','nova_invoice_lines','invoice-refund','financeOpenInvoice','function adminView','finance-invoices','finance-invoice','function finance','invoice-detail','invoice-list','invoice-refund')):
+                      if any(t in line.lower() for t in ('refund','استرداد','/api/hospital/finance','require_role','admin-finance','create table nova_refunds','nova_invoice_lines','invoice-refund','financeOpenInvoice','function adminView','finance-invoices','finance-invoice','function finance','invoice-detail','invoice-list','invoice-refund','cashier','state.role','financeCashierView','financeServicesView','financeOpenInvoice','finance-invoice-details','service-invoice-details','admin-finance','render','nav','section')):
                           print(f'{i+1}: {line[:220]}')
+                          if name.endswith(('hospital/static/app.js','hospital/static/finance-ui.js','hospital/static/admin-ui.js')) and i < 225: print('CONTEXT', '\n'.join(f'{j+1}: {lines[j]}' for j in range(max(0,i-1),min(len(lines),i+3))))
                           if 'def refund' in line or 'def create_refund' in line or 'CREATE TABLE nova_refunds' in line:
                               print('BODY', '\n'.join(lines[i:i+65]))
           PY
