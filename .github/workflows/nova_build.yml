@@ -237,6 +237,8 @@ jobs:
         shell: pwsh
         run: |
           python .github/ci/nova_batch13_purchase.py
+          python .github/ci/nova_inventory_dashboard.py
+          node --check pharmacy/static/ux_v14.js
           if ($LASTEXITCODE -ne 0) { throw 'NOVA13 patch failed; installer blocked' }
           node --check pharmacy/static/nova_pharmacy_batch08.js
           if ($LASTEXITCODE -ne 0) { throw 'NOVA13 JS syntax invalid; installer blocked' }
