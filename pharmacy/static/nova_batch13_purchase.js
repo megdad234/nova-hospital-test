@@ -47,14 +47,14 @@
      const per=row.nova13_unit_manual?Number(row.nova13_unit_sale_price):Math.round(sale/unitCount);
      unitInfo='<div class="nova13-subprice"><span>سعر الشريط المحسوب: '+money(per)+' ج.س</span>'+
        '<label>تعديل سعر الشريط <input type="number" min="1" step="1" value="'+clean(per||'')+
-       '" onchange="nova13SetUnitPrice('+i+',this.value)"></label></div>';
+       '" oninput="nova13LiveUnitPrice('+i+',this)" onchange="nova13SetUnitPrice('+i+',this.value)"></label></div>';
    }
    return '<tr class="nova13-row"><td><strong>'+clean(name)+'</strong><small>'+clean(pk?.unit_name||'')+
      (unitCount>1?' · Unit ('+unitCount+' شرائط)':' · Package')+'</small>'+
      '<button type="button" class="nova13-detail-button" onclick="togglePurchaseLineDetails('+i+')">'+(row.madarShowDetail?'إخفاء التفاصيل':'تفاصيل')+'</button></td>'+
      '<td><input type="number" min="1" step="1" value="'+clean(row.qty)+'" onchange="editBuy('+i+',\'qty\',this.value)"></td>'+
      '<td><input type="number" min="0" step="1" value="'+clean(row.unit_cost)+'" onchange="editBuy('+i+',\'unit_cost\',this.value)"></td>'+
-     '<td><input type="number" min="1" step="1" value="'+clean(sale||'')+'" onchange="nova13SetPrice('+i+',this.value)">'+unitInfo+'</td>'+
+     '<td><input type="number" min="1" step="1" value="'+clean(sale||'')+'" oninput="nova13LivePackPrice('+i+',this)" onchange="nova13SetPrice('+i+',this.value)">'+unitInfo+'</td>'+
      '<td class="nova13-money">'+money(sub)+'</td><td><button type="button" class="nova13-delete" onclick="removeBuy('+i+')" aria-label="حذف السطر">×</button></td></tr>'+
      '<tr class="nova13-subrow"><td colspan="6"><div class="nova13-row-details">'+
      '<label>الصلاحية <input type="date" value="'+clean(row.expiry||'')+'" onchange="editBuy('+i+',\'expiry\',this.value)"></label>'+
@@ -108,15 +108,40 @@
        '</div></div></div>';
  };
  window.nova13SaveDraft=function(){document.getElementById('nova-save-purchase-draft')?.click()};
+ // NOVA13: native number input 'change' fires only on blur/spinner.
+ // Keep both linked prices in sync on typing, without redrawing the focused input.
+ window.nova13LivePackPrice=function(i,el){
+   const row=state.purchaseRows[i],n=Number(el.value),count=Number(row?.nova13_unit_count);
+   if(!row||!Number.isSafeInteger(n)||n<=0)return;
+   row.nova_sale_price=n;row.nova_manual_sale_price=true;
+   if(count>1){
+     row.nova13_unit_manual=false;
+     row.nova13_unit_sale_price=Math.round(n/count);
+     const cell=el.closest('td'),strip=cell?.querySelector('.nova13-subprice input');
+     if(strip)strip.value=String(row.nova13_unit_sale_price);
+     const label=cell?.querySelector('.nova13-subprice span');
+     if(label)label.textContent='سعر الشريط المحسوب: '+money(row.nova13_unit_sale_price)+' ج.س';
+   }
+ };
+ window.nova13LiveUnitPrice=function(i,el){
+   const row=state.purchaseRows[i],n=Number(el.value),count=Number(row?.nova13_unit_count);
+   if(!row||!Number.isSafeInteger(n)||n<=0||!Number.isSafeInteger(count)||count<2)return;
+   row.nova13_unit_sale_price=n;row.nova13_unit_manual=true;
+   row.nova_sale_price=n*count;row.nova_manual_sale_price=true;
+   const cell=el.closest('td'),pack=cell?.querySelector('input[type=number]');
+   if(pack)pack.value=String(row.nova_sale_price);
+   const label=cell?.querySelector('.nova13-subprice span');
+   if(label)label.textContent='سعر الشريط المحسوب: '+money(n)+' ج.س';
+ };
  window.nova13SetPrice=function(i,value){
    const row=state.purchaseRows[i],n=Number(value);
    if(!row||!Number.isSafeInteger(n)||n<=0)return toast('سعر البيع يجب أن يكون موجباً بالجنيه الصحيح',true);
-   row.nova_sale_price=n;row.nova_manual_sale_price=true;redraw();
+   window.nova13LivePackPrice(i,{value:String(n),closest:()=>null});redraw();
  };
  window.nova13SetUnitPrice=function(i,value){
    const row=state.purchaseRows[i],n=Number(value);
    if(!row||!Number.isSafeInteger(n)||n<=0)return toast('سعر الشريط يجب أن يكون موجباً بالجنيه الصحيح',true);
-   row.nova13_unit_sale_price=n;row.nova13_unit_manual=true;redraw();
+   window.nova13LiveUnitPrice(i,{value:String(n),closest:()=>null});redraw();
  };
  window.nova13UnitRules=function(rows){
    return rows.filter(r=>Number(r.nova13_unit_count)>1).map(r=>{
