@@ -68,6 +68,8 @@ on:
       - '.github/ci/nova_batch16_return_status.py'
       - '.github/ci/nova_batch13_purchase.py'
       - '.github/ci/nova_inventory_dashboard.py'
+      - '.github/ci/nova_admin_refunds.py'
+      - 'hospital/static/nova_admin_refunds.js'
       - 'pharmacy/static/nova_inventory_dashboard.js'
       - '.github/ci/nova_batch13_ui_smoke.js'
       - 'pharmacy/static/nova_batch13_purchase.js'
@@ -291,6 +293,13 @@ jobs:
         run: |
           node --check hospital/static/nova_batch09_collections.js
           if ($LASTEXITCODE -ne 0) { throw 'Admin collections preview JavaScript syntax invalid; installer blocked' }
+      - name: Install isolated admin refund screen and validate JavaScript
+        shell: pwsh
+        run: |
+          python .github/ci/nova_admin_refunds.py
+          node --check hospital/static/app.js
+          node --check hospital/static/admin-ui.js
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA admin refund UI syntax invalid' }
       - name: Build Windows installer freshly from fully patched source (no cached executable)
         shell: pwsh
         run: |
