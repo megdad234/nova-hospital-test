@@ -110,6 +110,39 @@ jobs:
           $ErrorActionPreference='Stop'
           Expand-Archive -LiteralPath 'NOVA_Hospital_GitHub_Ready_Source.zip' -DestinationPath '.' -Force
           if (!(Test-Path 'pharmacy/app.py')) { throw 'NOVA pharmacy source missing' }
+      - name: Sync approved hospital pharmacy updates into temporary commercial build only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # Read-only fetch of a fixed hospital main revision. Never push or edit main.
+          $hospitalSha = '5a944b69c68b0672e43d6b3546dc392b5ccfa385'
+          git fetch --no-tags --depth=1 origin $hospitalSha
+          if ($LASTEXITCODE -ne 0) { throw 'Could not fetch approved hospital source revision' }
+          $paths = @(
+            '.github/ci/nova_batch12_insurance.py',
+            '.github/ci/nova_batch12_insurance_backend.pyfrag',
+            '.github/ci/nova_batch13_purchase.py',
+            '.github/ci/nova_batch13_ui_smoke.js',
+            '.github/ci/nova_batch15_bulk_prices.py',
+            '.github/ci/nova_batch16_return_status.py',
+            '.github/ci/nova_batch17_pos_restore.py',
+            '.github/ci/nova_bulk_prices_ui.js',
+            '.github/ci/nova_inventory_dashboard.py',
+            '.github/ci/nova_manual_price_editor.js',
+            '.github/ci/test_nova_bulk_price_integration.py',
+            '.github/ci/test_nova_manual_price.py',
+            'pharmacy/static/nova_batch09_pos.css',
+            'pharmacy/static/nova_batch09_pos.js',
+            'pharmacy/static/nova_batch12_insurance.css',
+            'pharmacy/static/nova_batch12_insurance.js',
+            'pharmacy/static/nova_batch13_purchase.js',
+            'pharmacy/static/nova_inventory_dashboard.js'
+          )
+          foreach ($path in $paths) {
+            git restore --source=$hospitalSha --worktree -- $path
+            if ($LASTEXITCODE -ne 0) { throw "Failed to sync hospital pharmacy update: $path" }
+          }
+          Write-Host "COMMERCIAL_SOURCE_SYNCED_FROM_HOSPITAL_READONLY_SHA=$hospitalSha"
       - name: Apply NOVA source patches in canonical order
         shell: pwsh
         run: |
