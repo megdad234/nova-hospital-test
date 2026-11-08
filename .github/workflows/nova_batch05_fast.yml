@@ -73,6 +73,8 @@ jobs:
           python .github/ci/nova_batch11_unified_print.py
           python .github/ci/nova_batch12_insurance.py
           python .github/ci/nova_batch13_purchase.py
+          python .github/ci/nova_inventory_dashboard.py
+          node --check pharmacy/static/ux_v14.js
           python -m compileall -q pharmacy hospital
       - name: Display laboratory printer context
         run: sed -n '82,98p' hospital/static/app.js
