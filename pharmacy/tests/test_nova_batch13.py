@@ -79,6 +79,58 @@ class NovaApprovedPurchaseTest(unittest.TestCase):
         self.assertEqual(app.one(self.c,'SELECT sale_price FROM packages WHERE id=?',
                                   (pkg['package_id'],))['sale_price'],0)
 
+    def test_catalogue_box_activates_strips_atomically_on_first_purchase(self):
+        product = app.create_product(self.c, {
+            'sku': 'CATALOGUE-NOVA13-NEW', 'name': 'Catalogue Box NOVA13',
+            'base_uom': 'علبة',
+            'packages': [{'unit_name': 'علبة', 'factor': 1,
+                          'sale_price': 0, 'is_default': 1}]
+        }, self.uid)
+        pid = product['id']
+        pk = app.one(self.c, 'SELECT id FROM packages WHERE product_id=?', (pid,))['id']
+        result = app.purchase(self.c, {
+            'supplier_id': self.supplier,
+            'items': [{'package_id': pk, 'qty': 5, 'unit_cost': 5000,
+                       'expiry': self.expiry}],
+            'nova_sale_prices': [{'package_id': pk, 'price': 15000}],
+            'nova_unit_rules': [{'package_id': pk, 'strips': 3, 'unit_price': 5000}]
+        }, self.uid)
+        self.assertEqual(result['total'], 25000)
+        self.assertEqual(app.one(self.c, 'SELECT base_uom FROM products WHERE id=?',
+                                 (pid,))['base_uom'], 'شريط')
+        self.assertEqual(app.one(self.c, 'SELECT factor FROM packages WHERE id=?',
+                                 (pk,))['factor'], 3)
+        self.assertEqual(app.one(self.c, 'SELECT qty_base FROM lots WHERE product_id=?',
+                                 (pid,))['qty_base'], 15)
+        strip = app.one(self.c, "SELECT * FROM packages WHERE product_id=? AND unit_name='شريط'", (pid,))
+        self.assertEqual(strip['factor'], 1)
+        self.assertEqual(strip['sale_price'], 5000)
+
+    def test_historical_box_is_never_silently_reinterpreted(self):
+        product = app.create_product(self.c, {
+            'sku': 'CATALOGUE-NOVA13-HISTORY', 'name': 'Historical Box NOVA13',
+            'base_uom': 'علبة',
+            'packages': [{'unit_name': 'علبة', 'factor': 1,
+                          'sale_price': 0, 'is_default': 1}]
+        }, self.uid)
+        pid = product['id']
+        pk = app.one(self.c, 'SELECT id FROM packages WHERE product_id=?', (pid,))['id']
+        app.purchase(self.c, {
+            'supplier_id': self.supplier,
+            'items': [{'package_id': pk, 'qty': 1, 'unit_cost': 1000,
+                       'expiry': self.expiry}]
+        }, self.uid)
+        with self.assertRaisesRegex(ValueError, 'حركات'):
+            app.purchase(self.c, {
+                'supplier_id': self.supplier,
+                'items': [{'package_id': pk, 'qty': 1, 'unit_cost': 1000,
+                           'expiry': self.expiry}],
+                'nova_unit_rules': [{'package_id': pk, 'strips': 3, 'unit_price': 500}]
+            }, self.uid)
+        self.assertEqual(app.one(self.c, 'SELECT factor FROM packages WHERE id=?',
+                                 (pk,))['factor'], 1)
+        self.assertEqual(app.one(self.c, 'SELECT COUNT(*) n FROM purchases')['n'], 1)
+
     def test_duplicate_barcode_and_duplicate_name_are_rejected(self):
         item = self.quick('NOVA13 Test C', 3, barcode='UNIQUE-13-C')
         with self.assertRaisesRegex(ValueError, 'موجود'):
