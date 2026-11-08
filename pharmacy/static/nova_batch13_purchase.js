@@ -186,8 +186,8 @@
    if(!/^\d{4}-\d{2}-\d{2}$/.test(expiry))return toast('حدد تاريخ صلاحية صحيح',true);
    if(mode==='Unit'&&(!Number.isSafeInteger(strips)||strips<2||strips>100))
      return toast('أدخل عدد الشرائط الصحيح',true);
-   if(mode==='Unit'&&(!Number.isInteger(Number(pk.factor)/strips)))
-     return toast('التعبئة المسجلة لهذا الصنف لا تقبل القسمة على عدد الشرائط؛ صححها من إدارة العبوات قبل الاستلام',true);
+   if(mode==='Unit'&&(!Number.isInteger(Number(pk.factor)/strips))&&!(Number(pk.factor)===1&&pk.unit_name==='علبة'&&Number(pk.product?.available||0)===0))
+     return toast('تعريف العبوة الحالي لا يطابق عدد الشرائط؛ الأصناف ذات الحركات القديمة تحتاج تحويل مخزون معتمد',true);
    if(barcode&&state.products.some(p=>p.packages.some(b=>b.barcode===barcode&&Number(b.id)!==Number(pk.id))))
      return toast('الباركود مسجل بالفعل لعبوة أخرى؛ لا يمكن تكراره',true);
    if(barcode!==String(pk.barcode||'')&&pk.barcode&&!confirm('تغيير الباركود المسجل لهذه العبوة؟'))return;
