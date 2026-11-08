@@ -46,6 +46,7 @@
     if(product){product.value=String(pid);if(typeof adjLoadLots==='function')adjLoadLots()}
     const lot=document.getElementById('adj-lot');
     if(lot){lot.value=String(lid);if(typeof adjSyncLot==='function')adjSyncLot()}
+    if(!lot){const p=(state.products||[]).find(x=>Number(x.id)===Number(pid));const l=(p?.lots||[]).find(x=>Number(x.id)===Number(lid));const batch=document.getElementById('adj-batch'),exp=document.getElementById('adj-exp');if(batch&&l)batch.value=l.batch||'';if(exp&&l)exp.value=l.expiry||''}
   };
   const style=document.createElement('style');
   style.textContent='.nova-inv-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:16px 0}.nova-inv-card{border:1px solid var(--border,#d9e2e7);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:8px}.nova-inv-card small{opacity:.7}.nova-inv-card strong{font-size:1.3rem}.nova-inventory-dashboard .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.nova-inventory-dashboard input{max-width:100%;margin:10px 0}';
