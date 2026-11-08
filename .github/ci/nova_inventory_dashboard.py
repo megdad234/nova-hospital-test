@@ -8,6 +8,6 @@ if marker in s:
 else:
     addon=Path('pharmacy/static/nova_inventory_dashboard.js').read_text(encoding='utf-8')
     assert 'function stock()' in Path('pharmacy/static/app.js').read_text(encoding='utf-8')
-    assert 'stockAdjustModal' in Path('pharmacy/static/workstation_upgrade.js').read_text(encoding='utf-8')
+    assert 'stockAdjustModal' in Path('pharmacy/static/app.js').read_text(encoding='utf-8')
     p.write_text(s+'\n'+marker+'\n'+addon+'\n',encoding='utf-8')
     print('NOVA_INVENTORY_DASHBOARD_APPLIED')
