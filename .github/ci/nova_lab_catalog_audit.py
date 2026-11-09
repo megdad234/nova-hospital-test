@@ -123,6 +123,6 @@ if __name__ == "__main__":
         lines.append(f"- {key}: {json.dumps(report[key], ensure_ascii=False)}")
     lines += ["", "## Important", "", "A defined field is not proof of clinical correctness. Review each template against approved laboratory forms before changing existing results.", ""]
     summary = ROOT / "lab_catalog_review.md"
-    summary.write_text("\\n".join(lines), encoding="utf-8")
+    summary.write_text("\n".join(lines), encoding="utf-8")
     print("LAB_AUDIT_REPORT:", out)
     print("LAB_AUDIT_REVIEW:", summary)
