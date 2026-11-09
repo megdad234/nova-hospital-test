@@ -14,7 +14,7 @@ def audit(path=CATALOG):
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     tests = []
     parse_warnings = []
-    for node in ast.walk(tree):
+    for node in tree.body:
         if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "TESTS" for t in node.targets):
             try:
                 tests = list(ast.literal_eval(node.value))
@@ -22,12 +22,16 @@ def audit(path=CATALOG):
                 parse_warnings.append("TESTS assignment: " + type(exc).__name__)
             break
     # Seed extensions may use TESTS.extend; inspect only literal arguments, never execute source.
-    for node in ast.walk(tree):
+    for node in tree.body:
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            node = node.value
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name) and node.func.value.id == "TESTS" and node.func.attr == "extend" and node.args:
             try:
                 tests.extend(ast.literal_eval(node.args[0]))
             except (ValueError, TypeError, SyntaxError) as exc:
                 parse_warnings.append("TESTS.extend: " + type(exc).__name__)
+    if not any(isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "TESTS" for t in node.targets) for node in tree.body):
+        parse_warnings.append("TESTS assignment missing")
     rows = []
     priority_details = {}
     malformed_parameters = []
