@@ -181,6 +181,13 @@ jobs:
           python .github/ci/nova_lab_catalog_audit.py
           if ($LASTEXITCODE -ne 0) { throw 'Laboratory catalogue audit failed; installer blocked' }
           if (!(Test-Path 'lab_catalog_audit.json')) { throw 'Lab catalogue audit output missing' }
+      - name: Publish read-only laboratory catalogue audit for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-lab-catalogue-audit
+          path: lab_catalog_audit.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Apply NOVA Batch 05 pharmacy and cashier updates
         shell: pwsh
         run: |
