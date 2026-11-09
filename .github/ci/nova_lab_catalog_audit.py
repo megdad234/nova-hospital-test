@@ -46,6 +46,7 @@ def audit(path=CATALOG):
         "duplicate_codes": sorted(code for code, count in counts.items() if count > 1),
         "generic_result_tests": [r for r in rows if r["generic_result_only"]],
         "missing_priority_codes": [code for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") if code not in counts],
+        "priority_generic_only": [r["code"] for r in rows if r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")],
         "all_tests": rows,
         "note": "Static source inspection only. Runtime database may contain additional or locally modified tests."
     }
@@ -55,4 +56,6 @@ if __name__ == "__main__":
     out = ROOT / "lab_catalog_audit.json"
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print("LAB_AUDIT:", report["parsed_tests"], "tests,", len(report["generic_result_tests"]), "generic-only")
+    print("LAB_AUDIT_PRIORITY_GENERIC:", report["priority_generic_only"])
+    print("LAB_AUDIT_MISSING_PRIORITY:", report["missing_priority_codes"])
     print("LAB_AUDIT_REPORT:", out)
