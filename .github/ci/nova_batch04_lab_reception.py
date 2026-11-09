@@ -179,8 +179,11 @@ function novaLabResultControl(x){
   const attrs=' data-line="'+x.id+'" aria-label="نتيجة '+esc(x.name)+'"';
   if(choices){
     if(value && !choices.includes(value))choices=[value,...choices];
-    return '<select'+attrs+'><option value="">— اختر النتيجة —</option>'+
-      choices.map(v=>'<option value="'+esc(v)+'"'+(v===value?' selected':'')+'>'+esc(v)+'</option>').join('')+'</select>';
+    // Keep the existing input[data-line] save contract untouched.
+    // The visible dropdown mirrors its value into the original save input.
+    return '<select aria-label="نتيجة '+esc(x.name)+'" onchange="this.nextElementSibling.value=this.value"><option value="">— اختر النتيجة —</option>'+
+      choices.map(v=>'<option value="'+esc(v)+'"'+(v===value?' selected':'')+'>'+esc(v)+'</option>').join('')+
+      '</select><input type="hidden"'+attrs+' value="'+esc(value)+'">';
   }
   const numeric=/^(FASTING|TIME_30|TIME_60|TIME_120|TIME_180)$/.test(code) && /glucose/i.test(name);
   return '<input'+attrs+' value="'+esc(value)+'" maxlength="4000" autocomplete="off" dir="auto"'+
