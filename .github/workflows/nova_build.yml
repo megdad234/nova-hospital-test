@@ -16,6 +16,7 @@ on:
       - '.github/ci/nova_alsharq_lab_seed.py'
       - '.github/ci/nova_lab_catalog_audit.py'
       - '.github/ci/test_nova_lab_catalog_audit.py'
+      - '.github/ci/test_nova_lab_print_isolation.py'
       - '.github/ci/nova_batch05_cashier_pharmacy.py'
       - '.github/ci/nova_batch05_ui.py'
       - '.github/ci/nova_batch05_free_policy.py'
@@ -161,6 +162,11 @@ jobs:
         shell: pwsh
         run: |
           python .github/ci/nova_batch04_lab_reception.py
+      - name: Verify lab report print isolation
+        shell: pwsh
+        run: |
+          python .github/ci/test_nova_lab_print_isolation.py
+          if ($LASTEXITCODE -ne 0) { throw 'Lab print isolation regression failed' }
       - name: Seed Al Sharq lab prices on fresh catalogues only
         shell: pwsh
         run: |
