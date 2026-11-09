@@ -219,7 +219,7 @@ regex("hospital/static/app.js",r"^async function printReport\(id\)\{.*$",
       
       <footer class="print-foot"><span>@{esc(brand.hospital_phone||'')}&nbsp;&nbsp; @{esc(brand.hospital_website||'')}</span>
       <small>Powered by NOVA Hospital System</small></footer></article>~;
-    const area=$('print-area');area.innerHTML=html;
+    const area=$('print-area');if(!area)throw new Error('منطقة الطباعة غير متاحة، أعد فتح شاشة المعمل');area.innerHTML=html;
     document.body.classList.add('printing-lab');
     const cleanup=()=>{document.body.classList.remove('printing-lab');area.innerHTML=''};
     window.addEventListener('afterprint',cleanup,{once:true});
