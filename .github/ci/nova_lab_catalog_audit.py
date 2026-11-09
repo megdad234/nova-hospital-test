@@ -28,6 +28,7 @@ def audit(path=CATALOG):
             except (ValueError, TypeError):
                 pass
     rows = []
+    priority_details = {}
     malformed_parameters = []
     duplicate_parameter_codes = {}
     empty_parameter_tests = []
@@ -48,6 +49,8 @@ def audit(path=CATALOG):
             empty_parameter_tests.append(code)
         generic = (len(params) == 1 and isinstance(params[0], (tuple, list)) and len(params[0]) > 0 and str(params[0][0]).strip().upper() == "RESULT")
         rows.append({"code": code, "name": name, "category": category, "parameters": len(params), "generic_result_only": generic, "parameter_codes": parameter_codes})
+        if code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC"):
+            priority_details.setdefault(code, []).append({"name": name, "category": category, "parameter_definitions": [list(p) if isinstance(p, (tuple, list)) else repr(p) for p in params]})
     counts = collections.Counter(row["code"] for row in rows)
     return {
         "catalogue_file": str(path),
@@ -61,6 +64,7 @@ def audit(path=CATALOG):
         "missing_priority_codes": [code for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") if code not in counts],
         "priority_generic_only": [r["code"] for r in rows if r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")],
         "all_tests": rows,
+        "priority_template_details": priority_details,
         "review_required": bool(malformed_tests or empty_parameter_tests or duplicate_parameter_codes or malformed_parameters or any(n > 1 for n in counts.values()) or any(code not in counts for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")) or any(r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") for r in rows)),
         "note": "Static source inspection only. Runtime database may contain additional or locally modified tests."
     }
