@@ -24,6 +24,22 @@ class LabPrintIsolationTests(unittest.TestCase):
         self.assertIn("catch(printError){cleanup();throw printError}", source)
         self.assertIn(".filter(item=>(item.lines||[]).some(", source)
 
+    def test_lab_print_function_boundary_and_receipt_preservation(self):
+        source = APP.read_text(encoding="utf-8")
+        self.assertEqual(source.count("async function printReport(id){"), 1)
+        start = source.index("async function printReport(id){")
+        end = source.find("\\nfunction ", start)
+        async_end = source.find("\\nasync function ", start + 1)
+        candidates = [x for x in (end, async_end) if x >= 0]
+        self.assertTrue(candidates, "Lab print must end before the next top-level function")
+        lab = source[start:min(candidates)]
+        self.assertIn("await Promise.all(", lab)
+        self.assertIn("window.print();", lab)
+        self.assertIn("catch(printError){cleanup();throw printError}", lab)
+        self.assertNotIn("window.print()}catch(e){notice(e.message,true)}}", source)
+        # This laboratory-only test must never replace or normalize the receipt engines.
+        self.assertIn("printing-lab", lab)
+
     def test_lab_page_is_scoped(self):
         styles = [p.read_text(encoding="utf-8") for p in ROOT.glob("hospital/static/*.css")]
         joined = "\n".join(styles)
