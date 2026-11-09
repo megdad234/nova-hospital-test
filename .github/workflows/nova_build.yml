@@ -1,7 +1,7 @@
 name: NOVA Hospital - Build and Test Windows Setup
 on:
   push:
-    branches: [main]
+    branches: [main, feature/lab-report-layout-20261109]
     paths:
       - 'NOVA_Hospital_GitHub_Ready_Source.zip'
       - '.github/workflows/nova_build.yml'
