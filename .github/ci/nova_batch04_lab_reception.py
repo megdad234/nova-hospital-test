@@ -185,7 +185,7 @@ regex("hospital/static/app.js",
       r"\$\{lines\.map\(x=>~<tr><td><b>\$\{esc\(x\.name\)\}</b>.*?\.join\(''\)\}",
       "@{novaLabGroupedRows(lines,true)}")
 # Replace report renderer in one operation because all its HTML is one JS line.
-regex("hospital/static/app.js",r"^async function printReport\(id\)\{[\s\S]*?^\}",
+regex("hospital/static/app.js",r"^async function printReport\(id\)\{[\s\S]*?(?=^(?:async )?function [A-Za-z_$][\w$]*\()",
  """async function printReport(id){
   try{
     const d=await api('lab/report/'+id),brand=d.brand||{};
