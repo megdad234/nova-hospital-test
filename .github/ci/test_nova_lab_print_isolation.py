@@ -14,6 +14,10 @@ class LabPrintIsolationTests(unittest.TestCase):
         self.assertNotIn("تقرير جزئي — توجد فحوصات أخرى لم تُنشر بعد.", source)
         self.assertIn("print-patient", source)
         self.assertIn("lab-results", source)
+        for token in ("section_name", "print_time", "patient_name", "patient_no", "order_no", "window.print()"):
+            self.assertIn(token, source)
+        self.assertIn("window.addEventListener('afterprint',cleanup", source)
+        self.assertNotIn("تقرير جزئي", source)
 
     def test_lab_page_is_scoped(self):
         styles = [p.read_text(encoding="utf-8") for p in ROOT.glob("hospital/static/*.css")]
@@ -21,6 +25,8 @@ class LabPrintIsolationTests(unittest.TestCase):
         self.assertIn("@page nova-lab-report", joined)
         self.assertIn("page:nova-lab-report", joined)
         self.assertNotIn("@page{size:A4 portrait", joined)
+        for token in ("body.printing-lab .nova-clinical-print", "size:A4 portrait", "page-break-inside:avoid", "display:table-header-group", "body.printing-lab .nova-clinical-print .print-patient", "body.printing-lab .nova-clinical-print .lab-print-test"):
+            self.assertIn(token, joined)
 
 if __name__ == "__main__":
     unittest.main()
