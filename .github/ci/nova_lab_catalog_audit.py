@@ -13,20 +13,21 @@ CATALOG = ROOT / "hospital" / "lab_catalog.py"
 def audit(path=CATALOG):
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     tests = []
+    parse_warnings = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "TESTS" for t in node.targets):
             try:
                 tests = list(ast.literal_eval(node.value))
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError, SyntaxError) as exc:
+                parse_warnings.append("TESTS assignment: " + type(exc).__name__)
             break
     # Seed extensions may use TESTS.extend; inspect only literal arguments, never execute source.
     for node in ast.walk(tree):
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name) and node.func.value.id == "TESTS" and node.func.attr == "extend" and node.args:
             try:
                 tests.extend(ast.literal_eval(node.args[0]))
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError, SyntaxError) as exc:
+                parse_warnings.append("TESTS.extend: " + type(exc).__name__)
     rows = []
     priority_details = {}
     malformed_parameters = []
@@ -54,6 +55,7 @@ def audit(path=CATALOG):
     counts = collections.Counter(row["code"] for row in rows)
     return {
         "catalogue_file": str(path),
+        "parse_warnings": parse_warnings,
         "parsed_tests": len(rows),
         "malformed_tests": malformed_tests,
         "empty_parameter_tests": sorted(set(empty_parameter_tests)),
@@ -65,7 +67,7 @@ def audit(path=CATALOG):
         "priority_generic_only": [r["code"] for r in rows if r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")],
         "all_tests": rows,
         "priority_template_details": priority_details,
-        "review_required": bool(malformed_tests or empty_parameter_tests or duplicate_parameter_codes or malformed_parameters or any(n > 1 for n in counts.values()) or any(code not in counts for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")) or any(r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") for r in rows)),
+        "review_required": bool(parse_warnings or malformed_tests or empty_parameter_tests or duplicate_parameter_codes or malformed_parameters or any(n > 1 for n in counts.values()) or any(code not in counts for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")) or any(r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") for r in rows)),
         "note": "Static source inspection only. Runtime database may contain additional or locally modified tests."
     }
 
@@ -74,6 +76,7 @@ if __name__ == "__main__":
     out = ROOT / "lab_catalog_audit.json"
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print("LAB_AUDIT:", report["parsed_tests"], "tests,", len(report["generic_result_tests"]), "generic-only")
+    print("LAB_AUDIT_PARSE_WARNINGS:", report["parse_warnings"])
     print("LAB_AUDIT_EMPTY_PANELS:", report["empty_parameter_tests"])
     print("LAB_AUDIT_DUPLICATE_PARAMETER_CODES:", report["duplicate_parameter_codes"])
     print("LAB_AUDIT_PRIORITY_GENERIC:", report["priority_generic_only"])
