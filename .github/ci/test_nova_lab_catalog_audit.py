@@ -72,6 +72,18 @@ class LabCatalogueAuditTests(unittest.TestCase):
             self.assertEqual(report["priority_template_details"]["MALARIA"][0]["parameter_definitions"][0][0], "PARASITE")
             self.assertNotIn("MALARIA", report["priority_generic_only"])
 
+    def test_invalid_parameter_containers_are_not_treated_as_valid_panels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "lab_catalog.py"
+            p.write_text(
+                "TESTS=[('A','A','Lab',(),None),('B','B','Lab',(),[('CODE',)])]\\n",
+                encoding="utf-8"
+            )
+            report = module.audit(p)
+            self.assertEqual(report["malformed_parameter_codes"], ["A", "B"])
+            self.assertIn("A", report["empty_parameter_tests"])
+            self.assertTrue(report["review_required"])
+
     def test_never_executes_catalogue_code(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "lab_catalog.py"
