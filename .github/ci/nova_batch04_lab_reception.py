@@ -205,6 +205,7 @@ regex("hospital/static/app.js",r"^async function printReport\(id\)\{.*$",
       ).join('');
       return ~<section class="lab-print-test"><h3 class="print-test">@{esc(item.test_name)}</h3><table class="lab-results"><thead><tr><th>Test</th><th>Result</th><th>Unit</th><th>Reference Range</th></tr></thead><tbody>@{rows}</tbody></table></section>~;
     }).join('');
+    if(!tests.trim())throw new Error('لا توجد نتائج مدخلة قابلة للطباعة لهذا الطلب');
     const html=~<article class="lab-print nova-clinical-print" dir="rtl">
       <header class="print-head">@{logo}<div class="print-hospital"><h2>@{esc(name)}</h2>
       @{english?~<p lang="en" dir="ltr">@{esc(english)}</p>~:''}
