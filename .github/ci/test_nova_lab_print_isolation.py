@@ -18,6 +18,8 @@ class LabPrintIsolationTests(unittest.TestCase):
             self.assertIn(token, source)
         self.assertIn("window.addEventListener('afterprint',cleanup", source)
         self.assertNotIn("تقرير جزئي", source)
+        self.assertIn("لا توجد نتائج مدخلة قابلة للطباعة", source)
+        self.assertIn(".filter(item=>(item.lines||[]).some(", source)
 
     def test_lab_page_is_scoped(self):
         styles = [p.read_text(encoding="utf-8") for p in ROOT.glob("hospital/static/*.css")]
