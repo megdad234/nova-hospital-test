@@ -215,7 +215,7 @@ regex("hospital/static/app.js",r"^async function printReport\(id\)\{.*$",
       @{d.gender?~<span>الجنس: @{d.gender==='male'?'ذكر':'أنثى'}</span>~:''}
       <span>رقم الطلب: @{esc(d.order_no)}</span><span>التاريخ: @{esc(timestamp)}</span></div>
       @{tests}
-      @{d.partial?'<p class="small">تقرير جزئي — توجد فحوصات أخرى لم تُنشر بعد.</p>':''}
+      
       <footer class="print-foot"><span>@{esc(brand.hospital_phone||'')}&nbsp;&nbsp; @{esc(brand.hospital_website||'')}</span>
       <small>Powered by NOVA Hospital System</small></footer></article>~;
     const area=$('print-area');area.innerHTML=html;
