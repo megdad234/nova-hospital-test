@@ -223,8 +223,10 @@ regex("hospital/static/app.js",r"^async function printReport\(id\)\{.*$",
     document.body.classList.add('printing-lab');
     const cleanup=()=>{document.body.classList.remove('printing-lab');area.innerHTML='';window.removeEventListener('afterprint',cleanup)};
     window.addEventListener('afterprint',cleanup,{once:true});
-    await Promise.all([...area.querySelectorAll('img')].map(x=>x.decode?.().catch(()=>{})||Promise.resolve()));
-    try{window.print()}catch(printError){cleanup();throw printError}
+    try{
+      await Promise.all([...area.querySelectorAll('img')].map(x=>x.decode?.().catch(()=>{})||Promise.resolve()));
+      window.print();
+    }catch(printError){cleanup();throw printError}
   }catch(e){notice(e.message,true)}
 }""")
 # The hospital website is optional; address remains stored for other documents but is not shown on labs.
