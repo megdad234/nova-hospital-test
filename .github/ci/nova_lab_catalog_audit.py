@@ -86,4 +86,39 @@ if __name__ == "__main__":
     print("LAB_AUDIT_PRIORITY_GENERIC:", report["priority_generic_only"])
     print("LAB_AUDIT_MISSING_PRIORITY:", report["missing_priority_codes"])
     print("LAB_AUDIT_REVIEW_REQUIRED:", report["review_required"])
+    lines = [
+        "# NOVA Laboratory Catalogue — Read-only Review",
+        "",
+        "Generated from extracted source; not from patient records.",
+        "",
+        f"- Parsed tests: {report['parsed_tests']}",
+        f"- Manual review required: {report['review_required']}",
+        f"- Unparseable declarations: {len(report['parse_warnings'])}",
+        f"- Malformed test entries: {len(report['malformed_tests'])}",
+        f"- Duplicate test codes: {len(report['duplicate_codes'])}",
+        f"- Empty panels: {len(report['empty_parameter_tests'])}",
+        f"- Duplicate parameter codes within panels: {len(report['duplicate_parameter_codes'])}",
+        f"- Generic-result-only tests: {len(report['generic_result_tests'])}",
+        "",
+        "## Priority tests",
+        "",
+        "| Test code | Status | Defined parameter codes |",
+        "|---|---|---|",
+    ]
+    for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC"):
+        entries = [r for r in report["all_tests"] if r["code"] == code]
+        if not entries:
+            lines.append(f"| {code} | MISSING | — |")
+            continue
+        for entry in entries:
+            status = "GENERIC ONLY" if entry["generic_result_only"] else ("EMPTY" if not entry["parameters"] else "DEFINED — verify clinically")
+            fields = ", ".join(entry["parameter_codes"]) or "—"
+            lines.append(f"| {code} | {status} | {fields} |")
+    lines += ["", "## Other findings", ""]
+    for key in ("parse_warnings", "malformed_tests", "duplicate_codes", "empty_parameter_tests", "duplicate_parameter_codes", "malformed_parameter_codes"):
+        lines.append(f"- {key}: {json.dumps(report[key], ensure_ascii=False)}")
+    lines += ["", "## Important", "", "A defined field is not proof of clinical correctness. Review each template against approved laboratory forms before changing existing results.", ""]
+    summary = ROOT / "lab_catalog_review.md"
+    summary.write_text("\\n".join(lines), encoding="utf-8")
     print("LAB_AUDIT_REPORT:", out)
+    print("LAB_AUDIT_REVIEW:", summary)
