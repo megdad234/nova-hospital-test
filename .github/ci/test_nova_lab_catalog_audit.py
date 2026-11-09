@@ -29,6 +29,16 @@ class LabCatalogueAuditTests(unittest.TestCase):
             self.assertIn("GTT", result["missing_priority_codes"])
             self.assertEqual(before, p.read_bytes())
 
+    def test_malformed_parameters_are_reported_without_crashing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "lab_catalog.py"
+            p.write_text("TESTS=[('BAD','Bad','Lab',(),[()]),('OK','OK','Lab',(),[('RESULT','Result')])]\n", encoding="utf-8")
+            before = p.read_bytes()
+            report = module.audit(p)
+            self.assertEqual(report["malformed_parameter_codes"], ["BAD"])
+            self.assertEqual([x["code"] for x in report["generic_result_tests"]], ["OK"])
+            self.assertEqual(before, p.read_bytes())
+
     def test_never_executes_catalogue_code(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "lab_catalog.py"
