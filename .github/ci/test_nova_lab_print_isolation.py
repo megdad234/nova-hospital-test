@@ -40,6 +40,16 @@ class LabPrintIsolationTests(unittest.TestCase):
         # This laboratory-only test must never replace or normalize the receipt engines.
         self.assertIn("printing-lab", lab)
 
+    def test_lab_dropdown_preserves_existing_save_contract(self):
+        # Inspect the patch source because the actual app.js is generated in CI.
+        patch = (ROOT / ".github/ci/nova_batch04_lab_reception.py").read_text(encoding="utf-8")
+        self.assertIn("function novaLabResultControl(x)", patch)
+        self.assertIn("onchange=\\"this.nextElementSibling.value=this.value\\"", patch)
+        self.assertIn("'<input type=\\"hidden\\"'+attrs+' value=\\"'+esc(value)+'\\">'", patch)
+        self.assertIn("editable?novaLabResultControl(x)", patch)
+        self.assertIn("if(value && !choices.includes(value))choices=[value,...choices]", patch)
+        self.assertIn("inputmode=\\"decimal\\"", patch)
+
     def test_lab_page_is_scoped(self):
         styles = [p.read_text(encoding="utf-8") for p in ROOT.glob("hospital/static/*.css")]
         joined = "\n".join(styles)
