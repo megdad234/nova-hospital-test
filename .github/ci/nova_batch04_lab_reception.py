@@ -333,7 +333,7 @@ add("hospital/static/style.css", """
   body.printing-lab .nova-clinical-print{page:nova-lab-report;width:auto!important;max-width:none!important;min-height:0!important;margin:0!important;padding:0!important;box-shadow:none!important;break-before:auto!important;page-break-before:auto!important}
   body.printing-lab .nova-clinical-print .print-head{margin:0 0 7mm!important;padding:0 0 3mm!important;break-after:avoid-page;page-break-after:avoid}
   body.printing-lab .nova-clinical-print .print-patient{margin:0 0 4mm!important;break-after:avoid-page;page-break-after:avoid}
-  body.printing-lab .nova-clinical-print .lab-print-test{break-inside:avoid-page;page-break-inside:avoid;margin:0 0 4mm!important}
+  body.printing-lab .nova-clinical-print .lab-print-test{break-inside:auto;page-break-inside:auto;margin:0 0 4mm!important}\n  body.printing-lab .nova-clinical-print .lab-print-test .print-test{break-after:avoid-page;page-break-after:avoid;margin-bottom:2mm}
   body.printing-lab .nova-clinical-print .lab-results{width:100%;border-collapse:collapse}
   body.printing-lab .nova-clinical-print .lab-results tr{break-inside:avoid;page-break-inside:avoid}
   body.printing-lab .nova-clinical-print .lab-results thead{display:table-header-group}
