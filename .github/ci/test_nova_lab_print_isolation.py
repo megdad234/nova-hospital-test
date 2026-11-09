@@ -31,8 +31,8 @@ class LabPrintIsolationTests(unittest.TestCase):
         end = source.find("\\nfunction ", start)
         async_end = source.find("\\nasync function ", start + 1)
         candidates = [x for x in (end, async_end) if x >= 0]
-        self.assertTrue(candidates, "Lab print must end before the next top-level function")
-        lab = source[start:min(candidates)]
+        # The report renderer can be the final top-level function in this bundle.
+        lab = source[start:min(candidates)] if candidates else source[start:]
         self.assertIn("await Promise.all(", lab)
         self.assertIn("window.print();", lab)
         self.assertIn("catch(printError){cleanup();throw printError}", lab)
