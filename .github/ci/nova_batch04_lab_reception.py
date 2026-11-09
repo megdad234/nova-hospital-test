@@ -192,7 +192,7 @@ regex("hospital/static/app.js",r"^async function printReport\(id\)\{.*$",
     const logo=brand.hospital_logo?~<img class="print-logo" src="@{esc(brand.hospital_logo)}" alt="شعار المستشفى">~:'';
     const name=brand.hospital_name||'اسم المستشفى',english=brand.hospital_name_en||'';
     const timestamp=String(d.print_time||'').replace('T',' ').slice(0,19);
-    const tests=(d.items||[]).map(item=>{
+    const tests=(d.items||[]).filter(item=>(item.lines||[]).some(x=>String(x.value||'').trim())).map(item=>{
       const groups=new Map();
       for(const line of (item.lines||[]).filter(x=>String(x.value||'').trim())){
         const key=line.section_name||'';
