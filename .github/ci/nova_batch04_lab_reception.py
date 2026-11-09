@@ -328,7 +328,17 @@ add("hospital/static/style.css", """
 .nova-clinical-print .print-foot small{font-size:8px;color:#888}
 .nova-clinical-print .lab-print-test{break-inside:avoid}
 @media(max-width:900px){.nova-reception-hero{flex-direction:column;align-items:stretch}}
-@media print{.nova-clinical-print .print-foot{display:flex!important}.nova-clinical-print .lab-print-test{break-inside:avoid}}
+@media print{
+  @page{size:A4 portrait;margin:10mm 12mm}
+  body.printing-lab .nova-clinical-print{width:auto!important;max-width:none!important;min-height:0!important;margin:0!important;padding:0!important;box-shadow:none!important;break-before:auto!important;page-break-before:auto!important}
+  body.printing-lab .nova-clinical-print .print-head{margin:0 0 7mm!important;padding:0 0 3mm!important;break-after:avoid-page;page-break-after:avoid}
+  body.printing-lab .nova-clinical-print .print-patient{margin:0 0 4mm!important;break-after:avoid-page;page-break-after:avoid}
+  body.printing-lab .nova-clinical-print .lab-print-test{break-inside:avoid-page;page-break-inside:avoid;margin:0 0 4mm!important}
+  body.printing-lab .nova-clinical-print .lab-results{width:100%;border-collapse:collapse}
+  body.printing-lab .nova-clinical-print .lab-results tr{break-inside:avoid;page-break-inside:avoid}
+  body.printing-lab .nova-clinical-print .lab-results thead{display:table-header-group}
+  body.printing-lab .nova-clinical-print .print-foot{display:flex!important;position:static!important;margin-top:4mm!important;break-inside:avoid}
+}
 """)
 
 # Additional end-to-end HTTP acceptance checks on a disposable test database.
