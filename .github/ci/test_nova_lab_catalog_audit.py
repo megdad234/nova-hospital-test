@@ -25,6 +25,8 @@ class LabCatalogueAuditTests(unittest.TestCase):
             result = module.audit(p)
             self.assertEqual(result["parsed_tests"], 4)
             self.assertEqual(result["duplicate_codes"], ["CBC"])
+            self.assertEqual(result["empty_parameter_tests"], ["CBC"])
+            self.assertTrue(result["review_required"])
             self.assertEqual({x["code"] for x in result["generic_result_tests"]}, {"MALARIA", "URINE"})
             self.assertIn("GTT", result["missing_priority_codes"])
             self.assertEqual(result["priority_generic_only"], ["MALARIA", "URINE"])
@@ -39,6 +41,19 @@ class LabCatalogueAuditTests(unittest.TestCase):
             self.assertEqual(report["malformed_parameter_codes"], ["BAD"])
             self.assertEqual([x["code"] for x in report["generic_result_tests"]], ["OK"])
             self.assertEqual(before, p.read_bytes())
+
+    def test_repeated_parameter_codes_and_invalid_test_shape(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "lab_catalog.py"
+            p.write_text(
+                "TESTS=[('GTT','GTT','Chemistry',(),[('FAST','Fasting'),('FAST','Repeated')]),('BROKEN',)]\n",
+                encoding="utf-8"
+            )
+            report = module.audit(p)
+            self.assertEqual(report["duplicate_parameter_codes"], {"GTT": ["FAST"]})
+            self.assertEqual(len(report["malformed_tests"]), 1)
+            self.assertEqual(report["all_tests"][0]["parameter_codes"], ["FAST", "FAST"])
+            self.assertTrue(report["review_required"])
 
     def test_never_executes_catalogue_code(self):
         with tempfile.TemporaryDirectory() as tmp:
