@@ -55,6 +55,23 @@ class LabCatalogueAuditTests(unittest.TestCase):
             self.assertEqual(report["all_tests"][0]["parameter_codes"], ["FAST", "FAST"])
             self.assertTrue(report["review_required"])
 
+    def test_unparseable_literal_extension_is_visible_not_silently_ignored(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "lab_catalog.py"
+            p.write_text("TESTS=[]\\nTESTS.extend(make_tests())\\n", encoding="utf-8")
+            report = module.audit(p)
+            self.assertEqual(report["parsed_tests"], 0)
+            self.assertEqual(report["parse_warnings"], ["TESTS.extend: ValueError"])
+            self.assertTrue(report["review_required"])
+
+    def test_priority_details_preserve_exact_parameter_fields(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "lab_catalog.py"
+            p.write_text("TESTS=[('MALARIA','Malaria','Parasitology',(),[('PARASITE','Parasites','','','','')])]\\n", encoding="utf-8")
+            report = module.audit(p)
+            self.assertEqual(report["priority_template_details"]["MALARIA"][0]["parameter_definitions"][0][0], "PARASITE")
+            self.assertNotIn("MALARIA", report["priority_generic_only"])
+
     def test_never_executes_catalogue_code(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "lab_catalog.py"
