@@ -45,10 +45,10 @@ class LabPrintIsolationTests(unittest.TestCase):
         for token in (
             "function novaLabResultControl(x)",
             "this.nextElementSibling.value=this.value",
-            "type=\\\"hidden\\\"",
+            'type="hidden"',
             "editable?novaLabResultControl(x)",
             "if(value && !choices.includes(value))choices=[value,...choices]",
-            "inputmode=\\\"decimal\\\"",
+            'inputmode="decimal"',
         ):
             self.assertIn(token, patch)
 
