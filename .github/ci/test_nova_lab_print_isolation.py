@@ -20,6 +20,8 @@ class LabPrintIsolationTests(unittest.TestCase):
         self.assertNotIn("تقرير جزئي", source)
         self.assertIn("لا توجد نتائج مدخلة قابلة للطباعة", source)
         self.assertIn("منطقة الطباعة غير متاحة", source)
+        self.assertIn("window.removeEventListener('afterprint',cleanup)", source)
+        self.assertIn("catch(printError){cleanup();throw printError}", source)
         self.assertIn(".filter(item=>(item.lines||[]).some(", source)
 
     def test_lab_page_is_scoped(self):
