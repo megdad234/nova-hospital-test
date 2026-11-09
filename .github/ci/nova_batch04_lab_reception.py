@@ -184,6 +184,11 @@ function novaLabGroupedRows(lines,editable){
 regex("hospital/static/app.js",
       r"\$\{lines\.map\(x=>~<tr><td><b>\$\{esc\(x\.name\)\}</b>.*?\.join\(''\)\}",
       "@{novaLabGroupedRows(lines,true)}")
+# The hospital website is optional; address remains stored for other documents but is not shown on labs.
+sub("hospital/static/app.js",
+ """<label>رقم التواصل<input name="hospital_phone" maxlength="200" value="@{esc(b.hospital_phone)}"></label>""",
+ """<label>رقم التواصل<input name="hospital_phone" maxlength="200" value="@{esc(b.hospital_phone)}"></label><label>الموقع الإلكتروني — يظهر أسفل نتيجة المعمل<input name="hospital_website" maxlength="200" value="@{esc(b.hospital_website||'')}"></label>""")
+
 # Replace report renderer in one operation because all its HTML is one JS line.
 regex("hospital/static/app.js",r"^async function printReport\(id\)\{[\s\S]*?(?=^(?:async )?function [A-Za-z_$][\w$]*\()",
  """async function printReport(id){
@@ -229,11 +234,6 @@ regex("hospital/static/app.js",r"^async function printReport\(id\)\{[\s\S]*?(?=^
     }catch(printError){cleanup();throw printError}
   }catch(e){notice(e.message,true)}
 }""")
-# The hospital website is optional; address remains stored for other documents but is not shown on labs.
-sub("hospital/static/app.js",
- """<label>رقم التواصل<input name="hospital_phone" maxlength="200" value="@{esc(b.hospital_phone)}"></label>""",
- """<label>رقم التواصل<input name="hospital_phone" maxlength="200" value="@{esc(b.hospital_phone)}"></label><label>الموقع الإلكتروني — يظهر أسفل نتيجة المعمل<input name="hospital_website" maxlength="200" value="@{esc(b.hospital_website||'')}"></label>""")
-
 # Reception summary, collapsed registration, selected patient history and corrections.
 sub("hospital/static/finance-ui.js",
  "  return ~<div class=\"split\">@{panel('المريض'",
