@@ -165,6 +165,12 @@ jobs:
           python .github/ci/nova_alsharq_lab_seed.py
           python -m py_compile hospital/lab.py hospital/lab_catalog.py
           if ($LASTEXITCODE -ne 0) { throw 'NOVA Batch 04 source upgrade rejected; installer blocked' }
+      - name: Audit laboratory catalogue without touching patient data
+        shell: pwsh
+        run: |
+          python .github/ci/nova_lab_catalog_audit.py
+          if ($LASTEXITCODE -ne 0) { throw 'Laboratory catalogue audit failed; installer blocked' }
+          if (!(Test-Path 'lab_catalog_audit.json')) { throw 'Lab catalogue audit output missing' }
       - name: Apply NOVA Batch 05 pharmacy and cashier updates
         shell: pwsh
         run: |
