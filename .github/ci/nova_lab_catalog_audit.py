@@ -48,6 +48,7 @@ def audit(path=CATALOG):
         "missing_priority_codes": [code for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") if code not in counts],
         "priority_generic_only": [r["code"] for r in rows if r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")],
         "all_tests": rows,
+        "review_required": bool(malformed_parameters or any(n > 1 for n in counts.values()) or any(code not in counts for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")) or any(r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") for r in rows)),
         "note": "Static source inspection only. Runtime database may contain additional or locally modified tests."
     }
 
@@ -58,4 +59,5 @@ if __name__ == "__main__":
     print("LAB_AUDIT:", report["parsed_tests"], "tests,", len(report["generic_result_tests"]), "generic-only")
     print("LAB_AUDIT_PRIORITY_GENERIC:", report["priority_generic_only"])
     print("LAB_AUDIT_MISSING_PRIORITY:", report["missing_priority_codes"])
+    print("LAB_AUDIT_REVIEW_REQUIRED:", report["review_required"])
     print("LAB_AUDIT_REPORT:", out)
