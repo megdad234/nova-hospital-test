@@ -166,7 +166,13 @@ jobs:
           python -m py_compile hospital/lab.py hospital/lab_catalog.py hospital/core.py hospital/gateway.py
           if ($LASTEXITCODE -ne 0) { throw 'NOVA04 Python source invalid' }
           node --check hospital/static/app.js
-          if ($LASTEXITCODE -ne 0) { throw 'NOVA04 laboratory JavaScript invalid' }
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host 'NOVA04_JS_CONTEXT_START'
+            $src = Get-Content hospital/static/app.js
+            for ($i=0; $i -lt [Math]::Min(150,$src.Count); $i++) { Write-Host ('{0,4}: {1}' -f ($i+1),$src[$i]) }
+            Write-Host 'NOVA04_JS_CONTEXT_END'
+            throw 'NOVA04 laboratory JavaScript invalid'
+          }
       - name: Verify lab report print isolation
         shell: pwsh
         run: |
