@@ -162,6 +162,11 @@ jobs:
         shell: pwsh
         run: |
           python .github/ci/nova_batch04_lab_reception.py
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA04 laboratory patch failed' }
+          python -m py_compile hospital/lab.py hospital/lab_catalog.py hospital/core.py hospital/gateway.py
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA04 Python source invalid' }
+          node --check hospital/static/app.js
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA04 laboratory JavaScript invalid' }
       - name: Verify lab report print isolation
         shell: pwsh
         run: |
