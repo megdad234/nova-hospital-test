@@ -72,11 +72,35 @@ assert len(ROWS)==47 and len({x[0] for x in ROWS})==47
 # Other ambiguous tests have independent codes, with no fabricated medical reference ranges.
 tree=ast.parse(catalog)
 existing={item.elts[0].value for node in tree.body if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=="TESTS" for t in node.targets) for item in node.value.elts}
+# Structured entry for new installations; no clinical reference ranges or inferred diagnoses.
+# Existing catalogue definitions and already installed databases remain untouched.
+LAB_STRUCTURED_NEW = {
+    "MALARIA": [
+        ("METHOD", "Method", "", "", "", ""),
+        ("PARASITE", "Malaria parasite detected", "", "", "", ""),
+        ("SPECIES", "Plasmodium species (if identified)", "", "", "", ""),
+        ("STAGE", "Parasite stage (if identified)", "", "", "", ""),
+        ("DENSITY", "Parasite density / grading (if reported)", "", "", "", ""),
+        ("COMMENTS", "Microscopy comments", "", "", "", ""),
+    ],
+    "GTT": [
+        ("FASTING", "Fasting glucose (0 min)", "mg/dL", "", "", ""),
+        ("TIME_30", "Glucose at 30 min (if ordered)", "mg/dL", "", "", ""),
+        ("TIME_60", "Glucose at 60 min (if ordered)", "mg/dL", "", "", ""),
+        ("TIME_120", "Glucose at 120 min (if ordered)", "mg/dL", "", "", ""),
+        ("TIME_180", "Glucose at 180 min (if ordered)", "mg/dL", "", "", ""),
+        ("COMMENTS", "Comments / protocol", "", "", "", ""),
+    ],
+}
 extra=[]
 for src,code,price,name,category in ROWS:
     if code not in existing:
-        extra.append((code,name,category,src.lower().replace("_"," "),[("RESULT","Result","","","","")]))
+        extra.append((code,name,category,src.lower().replace("_"," "),LAB_STRUCTURED_NEW.get(code,[("RESULT","Result","","","","")])))
         existing.add(code)
+# GTT is a structured catalogue option on new installs, without a default price.
+if "GTT" not in existing:
+    extra.append(("GTT", "Glucose Tolerance Test", "Chemistry", "glucose tolerance test", LAB_STRUCTURED_NEW["GTT"]))
+    existing.add("GTT")
 anchor="\nPOPULAR = "
 assert anchor in catalog
 catalog=catalog.replace(anchor,"\n# AL_SHARQ_LAB_SEED_V1 — new test definitions; no invented clinical intervals.\nTESTS.extend("+repr(extra)+")\n"+anchor,1)
