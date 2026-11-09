@@ -14,8 +14,10 @@ def audit(path=CATALOG):
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     tests = []
     parse_warnings = []
+    declared = False
     for node in tree.body:
         if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "TESTS" for t in node.targets):
+            declared = True
             try:
                 tests = list(ast.literal_eval(node.value))
             except (ValueError, TypeError, SyntaxError) as exc:
@@ -30,7 +32,7 @@ def audit(path=CATALOG):
                 tests.extend(ast.literal_eval(node.args[0]))
             except (ValueError, TypeError, SyntaxError) as exc:
                 parse_warnings.append("TESTS.extend: " + type(exc).__name__)
-    if not any(isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "TESTS" for t in node.targets) for node in tree.body):
+    if not declared:
         parse_warnings.append("TESTS assignment missing")
     rows = []
     priority_details = {}
@@ -44,7 +46,9 @@ def audit(path=CATALOG):
             continue
         code, name, category = str(item[0]), str(item[1]), str(item[2])
         params = item[4] if isinstance(item[4], (list, tuple)) else []
-        if any(not isinstance(p, (tuple, list)) or len(p) == 0 for p in params):
+        if not isinstance(item[4], (list, tuple)):
+            malformed_parameters.append(code)
+        if any(not isinstance(p, (tuple, list)) or len(p) < 2 for p in params):
             malformed_parameters.append(code)
         parameter_codes = [str(p[0]).strip() for p in params if isinstance(p, (tuple, list)) and p]
         repeated = sorted(code for code, count in collections.Counter(parameter_codes).items() if count > 1)
