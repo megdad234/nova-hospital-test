@@ -164,6 +164,28 @@ function novaChooseLabCategory(category){
   }));
 }
 // Structured inputs and printouts use the SAME saved section names.
+// Fixed choices only where the result has a well-defined categorical meaning.
+// Preserve every existing saved value, including values outside these options.
+function novaLabResultControl(x){
+  const code=String(x.code||'').toUpperCase(),name=String(x.name||'').toLowerCase();
+  let choices=null;
+  if(code==='PARASITE' && (name.includes('malaria')||name.includes('parasite detected')))
+    choices=['Not detected','Detected'];
+  else if(code==='SPECIES' && name.includes('plasmodium'))
+    choices=['P. falciparum','P. vivax','P. malariae','P. ovale','P. knowlesi','Mixed infection','Not identified'];
+  else if(code==='METHOD' && name==='method')
+    choices=['Thick and thin blood film','Thick blood film','Thin blood film','Rapid diagnostic test'];
+  const value=String(x.value??'');
+  const attrs=' data-line="'+x.id+'" aria-label="نتيجة '+esc(x.name)+'"';
+  if(choices){
+    if(value && !choices.includes(value))choices=[value,...choices];
+    return '<select'+attrs+'><option value="">— اختر النتيجة —</option>'+
+      choices.map(v=>'<option value="'+esc(v)+'"'+(v===value?' selected':'')+'>'+esc(v)+'</option>').join('')+'</select>';
+  }
+  const numeric=/^(FASTING|TIME_30|TIME_60|TIME_120|TIME_180)$/.test(code) && /glucose/i.test(name);
+  return '<input'+attrs+' value="'+esc(value)+'" maxlength="4000" autocomplete="off" dir="auto"'+
+    (numeric?' inputmode="decimal" aria-label="Glucose result in mg/dL"':'')+'>';
+}
 function novaLabGroupedRows(lines,editable){
   const groups=new Map();
   for(const line of lines||[]){
@@ -174,7 +196,7 @@ function novaLabGroupedRows(lines,editable){
   return [...groups.entries()].map(([section,rows])=>
     (section?'<tr class="nova-lab-section"><th colspan="4">'+esc(section)+'</th></tr>':'')+
     rows.map(x=>'<tr><td><b>'+esc(x.name)+'</b></td>'+
-      '<td>'+(editable?'<input data-line="'+x.id+'" value="'+esc(x.value)+'" maxlength="4000" aria-label="نتيجة '+esc(x.name)+'" autocomplete="off" dir="auto">':'<b dir="auto">'+esc(x.value)+'</b>')+'</td>'+
+      '<td>'+(editable?novaLabResultControl(x):'<b dir="auto">'+esc(x.value)+'</b>')+'</td>'+
       '<td dir="ltr">'+(esc(x.unit)||'—')+'</td>'+
       '<td dir="ltr" class="reference">'+(esc(x.reference_range)||'—')+'</td></tr>').join('')
   ).join('');
