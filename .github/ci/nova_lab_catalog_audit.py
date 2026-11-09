@@ -28,17 +28,21 @@ def audit(path=CATALOG):
             except (ValueError, TypeError):
                 pass
     rows = []
+    malformed_parameters = []
     for item in tests:
         if not isinstance(item, (tuple, list)) or len(item) < 5:
             continue
         code, name, category = str(item[0]), str(item[1]), str(item[2])
         params = item[4] if isinstance(item[4], (list, tuple)) else []
-        generic = len(params) == 1 and str(params[0][0]).upper() == "RESULT"
+        if any(not isinstance(p, (tuple, list)) or len(p) == 0 for p in params):
+            malformed_parameters.append(code)
+        generic = (len(params) == 1 and isinstance(params[0], (tuple, list)) and len(params[0]) > 0 and str(params[0][0]).strip().upper() == "RESULT")
         rows.append({"code": code, "name": name, "category": category, "parameters": len(params), "generic_result_only": generic})
     counts = collections.Counter(row["code"] for row in rows)
     return {
         "catalogue_file": str(path),
         "parsed_tests": len(rows),
+        "malformed_parameter_codes": sorted(set(malformed_parameters)),
         "duplicate_codes": sorted(code for code, count in counts.items() if count > 1),
         "generic_result_tests": [r for r in rows if r["generic_result_only"]],
         "missing_priority_codes": [code for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") if code not in counts],
