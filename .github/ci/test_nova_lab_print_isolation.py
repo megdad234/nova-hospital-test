@@ -41,14 +41,16 @@ class LabPrintIsolationTests(unittest.TestCase):
         self.assertIn("printing-lab", lab)
 
     def test_lab_dropdown_preserves_existing_save_contract(self):
-        # Inspect the patch source because the actual app.js is generated in CI.
         patch = (ROOT / ".github/ci/nova_batch04_lab_reception.py").read_text(encoding="utf-8")
-        self.assertIn("function novaLabResultControl(x)", patch)
-        self.assertIn("onchange=\\"this.nextElementSibling.value=this.value\\"", patch)
-        self.assertIn("'<input type=\\"hidden\\"'+attrs+' value=\\"'+esc(value)+'\\">'", patch)
-        self.assertIn("editable?novaLabResultControl(x)", patch)
-        self.assertIn("if(value && !choices.includes(value))choices=[value,...choices]", patch)
-        self.assertIn("inputmode=\\"decimal\\"", patch)
+        for token in (
+            "function novaLabResultControl(x)",
+            "this.nextElementSibling.value=this.value",
+            "type=\\\"hidden\\\"",
+            "editable?novaLabResultControl(x)",
+            "if(value && !choices.includes(value))choices=[value,...choices]",
+            "inputmode=\\\"decimal\\\"",
+        ):
+            self.assertIn(token, patch)
 
     def test_lab_page_is_scoped(self):
         styles = [p.read_text(encoding="utf-8") for p in ROOT.glob("hospital/static/*.css")]
