@@ -329,8 +329,8 @@ add("hospital/static/style.css", """
 .nova-clinical-print .lab-print-test{break-inside:avoid}
 @media(max-width:900px){.nova-reception-hero{flex-direction:column;align-items:stretch}}
 @media print{
-  @page{size:A4 portrait;margin:10mm 12mm}
-  body.printing-lab .nova-clinical-print{width:auto!important;max-width:none!important;min-height:0!important;margin:0!important;padding:0!important;box-shadow:none!important;break-before:auto!important;page-break-before:auto!important}
+  @page nova-lab-report{size:A4 portrait;margin:10mm 12mm}
+  body.printing-lab .nova-clinical-print{page:nova-lab-report;width:auto!important;max-width:none!important;min-height:0!important;margin:0!important;padding:0!important;box-shadow:none!important;break-before:auto!important;page-break-before:auto!important}
   body.printing-lab .nova-clinical-print .print-head{margin:0 0 7mm!important;padding:0 0 3mm!important;break-after:avoid-page;page-break-after:avoid}
   body.printing-lab .nova-clinical-print .print-patient{margin:0 0 4mm!important;break-after:avoid-page;page-break-after:avoid}
   body.printing-lab .nova-clinical-print .lab-print-test{break-inside:avoid-page;page-break-inside:avoid;margin:0 0 4mm!important}
