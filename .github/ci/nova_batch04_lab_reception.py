@@ -173,8 +173,8 @@ function novaLabResultControl(x){
     choices=['Not detected','Detected'];
   else if(code==='SPECIES' && name.includes('plasmodium'))
     choices=['P. falciparum','P. vivax','P. malariae','P. ovale','P. knowlesi','Mixed infection','Not identified'];
-  else if(code==='METHOD' && name==='method')
-    choices=['Thick and thin blood film','Thick blood film','Thin blood film','Rapid diagnostic test'];
+  // METHOD is shared by multiple tests; keep it as free text to avoid
+  // incorrectly forcing a malaria-specific method on unrelated assays.
   const value=String(x.value??'');
   const attrs=' data-line="'+x.id+'" aria-label="نتيجة '+esc(x.name)+'"';
   if(choices){
