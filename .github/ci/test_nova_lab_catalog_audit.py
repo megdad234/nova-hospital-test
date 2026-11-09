@@ -27,6 +27,7 @@ class LabCatalogueAuditTests(unittest.TestCase):
             self.assertEqual(result["duplicate_codes"], ["CBC"])
             self.assertEqual({x["code"] for x in result["generic_result_tests"]}, {"MALARIA", "URINE"})
             self.assertIn("GTT", result["missing_priority_codes"])
+            self.assertEqual(result["priority_generic_only"], ["MALARIA", "URINE"])
             self.assertEqual(before, p.read_bytes())
 
     def test_malformed_parameters_are_reported_without_crashing(self):
