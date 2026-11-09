@@ -25,7 +25,7 @@ class LabPrintIsolationTests(unittest.TestCase):
         self.assertIn("@page nova-lab-report", joined)
         self.assertIn("page:nova-lab-report", joined)
         self.assertNotIn("@page{size:A4 portrait", joined)
-        for token in ("body.printing-lab .nova-clinical-print", "size:A4 portrait", "page-break-inside:avoid", "display:table-header-group", "body.printing-lab .nova-clinical-print .print-patient", "body.printing-lab .nova-clinical-print .lab-print-test"):
+        for token in ("body.printing-lab .nova-clinical-print", "size:A4 portrait", "display:table-header-group", "body.printing-lab .nova-clinical-print .print-patient", "body.printing-lab .nova-clinical-print .lab-print-test", "page-break-inside:auto", "page-break-after:avoid"):
             self.assertIn(token, joined)
 
 if __name__ == "__main__":
