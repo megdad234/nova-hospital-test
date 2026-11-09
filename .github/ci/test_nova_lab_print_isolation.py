@@ -1,5 +1,6 @@
 """Guard laboratory print isolation from pharmacy/cashier receipt styles."""
 import unittest
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,6 +65,39 @@ class LabPrintIsolationTests(unittest.TestCase):
         self.assertIn("this.nextElementSibling.value=this.value", renderer)
         self.assertIn("type=\"hidden\"", renderer)
         self.assertIn("inputmode=\"decimal\"", renderer)
+
+    def test_generated_lab_controls_in_node(self):
+        # Execute the actual generated app.js controls, not merely the patch text.
+        # The script does not invoke any pharmacy or cashier functions.
+        script = r"""
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const src=fs.readFileSync(process.argv[1],'utf8');
+const start=src.indexOf('function novaLabResultControl(x){');
+const end=src.indexOf('function novaLabGroupedRows(lines,editable){',start);
+assert(start>=0&&end>start,'generated lab renderer missing');
+const code=src.slice(start,end);
+const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const fn=vm.runInNewContext(code+';novaLabResultControl',{esc});
+const malaria=fn({id:1,code:'PARASITE',name:'Malaria parasite detected',value:'Detected'});
+assert(malaria.includes('<select')&&malaria.includes('selected')&&malaria.includes('type="hidden"'));
+assert(malaria.includes('data-line="1"'));
+assert(malaria.includes('this.nextElementSibling.value=this.value'));
+const legacy=fn({id:2,code:'SPECIES',name:'Plasmodium species (if identified)',value:'Previously recorded species'});
+assert(legacy.includes('Previously recorded species')&&legacy.includes('selected'));
+const unrelated=fn({id:3,code:'METHOD',name:'Method',value:'Other assay'});
+assert(!unrelated.includes('<select')&&unrelated.includes('Other assay'));
+const glucose=fn({id:4,code:'TIME_120',name:'Glucose at 120 min (if ordered)',value:'112.5'});
+assert(glucose.includes('inputmode="decimal"')&&glucose.includes('value="112.5"'));
+const escaped=fn({id:5,code:'PARASITE',name:'Malaria parasite detected',value:'<script>alert(1)</script>'});
+assert(!escaped.includes('<script>'));
+console.log('LAB_CONTROL_RUNTIME_OK');
+"""
+        result = subprocess.run(
+            ["node", "-e", script, str(APP)],
+            capture_output=True, text=True, encoding="utf-8", timeout=20,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("LAB_CONTROL_RUNTIME_OK", result.stdout)
 
     def test_lab_page_is_scoped(self):
         styles = [p.read_text(encoding="utf-8") for p in ROOT.glob("hospital/static/*.css")]
