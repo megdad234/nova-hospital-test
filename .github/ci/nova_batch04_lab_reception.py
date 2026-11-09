@@ -221,7 +221,7 @@ regex("hospital/static/app.js",r"^async function printReport\(id\)\{.*$",
       <small>Powered by NOVA Hospital System</small></footer></article>~;
     const area=$('print-area');if(!area)throw new Error('منطقة الطباعة غير متاحة، أعد فتح شاشة المعمل');area.innerHTML=html;
     document.body.classList.add('printing-lab');
-    const cleanup=()=>{document.body.classList.remove('printing-lab');area.innerHTML=''};
+    const cleanup=()=>{document.body.classList.remove('printing-lab');area.innerHTML='';window.removeEventListener('afterprint',cleanup)};
     window.addEventListener('afterprint',cleanup,{once:true});
     await Promise.all([...area.querySelectorAll('img')].map(x=>x.decode?.().catch(()=>{})||Promise.resolve()));
     window.print();
