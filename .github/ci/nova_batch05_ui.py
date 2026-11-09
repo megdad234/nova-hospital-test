@@ -176,7 +176,10 @@ def patients(s):
     # Batch04's original two-line print tail remained after its new async report renderer.
     # Remove exactly that unreachable invalid JavaScript; retain the new renderer intact.
     orphan="\n await Promise.all([...area.querySelectorAll('img')].map(x=>x.decode?.().catch(()=>{})||Promise.resolve()));\n window.print()}catch(e){notice(e.message,true)}}"
-    s=one(s,orphan,"")
+    if orphan in s:
+        s=one(s,orphan,"")
+    elif "async function printReport(id){" not in s or "window.print();" not in s:
+        raise RuntimeError("NOVA05_UI_LAB_PRINT_MISSING: expected intact lab report renderer")
     return s
 change('hospital/static/app.js',patients)
 def routes(s):
