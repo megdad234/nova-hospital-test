@@ -203,7 +203,11 @@ catalog = catalog.replace(
     "for _idx, _test in enumerate(TESTS):\n"
     "    _map = " + repr(STRUCTURED_FIELDS) + ".get(_test[0])\n"
     "    if _map is not None:\n"
-    "        _params = [(code, label, '', '', '', '') for code, label in _map]\n"
+    "        _old = {str(p[0]): p for p in _test[4]}\n"
+    "        _params = []\n"
+    "        for code, label in _map:\n"
+    "            _prior = _old.get(code)\n"
+    "            _params.append((code, label, *_prior[2:]) if _prior is not None else (code, label, '', '', '', ''))\n"
     "        TESTS[_idx] = (*_test[:4], _params, *_test[5:])\n"
     "\nPOPULAR = ", 1
 )
