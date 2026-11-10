@@ -143,6 +143,65 @@ for code,name,category,params in COMMON_EXTRA_TESTS:
 anchor="\nPOPULAR = "
 assert anchor in catalog
 catalog=catalog.replace(anchor,"\n# AL_SHARQ_LAB_SEED_V1 — new test definitions; no invented clinical intervals.\nTESTS.extend("+repr(extra)+")\n"+anchor,1)
+# NOVA_LAB_STRUCTURED_CATALOG_V1: named analytes for existing composite assays.
+# Use field identities, not fabricated patient results or clinical reference intervals.
+# The source catalogue remains the authority for test codes and pricing.
+STRUCTURED_FIELDS = {
+    "NA_K": [("NA", "Sodium"), ("K", "Potassium")],
+    "LFT_E": [("ALT", "ALT (SGPT)"), ("AST", "AST (SGOT)"),
+              ("ALP", "Alkaline Phosphatase"), ("TBIL", "Total Bilirubin"),
+              ("DBIL", "Direct Bilirubin"), ("ALBUMIN", "Albumin"),
+              ("TOTAL_PROTEIN", "Total Protein"), ("NA", "Sodium"),
+              ("K", "Potassium"), ("CL", "Chloride")],
+    "IRON_FULL": [("IRON", "Serum Iron"), ("TIBC", "Total Iron Binding Capacity"),
+                  ("TRANSFERRIN_SAT", "Transferrin Saturation"), ("FERRITIN", "Ferritin")],
+    "PT_PTT": [("PT", "Prothrombin Time"), ("INR", "INR"),
+               ("APTT", "Activated Partial Thromboplastin Time")],
+    "SEMEN": [("VOLUME", "Volume"), ("APPEARANCE", "Appearance"),
+              ("LIQUEFACTION", "Liquefaction"), ("VISCOSITY", "Viscosity"),
+              ("PH", "pH"), ("CONCENTRATION", "Sperm Concentration"),
+              ("TOTAL_COUNT", "Total Sperm Count"), ("PROGRESSIVE", "Progressive Motility"),
+              ("NONPROGRESSIVE", "Non-progressive Motility"), ("IMMOTILE", "Immotile"),
+              ("MORPHOLOGY", "Normal Morphology"), ("VITALITY", "Vitality"),
+              ("WBC", "Round Cells / WBC"), ("COMMENTS", "Comments")],
+    "DENGUE": [("NS1", "Dengue NS1 Antigen"), ("IGM", "Dengue IgM"),
+               ("IGG", "Dengue IgG")],
+    "FERTILITY": [("FSH", "FSH"), ("LH", "LH"), ("PROLACTIN", "Prolactin"),
+                  ("ESTRADIOL", "Estradiol"), ("PROGESTERONE", "Progesterone"),
+                  ("TESTOSTERONE", "Testosterone")],
+    "BRUCELLA": [("RESULT", "Brucella screening result"), ("TITER", "Titer (if performed)")],
+    "HBS_ELISA": [("RESULT", "HBsAg ELISA result"), ("INDEX", "Index / S-CO (if reported)")],
+    "AMYLASE": [("AMYLASE", "Amylase")],
+    "AMH": [("AMH", "Anti-Mullerian Hormone")],
+    "INSULIN": [("INSULIN", "Insulin")],
+    "C_PEPTIDE": [("C_PEPTIDE", "C-Peptide")],
+    "PTH": [("PTH", "Parathyroid Hormone")],
+    "ACCP": [("ACCP", "Anti-CCP Antibody")],
+    "TROPONIN_Q": [("TROPONIN", "Troponin (quantitative)")],
+    "AFP": [("AFP", "Alpha-Fetoprotein")],
+    "SG": [("RESULT", "Sickling test result")],
+    "ICT_TYPHOID": [("RESULT", "Typhoid ICT result")],
+    "HP_STOOL": [("RESULT", "H. pylori stool antigen result")],
+    "HP_SERUM": [("RESULT", "H. pylori serum antibody result")],
+    "HCG": [("RESULT", "Pregnancy test result")],
+    "STOOL_OCCULT": [("RESULT", "Occult blood result")],
+    "URINE_PREG": [("RESULT", "Pregnancy test result")],
+    "MALARIA_RDT": [("RESULT", "Malaria RDT result")],
+}
+# Single-analyte and qualitative panels are intentionally kept simple.
+# Some names (MAT, U S&A, Troponin Q) do not establish a method;
+# never infer assay-specific thresholds or reference values from the name.
+# Build an explicit replacement after all new catalogue tests are appended.
+catalog = catalog.replace(
+    "\nPOPULAR = ",
+    "\n# NOVA_LAB_STRUCTURED_CATALOG_V1\n"
+    "for _idx, _test in enumerate(TESTS):\n"
+    "    _map = " + repr(STRUCTURED_FIELDS) + ".get(_test[0])\n"
+    "    if _map is not None:\n"
+    "        _params = [(code, label, '', '', '', '') for code, label in _map]\n"
+    "        TESTS[_idx] = (*_test[:4], _params, *_test[5:])\n"
+    "\nPOPULAR = ", 1
+)
 C.write_text(catalog,encoding="utf-8")
 # Insertion happens only when the test code is not present. Never touch a locally edited price.
 prices={code:price for _,code,price,_,_ in ROWS}
