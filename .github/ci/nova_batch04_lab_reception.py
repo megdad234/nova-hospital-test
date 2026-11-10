@@ -220,7 +220,7 @@ function novaLabResultKeyboard(event){
   const table=target.closest('table');
   if(!table||!table.querySelector('input[data-line]'))return;
   if(target.tagName==='SELECT'&&!target.nextElementSibling?.matches('input[data-line]'))return;
-  if(event.altKey||event.ctrlKey||event.metaKey||event.isComposing)return;
+  if(event.altKey||event.metaKey||event.isComposing)return;
   if(!['Enter','ArrowDown','ArrowUp'].includes(event.key))return;
   // Native up/down must remain available to select an option or edit text.
   // Ctrl+up/down provides explicit navigation for text fields.
