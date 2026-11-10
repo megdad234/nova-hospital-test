@@ -48,7 +48,7 @@ class LabPrintIsolationTests(unittest.TestCase):
             "this.nextElementSibling.value=this.value",
             'type="hidden"',
             "editable?novaLabResultControl(x)",
-            "if(value && !choices.includes(value))choices=[value,...choices]",
+            "if(value&&!choices.includes(value))choices=[value,...choices]",
             'inputmode="decimal"',
         ):
             self.assertIn(token, patch)
@@ -61,7 +61,7 @@ class LabPrintIsolationTests(unittest.TestCase):
         self.assertIn("code==='PARASITE'", renderer)
         self.assertIn("code==='SPECIES'", renderer)
         self.assertNotIn("code==='METHOD' && name==='method'", renderer)
-        self.assertIn("if(value && !choices.includes(value))", renderer)
+        self.assertIn("if(value&&!choices.includes(value))", renderer)
         self.assertIn("this.nextElementSibling.value=this.value", renderer)
         self.assertIn("type=\"hidden\"", renderer)
         self.assertIn("inputmode=\"decimal\"", renderer)
@@ -135,7 +135,7 @@ console.log('LAB_CONTROL_RUNTIME_OK');
     def test_lab_save_collection_uses_original_line_identifiers(self):
         # Guard the frontend/backend boundary without writing patient records.
         source = APP.read_text(encoding="utf-8")
-        self.assertIn('data-line="'+ "'+x.id+'" + '"', source)
+        self.assertIn('data-line="'+ "'+esc(x.id)+'" + '"', source)
         self.assertIn('this.nextElementSibling.value=this.value', source)
         # Every editable qualitative control has one original hidden input
         # carrying the same data-line key as ordinary text results.
