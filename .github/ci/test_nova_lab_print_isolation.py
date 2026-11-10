@@ -483,7 +483,7 @@ console.log('LAB_KEYBOARD_RUNTIME_OK');
                        'HBS_ELISA','HIV','HCV','HBSAG','MALARIA_RDT','MAL_RDT',
                        'URINE_PREG','PREG','HCG','HP_STOOL','HP_SERUM',
                        'STOOL_OCCULT','ICT_TYPHOID','SG','DENGUE','BRUCELLA',
-                       'H_PYLORI','BLOOD_GROUP','BGROUP','CROSSMATCH'}
+                       'H_PYLORI','BLOOD_GROUP','BGROUP','CROSSMATCH','RF','ASO'}
         numeric = {'CBC','ESR','HB','PCV','RBS','FBS','PPBS','HBA1C',
                    'LFT','RFT','LIPID','ELECTRO','UREA','CRE','URIC',
                    'ALT','AST','TBIL','CALCIUM','PHOS','MG','TSH','FT4',
@@ -491,10 +491,10 @@ console.log('LAB_KEYBOARD_RUNTIME_OK');
                    'PTINR','APTT','D_DIMER','VITD','B12','FERRITIN',
                    'IRON','TIBC','NA_K','LFT_E','AMYLASE','IRON_FULL',
                    'AMH','INSULIN','C_PEPTIDE','FERTILITY','PTH',
-                   'ACCP','PT_PTT','TROPONIN_Q','AFP','RETIC','GTT'}
+                   'ACCP','PT_PTT','TROPONIN_Q','AFP','RETIC','GTT','CRP','BHCG'}
         mixed = {'MALARIA','URINE','STOOL','SEMEN','WIDAL','BTCT',
                  'CULTURE','URINE_CULT','STOOL_CULT','BLOOD_CULT',
-                 'URINE_CULTURE','STOOL_CULTURE','BLOOD_CULTURE'}
+                 'URINE_CULTURE','STOOL_CULTURE','BLOOD_CULTURE','USA','MAT'}
         covered = qualitative | numeric | mixed
         actual = {str(t[0]) for t in module.TESTS}
         self.assertEqual(actual, covered,
