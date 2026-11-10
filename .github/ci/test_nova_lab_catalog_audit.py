@@ -84,6 +84,20 @@ class LabCatalogueAuditTests(unittest.TestCase):
             self.assertIn("A", report["empty_parameter_tests"])
             self.assertTrue(report["review_required"])
 
+    def test_blank_field_labels_and_codes_are_flagged_read_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "lab_catalog.py"
+            p.write_text(
+                "TESTS=[('URINE','Urine','Urinalysis',(),[('COLOR','','','','',''),('', 'Appearance','','','','')])]\n",
+                encoding="utf-8",
+            )
+            original = p.read_bytes()
+            report = module.audit(p)
+            self.assertEqual(report["blank_parameter_labels"], {"URINE": ["COLOR"]})
+            self.assertEqual(report["blank_parameter_codes"], {"URINE": ["Appearance"]})
+            self.assertTrue(report["review_required"])
+            self.assertEqual(p.read_bytes(), original)
+
     def test_never_executes_catalogue_code(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "lab_catalog.py"
