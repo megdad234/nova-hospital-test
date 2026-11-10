@@ -188,7 +188,7 @@ function novaLabResultControl(x){
       {choices=['Yellow','Pale yellow','Amber','Dark yellow','Red','Brown','Other'];allowOther=true;}
     else if(/^(APPEARANCE|APPEAR|CLARITY)$/.test(code)||/appearance|clarity/.test(name))
       {choices=['Clear','Slightly cloudy','Cloudy','Turbid','Other'];allowOther=true;}
-    else if(/crystal|cast|bacteria|epithelial|parasite/.test(name))
+    else if(/^(CRYS|EPI|CAST|BACT|PARASITE)$/.test(code)||/crystal|cast|bacteria|epithelial|parasite/.test(name))
       {choices=['Absent','Present','Few','Moderate','Many','Other'];allowOther=true;}
   }else if(stool){
     if(code==='MUCUS')choices=['Absent','Present'];
@@ -247,7 +247,7 @@ function novaLabGroupedRows(lines,editable){
   const codes=new Set((lines||[]).map(x=>String(x.code||'').trim().toUpperCase()));
   const urineSignature=['NIT','LEU','KET'].filter(c=>codes.has(c)).length>=2;
   const stoolSignature=codes.has('MUCUS')&&
-    [...codes].some(c=>/^(OVA|CYST|WORM|PARASITE|CONSISTENCY|OCCULT_BLOOD)$/.test(c));
+    [...codes].some(c=>/^(OVA|CYST|WORM|PARASITE|CONS|CONSISTENCY|OCCULT_BLOOD)$/.test(c));
   const inferredPanel=urineSignature?'URINE':stoolSignature?'STOOL':'';
   const groups=new Map();
   for(const line of lines||[]){
