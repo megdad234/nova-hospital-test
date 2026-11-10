@@ -234,6 +234,12 @@ const crystals=fn({id:15,code:'CRYS',name:'Crystals',section_name:'Urinalysis',v
 assert(crystals.includes('<datalist')&&crystals.includes('Calcium oxalate ++'));
 const protein=fn({id:16,code:'PRO',name:'Protein',section_name:'Urinalysis',value:'++'});
 assert(protein.includes('<select')&&protein.includes('selected'));
+const urineRbc=fn({id:80,code:'RBC',name:'RBCs',test_code:'URINE',value:'2-4'});
+assert(urineRbc.includes('value="2-4"')&&!urineRbc.includes('inputmode="decimal"'),'urine RBC ranges must not use decimal-only input');
+const urineSg=fn({id:81,code:'SG',name:'Specific Gravity',test_code:'URINE',value:'1.020'});
+assert(urineSg.includes('inputmode="decimal"'),'urine SG should use numeric keyboard');
+const urinePh=fn({id:82,code:'PH',name:'pH',test_code:'URINE',value:'6.0'});
+assert(urinePh.includes('inputmode="decimal"'),'urine pH should use numeric keyboard');
 const hb=fn({id:17,code:'HB',name:'Hemoglobin',section_name:'CBC',value:'13.4'});
 assert(hb.includes('inputmode="decimal"')&&hb.includes('13.4'));
 const stoolAppearance=fn({id:18,code:'APPEAR',name:'Appearance',section_name:'Stool examination',value:'Watery'});
