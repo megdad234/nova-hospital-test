@@ -247,6 +247,16 @@ for(const [test_code,value] of panels){
  const html=fn({id:410,code:'RESULT',name:'Result',test_code,value});
  assert(html.includes('<datalist')&&html.includes('value="'+value+'"'),'qualitative panel not classified: '+test_code);
 }
+for(const [test_code,value] of [
+ ['HIV_RAPID','Non-reactive'],['HCV_RAPID','Reactive'],['HBSAG_RAPID','Non-reactive'],
+ ['VDRL','Reactive'],['RPR','Non-reactive'],['MALARIA_RDT','Negative'],
+ ['URINE_PREG','Positive'],['STOOL_OCCULT','Negative'],['HCG','Positive']
+]){
+ const html=fn({id:409,code:'RESULT',name:'Result',test_code,value});
+ assert(html.includes('<datalist')&&html.includes('value="'+value+'"'),'exact profile missing: '+test_code);
+}
+const unmatched=fn({id:408,code:'RESULT',name:'Result',test_code:'UNREVIEWED_PANEL',value:'custom'});
+assert(!unmatched.includes('<datalist')&&!unmatched.includes('<select'),'unknown test must stay free text');
 const quantitativeSerology=fn({id:411,code:'RESULT',name:'Result',test_code:'CRP Quantitative',value:'12.5'});
 assert(!quantitativeSerology.includes('<datalist'),'quantitative assay must stay numeric/free text');
 for(const test_name of ['HIV antibody quantitative','HCG concentration','Dengue antigen titre','Hepatitis antibody viral load']){
