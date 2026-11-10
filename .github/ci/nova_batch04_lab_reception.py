@@ -179,6 +179,12 @@ function novaLabResultControl(x){
     {choices=['Not detected','Detected','Other'];allowOther=true;}
   else if(code==='SPECIES' && name.includes('plasmodium'))
     choices=['P. falciparum','P. vivax','P. malariae','P. ovale','P. knowlesi','Mixed infection','Not identified'];
+  if(code==='DENSITY'&&/malaria|blood film|b\\.f/.test(name+' '+panel))
+    {choices=['(+)','(++)','(+++)','(++++)','Hyper parasitemia','Other'];allowOther=true;}
+  else if((code==='TYPE'||code==='SPECIES')&&/malaria|plasmodium|blood film|b\\.f/.test(name+' '+panel))
+    {choices=['P. falciparum','P. malariae','P. ovale','P. vivax','P. knowlesi','Mixed infection','Other'];allowOther=true;}
+  else if(code==='STAGE'&&/malaria|parasite|blood film|b\\.f/.test(name+' '+panel))
+    {choices=['Ring','Late Trophozoite','Gametocyte','Schizont','Ring and Gametocyte','Other'];allowOther=true;}
   if(urine){
     if(code==='NIT')choices=['Negative','Positive'];
     else if(code==='LEU')choices=['Negative','Trace','Positive'];
