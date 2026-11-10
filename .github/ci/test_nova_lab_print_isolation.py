@@ -177,33 +177,12 @@ console.log('LAB_GROUP_CONTEXT_OK');
         self.assertIn("LAB_GROUP_CONTEXT_OK", result.stdout)
 
     def test_lab_dropdown_preserves_existing_save_contract(self):
-        patch = (ROOT / ".github/ci/nova_batch04_lab_reception.py").read_text(encoding="utf-8")
-        for token in (
-            "function novaLabResultControl(x)",
-            "this.nextElementSibling.value=this.value",
-            'type="hidden"',
-            "editable?novaLabResultControl({...x,test_code:x.test_code||inferredPanel})",
-            "if(value&&!choices.includes(value))choices=[value,...choices]",
-            'inputmode="decimal"',
-        ):
-            self.assertIn(token, patch)
-
-    def test_malaria_dropdown_does_not_capture_unrelated_methods(self):
-        patch = (ROOT / ".github/ci/nova_batch04_lab_reception.py").read_text(encoding="utf-8")
-        start = patch.index("function novaLabResultControl(x){")
-        end = patch.index("function novaLabGroupedRows(lines,editable){", start)
-        renderer = patch[start:end]
-        self.assertIn("code==='PARASITE'", renderer)
-        self.assertIn("code==='SPECIES'", renderer)
-        self.assertNotIn("code==='METHOD' && name==='method'", renderer)
-        self.assertIn("if(value&&!choices.includes(value))", renderer)
-        self.assertIn("this.nextElementSibling.value=this.value", renderer)
-        self.assertIn("type=\"hidden\"", renderer)
-        self.assertIn("inputmode=\"decimal\"", renderer)
-
-    def test_generated_lab_controls_in_node(self):
-        # Execute the actual generated app.js controls, not merely the patch text.
-        # The script does not invoke any pharmacy or cashier functions.
+        # Use generated runtime JS, not the Python patch template (whose
+        # escaped regex literals are not directly executable JavaScript).
+        generated = APP.read_text(encoding="utf-8")
+        start = generated.index("function novaLabResultControl(x){")
+        end = generated.index("function novaLabGroupedRows(lines,editable){", start)
+        js = generated[start:end]
         script = r"""
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const src=fs.readFileSync(process.argv[1],'utf8');
