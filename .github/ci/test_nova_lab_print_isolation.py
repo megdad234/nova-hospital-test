@@ -172,6 +172,10 @@ const urineNit=fn({id:6,code:'NIT',name:'Nitrite',section_name:'Urine examinatio
 assert(urineNit.includes('<select')&&urineNit.includes('Negative')&&urineNit.includes('type="hidden"'));
 const urineLegacy=fn({id:7,code:'LEU',name:'Leukocyte esterase',section_name:'Urinalysis',value:'+++'});
 assert(urineLegacy.includes('<select')&&urineLegacy.includes('+++')&&urineLegacy.includes('selected'));
+const urineParent=fn({id:61,code:'NIT',name:'Nitrite',section_name:'Macroscopy',test_code:'URINE',value:'Negative'});
+assert(urineParent.includes('<select'),'Urine panel must be recognized despite generic section');
+const stoolParent=fn({id:62,code:'MUCUS',name:'Mucus',section_name:'Microscopy',test_name:'Stool Examination',value:'Present'});
+assert(stoolParent.includes('<select'),'Stool panel must be recognized despite generic section');
 const stoolMucus=fn({id:8,code:'MUCUS',name:'Mucus',section_name:'Stool examination',value:'Present'});
 assert(stoolMucus.includes('<select')&&stoolMucus.includes('Present'));
 const sameCodeElsewhere=fn({id:9,code:'NIT',name:'Nitrite',section_name:'Other assay',value:'Negative'});
