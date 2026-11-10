@@ -169,7 +169,9 @@ function novaChooseLabCategory(category){
 function novaLabResultControl(x){
   const code=String(x.code||'').trim().toUpperCase(),name=String(x.name||'').toLowerCase();
   const section=String(x.section_name||'').toLowerCase();
-  const panel=String(x.test_code||x.test_name||x.panel_code||x.panel_name||'').toLowerCase();
+  // Combine code and display name: legacy catalogue entries may carry a generic
+  // RESULT code while the clinical test identity is in test_name or panel_name.
+  const panel=[x.test_code,x.test_name,x.panel_code,x.panel_name].filter(Boolean).join(' ').toLowerCase();
   const context=section+' '+panel;
   const urine=/\\burine\\b|urinalysis|\\busa\\b|بول/.test(context);
   const stool=/\\bstool\\b|faec|fecal|براز/.test(context);
