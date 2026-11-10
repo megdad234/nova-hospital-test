@@ -217,20 +217,24 @@ function novaLabResultControl(x){
 function novaLabResultKeyboard(event){
   const target=event.target;
   if(!target||!target.matches||!target.matches('input[data-line],select'))return;
-  if(!target.closest('.lab-results')&&!target.closest('.nova-lab-results'))return;
-  if(event.key!=='ArrowDown'&&event.key!=='ArrowUp'&&event.key!=='Enter')return;
-  // Select arrows must remain native for choosing options.
-  if(target.tagName==='SELECT'&&event.key!=='Enter')return;
-  if(event.key==='Enter'&&event.shiftKey)return;
-  const fields=[...target.closest('table').querySelectorAll('input[data-line]:not([type="hidden"]),select')];
+  const table=target.closest('table');
+  if(!table||!table.querySelector('input[data-line]'))return;
+  if(target.tagName==='SELECT'&&!target.nextElementSibling?.matches('input[data-line]'))return;
+  if(event.altKey||event.ctrlKey||event.metaKey||event.isComposing)return;
+  if(!['Enter','ArrowDown','ArrowUp'].includes(event.key))return;
+  // Native up/down must remain available to select an option or edit text.
+  // Ctrl+up/down provides explicit navigation for text fields.
+  if(event.key!=='Enter'&&!event.ctrlKey)return;
+  if(event.key==='Enter'&&target.tagName==='SELECT'&&!event.ctrlKey)return;
+  const fields=[...table.querySelectorAll('input[data-line]:not([type="hidden"]),select')]
+    .filter(el=>el.tagName!=='SELECT'||el.nextElementSibling?.matches('input[data-line]'));
   const index=fields.indexOf(target);
   if(index<0)return;
-  const step=event.key==='ArrowUp'?-1:1;
+  const step=event.key==='ArrowUp'||(event.key==='Enter'&&event.shiftKey)?-1:1;
   const next=fields[index+step];
   if(!next)return;
-  // Do not hijack arrow keys while editing free text or a datalist.
-  if(target.tagName==='INPUT'&&event.key!=='Enter')return;
-  event.preventDefault();next.focus();
+  event.preventDefault();
+  next.focus();
 }
 if(typeof document!=='undefined'&&!window.__novaLabKeyboardBound){
   window.__novaLabKeyboardBound=true;
