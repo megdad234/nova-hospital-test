@@ -201,7 +201,7 @@ function novaLabResultControl(x){
     else if(/^(BIL|BILI|BILIRUBIN|URO|UROBILINOGEN|YEAST|MUC|THREADS)$/.test(code)||/bilirubin|urobilinogen|yeast|mucous thread/.test(name))
       {choices=['Nil','Trace','(+)','(++)','(+++)','(++++)','Present','Other'];allowOther=true;}
     else if(/^(CRYS|CRYSTALS)$/.test(code)||/crystal/.test(name))
-      {choices=['Nil','Calcium oxalate','Uric acid','Triple phosphate','Amorphous urates','Amorphous phosphates','Other'];allowOther=true;}
+      {choices=['Nil','Calcium oxalate - Few','Calcium oxalate - Moderate','Calcium oxalate - Many','Uric acid - Few','Uric acid - Moderate','Uric acid - Many','Triple phosphate - Few','Triple phosphate - Moderate','Triple phosphate - Many','Amorphous urates - Few','Amorphous phosphates - Few','Other'];allowOther=true;}
     else if(/^(CRYS|EPI|CAST|BACT|PARASITE)$/.test(code)||/crystal|cast|bacteria|epithelial|parasite/.test(name))
       {choices=['Nil','Few','Moderate','Many','(+)','(++)','(+++)','Absent','Present','Other'];allowOther=true;}
   }else if(stool){
