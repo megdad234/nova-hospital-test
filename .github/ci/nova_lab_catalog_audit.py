@@ -60,7 +60,9 @@ def audit(path=CATALOG):
             except (ValueError, TypeError, SyntaxError) as exc:
                 if "TESTS" in names:
                     declared = True
-                    parse_warnings.append("TESTS assignment: " + type(exc).__name__)
+                    parse_warnings.append("TESTS assignment: " + type(exc).__name__ +
+                                          " at line " + str(node.lineno) +
+                                          " expression=" + ast.dump(node.value, include_attributes=False)[:450])
         elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.value is not None:
             try:
                 symbols[node.target.id] = resolve_static(node.value, symbols)
