@@ -227,7 +227,10 @@ function novaLabResultControl(x){
     const qualitativeCode=/^(HCG|PREGNANCY|HBSAG|HCV|HIV|VDRL|RPR|DENGUE|MALARIA_RDT|ICT_TYPHOID|HP_STOOL|HP_SERUM|RF_LATEX|ASO_LATEX)$/i.test(code);
     const qualitativeName=/\\b(qualitative|screening|rapid test|antigen detected|antibody detected|reactive|non-reactive|pregnancy test|sickling test)\\b/.test(assay);
     const resultField=/^(RESULT|SCREEN|SCREENING|AG|AB|HBSAG|HCG|PREGNANCY|VDRL|RPR)$/i.test(code);
-    if(qualitativeCode||(resultField&&qualitativeName)){
+    // Quantitative assays must never receive qualitative choices based on a
+    // shared antigen/antibody keyword in their display name.
+    const quantitativeAssay=/\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\b/.test(assay);
+    if(!quantitativeAssay&&(qualitativeCode||(resultField&&qualitativeName))){
       choices=/pregnancy|\\bhcg\\b/.test(assay)?['Positive','Negative','Indeterminate']:
         /sickling/.test(assay)?['Positive','Negative','Indeterminate']:
         ['Negative','Positive','Non-reactive','Reactive','Indeterminate'];
