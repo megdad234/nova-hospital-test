@@ -101,6 +101,13 @@ e=ev(1,'Enter',{shiftKey:true});handler(e);assert.strictEqual(focused,0);
 e=ev(0,'ArrowDown');handler(e);assert.strictEqual(focused,0);assert(!e.prevented);
 e=ev(0,'ArrowDown',{ctrlKey:true});handler(e);assert.strictEqual(focused,1);
 e=ev(2,'Enter');handler(e);assert.strictEqual(focused,1);assert(!e.prevented);
+const hidden={tagName:'INPUT',matches:x=>x==='input[data-line]'};
+const select={tagName:'SELECT',matches:()=>true,nextElementSibling:hidden,focus(){focused=3}};
+fields.push(select);
+select.closest=x=>x==='table'?table:null;
+e={target:select,key:'ArrowDown',altKey:false,ctrlKey:false,metaKey:false,isComposing:false,shiftKey:false,preventDefault(){this.prevented=true}};
+handler(e);assert(!e.prevented,'native dropdown arrow was hijacked');
+e={...e,key:'Enter',prevented:false};handler(e);assert(!e.prevented,'last select should not jump');
 console.log('LAB_KEYBOARD_OK');
 """
         result = subprocess.run(["node", "-e", script, str(APP)],
@@ -153,6 +160,10 @@ const legacy=fn({id:2,code:'SPECIES',name:'Plasmodium species (if identified)',v
 assert(legacy.includes('Previously recorded species')&&legacy.includes('selected'));
 const unrelated=fn({id:3,code:'METHOD',name:'Method',value:'Other assay'});
 assert(!unrelated.includes('<select')&&unrelated.includes('Other assay'));
+const cbcNumeric=fn({id:50,code:'HGB',name:'Hemoglobin',section_name:'',value:'12.5'});
+assert(cbcNumeric.includes('inputmode="decimal"'),'CBC numeric mode missing when section is empty');
+const gttNumeric=fn({id:51,code:'TIME_120',name:'2 hours',section_name:'',value:'120'});
+assert(gttNumeric.includes('inputmode="decimal"'),'GTT numeric mode missing when section is empty');
 const urineNit=fn({id:6,code:'NIT',name:'Nitrite',section_name:'Urine examination',value:'Negative'});
 assert(urineNit.includes('<select')&&urineNit.includes('Negative')&&urineNit.includes('type="hidden"'));
 const urineLegacy=fn({id:7,code:'LEU',name:'Leukocyte esterase',section_name:'Urinalysis',value:'+++'});
