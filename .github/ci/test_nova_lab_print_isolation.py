@@ -136,6 +136,13 @@ assert(urine.includes('<select'),'urine signature should activate qualitative dr
 const stool=fn([{id:3,code:'MUCUS',name:'Mucus',section_name:'Macroscopy',value:'Present'},
 {id:4,code:'OVA',name:'Ova',section_name:'Microscopy',value:'Not seen'}],true);
 assert(stool.includes('<select'),'stool signature should activate qualitative dropdowns');
+const actualStool=fn([{id:70,code:'MUCUS',name:'Mucus',section_name:'Macroscopy',value:'Present'},
+{id:71,code:'CONS',name:'Consistency',section_name:'Macroscopy',value:'Soft'}],true);
+assert(actualStool.includes('<select'),'actual stool CONS signature should activate choices');
+const actualUrine=fn([{id:72,code:'NIT',name:'Nitrite',section_name:'Macroscopy',value:'Negative'},
+{id:73,code:'LEU',name:'Leucocytes',section_name:'Microscopy',value:'Negative'},
+{id:74,code:'CRYS',name:'Crystals',section_name:'Microscopy',value:'Calcium oxalate'}],true);
+assert(actualUrine.includes('<datalist'),'urine crystals should retain free-text suggestions');
 const unrelated=fn([{id:5,code:'NIT',name:'Nitrite',section_name:'Chemistry',value:'Negative'}],true);
 assert(!unrelated.includes('<select'),'isolated code must not trigger panel inference');
 console.log('LAB_GROUP_CONTEXT_OK');
