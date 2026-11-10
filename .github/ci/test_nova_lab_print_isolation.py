@@ -41,6 +41,42 @@ class LabPrintIsolationTests(unittest.TestCase):
         # This laboratory-only test must never replace or normalize the receipt engines.
         self.assertIn("printing-lab", lab)
 
+    def test_lab_keyboard_navigation_runtime(self):
+        # Exercise the generated handler with a mocked DOM, without patient data.
+        script = r"""
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const src=fs.readFileSync(process.argv[1],'utf8');
+const a=src.indexOf('function novaLabResultKeyboard(event){');
+const b=src.indexOf('function novaLabGroupedRows(lines,editable){',a);
+assert(a>=0&&b>a,'keyboard handler missing from generated bundle');
+let handler;
+const document={addEventListener:(type,fn)=>{assert.strictEqual(type,'keydown');handler=fn}};
+const window={};
+vm.runInNewContext(src.slice(a,b),{document,window});
+assert(handler,'keyboard listener missing');
+let focused=-1;
+const fields=[0,1,2].map(i=>({
+ tagName:'INPUT',type:'text',matches:()=>true,
+ nextElementSibling:null,focus(){focused=i}
+}));
+const table={querySelector:()=>({}),querySelectorAll:()=>fields};
+fields.forEach(f=>{f.closest=x=>x==='table'?table:null});
+const ev=(index,key,extra={})=>({
+ target:fields[index],key,altKey:false,ctrlKey:false,metaKey:false,
+ isComposing:false,shiftKey:false,preventDefault(){this.prevented=true},...extra
+});
+let e=ev(0,'Enter');handler(e);assert.strictEqual(focused,1);assert(e.prevented);
+e=ev(1,'Enter',{shiftKey:true});handler(e);assert.strictEqual(focused,0);
+e=ev(0,'ArrowDown');handler(e);assert.strictEqual(focused,0);assert(!e.prevented);
+e=ev(0,'ArrowDown',{ctrlKey:true});handler(e);assert.strictEqual(focused,1);
+e=ev(2,'Enter');handler(e);assert.strictEqual(focused,1);assert(!e.prevented);
+console.log('LAB_KEYBOARD_OK');
+"""
+        result = subprocess.run(["node", "-e", script, str(APP)],
+                                capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("LAB_KEYBOARD_OK", result.stdout)
+
     def test_lab_dropdown_preserves_existing_save_contract(self):
         patch = (ROOT / ".github/ci/nova_batch04_lab_reception.py").read_text(encoding="utf-8")
         for token in (
