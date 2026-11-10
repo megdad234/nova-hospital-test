@@ -218,6 +218,34 @@ console.log('LAB_CONTROL_RUNTIME_OK');
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("LAB_CONTROL_RUNTIME_OK", result.stdout)
 
+    def test_grouped_lab_panel_inference_runtime(self):
+        # Verify that the generated grouped renderer passes panel context into
+        # actual urine/stool controls when sections are generic.
+        script = r"""
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const src=fs.readFileSync(process.argv[1],'utf8');
+const a=src.indexOf('function novaLabResultControl(x){');
+const b=src.indexOf('function novaLabGroupedRows(lines,editable){',a);
+const c=src.indexOf('\nfunction ',b+12);
+assert(a>=0&&b>a&&c>b,'lab controls/grouped renderer missing');
+const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const fn=vm.runInNewContext(src.slice(a,c)+';novaLabGroupedRows',{esc});
+const urine=fn([
+ {id:1,code:'NIT',name:'Nitrite',section_name:'Macroscopy',value:'Negative'},
+ {id:2,code:'LEU',name:'Leukocytes',section_name:'Microscopy',value:'Positive'},
+ {id:3,code:'COLOR',name:'Colour',section_name:'Macroscopy',value:'Amber'}
+],true);
+assert(urine.includes('<select'),'urine categorical input missing');
+assert(urine.includes('<datalist'),'urine colour suggestions missing');
+const other=fn([{id:4,code:'NIT',name:'Nitrite',section_name:'Other',value:'Negative'}],true);
+assert(!other.includes('<select'),'isolated ambiguous code must stay free-text');
+console.log('LAB_PANEL_CONTEXT_OK');
+"""
+        result = subprocess.run(['node', '-e', script, str(APP)],
+                                capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('LAB_PANEL_CONTEXT_OK', result.stdout)
+
     def test_lab_save_collection_uses_original_line_identifiers(self):
         # Guard the frontend/backend boundary without writing patient records.
         source = APP.read_text(encoding="utf-8")
