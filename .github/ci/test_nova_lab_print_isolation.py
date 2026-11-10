@@ -207,6 +207,8 @@ const cbcNumeric=fn({id:50,code:'HGB',name:'Hemoglobin',section_name:'',value:'1
 assert(cbcNumeric.includes('inputmode="decimal"'),'CBC numeric mode missing when section is empty');
 const gttNumeric=fn({id:51,code:'TIME_120',name:'2 hours',section_name:'',value:'120'});
 assert(gttNumeric.includes('inputmode="decimal"'),'GTT numeric mode missing when section is empty');
+const usaNit=fn({id:83,code:'NIT',name:'Nitrite',test_code:'USA',value:'Negative'});
+assert(usaNit.includes('<select')&&usaNit.includes('Negative'),'USA urinalysis alias should use urine controls');
 const urineNit=fn({id:6,code:'NIT',name:'Nitrite',section_name:'Urine examination',value:'Negative'});
 assert(urineNit.includes('<select')&&urineNit.includes('Negative')&&urineNit.includes('type="hidden"'));
 const urineLegacy=fn({id:7,code:'LEU',name:'Leukocyte esterase',section_name:'Urinalysis',value:'+++'});
