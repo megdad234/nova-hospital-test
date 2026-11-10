@@ -11,19 +11,61 @@ import csv
 ROOT = Path(__file__).resolve().parents[2]
 CATALOG = ROOT / "hospital" / "lab_catalog.py"
 
+def resolve_static(node, symbols):
+    """Resolve literal catalogue declarations without importing or executing code."""
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.Name):
+        if node.id not in symbols:
+            raise ValueError("unresolved static name: " + node.id)
+        return symbols[node.id]
+    if isinstance(node, (ast.List, ast.Tuple)):
+        values = []
+        for part in node.elts:
+            if isinstance(part, ast.Starred):
+                values.extend(resolve_static(part.value, symbols))
+            else:
+                values.append(resolve_static(part, symbols))
+        return tuple(values) if isinstance(node, ast.Tuple) else values
+    if isinstance(node, ast.Dict):
+        return {resolve_static(k, symbols): resolve_static(v, symbols)
+                for k, v in zip(node.keys, node.values)}
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        return resolve_static(node.left, symbols) + resolve_static(node.right, symbols)
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        v = resolve_static(node.operand, symbols)
+        if type(v) in (int, float):
+            return -v
+    raise ValueError("non-literal expression: " + type(node).__name__)
+
+
 def audit(path=CATALOG):
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     tests = []
     parse_warnings = []
     declared = False
+    symbols = {}
     for node in tree.body:
-        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "TESTS" for t in node.targets):
-            declared = True
+        if isinstance(node, ast.Assign):
+            names = [t.id for t in node.targets if isinstance(t, ast.Name)]
+            if not names:
+                continue
             try:
-                tests = list(ast.literal_eval(node.value))
+                value = resolve_static(node.value, symbols)
+                for name in names:
+                    symbols[name] = value
+                if "TESTS" in names:
+                    declared = True
+                    tests = list(value)
             except (ValueError, TypeError, SyntaxError) as exc:
-                parse_warnings.append("TESTS assignment: " + type(exc).__name__)
-            break
+                if "TESTS" in names:
+                    declared = True
+                    parse_warnings.append("TESTS assignment: " + type(exc).__name__)
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.value is not None:
+            try:
+                symbols[node.target.id] = resolve_static(node.value, symbols)
+            except (ValueError, TypeError, SyntaxError):
+                pass
     # Seed extensions may use TESTS.extend; inspect only literal arguments, never execute source.
     for node in tree.body:
         if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
