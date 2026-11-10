@@ -443,10 +443,10 @@ console.log('LAB_KEYBOARD_RUNTIME_OK');
                               "test_code": test_code, "test_name": test_name,
                               "value": "NOVA_EXISTING_VALUE_42"})
         self.assertGreater(len(cases), 60, "Catalogue-wide coverage unexpectedly small")
-        patch = (ROOT / ".github/ci/nova_batch04_lab_reception.py").read_text(encoding="utf-8")
-        start = patch.index("const NOVA_LAB_RESULT_PROFILES=")
-        end = patch.index("function novaLabResultKeyboard(event){", start)
-        js = patch[start:end]
+        generated = APP.read_text(encoding="utf-8")
+        start = generated.index("function novaLabResultControl(x){")
+        end = generated.index("function novaLabGroupedRows(lines,editable){", start)
+        js = generated[start:end]
         script = r"""
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const cases=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));
