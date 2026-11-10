@@ -197,6 +197,12 @@ const legacy=fn({id:2,code:'SPECIES',name:'Plasmodium species (if identified)',v
 assert(legacy.includes('Previously recorded species')&&legacy.includes('value="Previously recorded species"'));
 const unrelated=fn({id:3,code:'METHOD',name:'Method',value:'Other assay'});
 assert(!unrelated.includes('<select')&&unrelated.includes('Other assay'));
+const pregnancy=fn({id:70,code:'HCG',name:'Pregnancy Test',value:'Negative'});
+assert(pregnancy.includes('<datalist')&&pregnancy.includes('Negative'),'pregnancy qualitative suggestions missing');
+const rapidScreen=fn({id:71,code:'RESULT',name:'Qualitative screening result',value:'Reactive'});
+assert(rapidScreen.includes('<datalist')&&rapidScreen.includes('Reactive'),'qualitative screening suggestions missing');
+const chemistry=fn({id:72,code:'RESULT',name:'Urea',test_name:'Renal Function Tests',value:'28'});
+assert(!chemistry.includes('<datalist')&&!chemistry.includes('<select'),'numeric chemistry must remain unrestricted');
 const cbcNumeric=fn({id:50,code:'HGB',name:'Hemoglobin',section_name:'',value:'12.5'});
 assert(cbcNumeric.includes('inputmode="decimal"'),'CBC numeric mode missing when section is empty');
 const gttNumeric=fn({id:51,code:'TIME_120',name:'2 hours',section_name:'',value:'120'});
