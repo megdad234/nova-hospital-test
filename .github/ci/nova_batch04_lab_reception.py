@@ -231,7 +231,7 @@ function novaLabResultControl(x){
     const assay=(panel+' '+name).toLowerCase().replace(/_/g,' ');
     const infection=/\\b(hiv|hbs|hcv|hepatitis|dengue|typhoid|widal|brucella|vdrl|rpr|syphilis|h\\.?\\s*pylori|hp stool|hp serum|malaria|ict|rapid|antigen|antibody|serology|sickling|pregnancy|hcg|occult blood)\\b/.test(assay);
     const quantitative=/\\b(quantitative|titre|titer|dilution|elisa index|concentration|viral load)\\b/.test(assay);
-    if(infection&&!quantitative){
+    if((infection||panel==='sg')&&!quantitative){
       choices=/widal|brucella/.test(assay)?['Negative','Positive','Other']:
         /hiv|hbs|hcv|hepatitis|vdrl|rpr|syphilis/.test(assay)?['Non-reactive','Reactive','Indeterminate','Other']:
         ['Negative','Positive','Indeterminate','Other'];
