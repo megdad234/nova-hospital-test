@@ -166,6 +166,27 @@ function novaChooseLabCategory(category){
 // Structured inputs and printouts use the SAME saved section names.
 // Fixed choices only where the result has a well-defined categorical meaning.
 // Preserve every existing saved value, including values outside these options.
+// Central catalogue mapping: exact test codes only. Generic RESULT never implies
+// qualitative reporting without a matching assay. These are editable suggestions;
+// no patient values, reference intervals or diagnoses are inserted.
+const NOVA_LAB_RESULT_PROFILES={
+  HIV_RAPID:['Non-reactive','Reactive','Indeterminate','Other'],
+  HCV_RAPID:['Non-reactive','Reactive','Indeterminate','Other'],
+  HBSAG_RAPID:['Non-reactive','Reactive','Indeterminate','Other'],
+  VDRL:['Non-reactive','Reactive','Indeterminate','Other'],
+  RPR:['Non-reactive','Reactive','Indeterminate','Other'],
+  HBS_ELISA:['Non-reactive','Reactive','Indeterminate','Other'],
+  HIV:['Non-reactive','Reactive','Indeterminate','Other'],
+  MALARIA_RDT:['Negative','Positive','Indeterminate','Other'],
+  URINE_PREG:['Negative','Positive','Indeterminate','Other'],
+  HCG:['Negative','Positive','Indeterminate','Other'],
+  HP_STOOL:['Negative','Positive','Indeterminate','Other'],
+  HP_SERUM:['Negative','Positive','Indeterminate','Other'],
+  STOOL_OCCULT:['Negative','Positive','Indeterminate','Other'],
+  ICT_TYPHOID:['Negative','Positive','Indeterminate','Other'],
+  SG:['Negative','Positive','Indeterminate','Other'],
+  DENGUE:['Negative','Positive','Indeterminate','Other']
+};
 function novaLabResultControl(x){
   const code=String(x.code||'').trim().toUpperCase(),name=String(x.name||'').toLowerCase();
   const section=String(x.section_name||'').toLowerCase();
@@ -178,6 +199,15 @@ function novaLabResultControl(x){
   // Stool antigen/serology tests are not stool microscopy panels.
   const stool=/\\bstool\\b|\\bfaec\\w*\\b|\\bfecal\\b|براز/.test(context)&&!/\\b(hp stool|h pylori|occult blood|stool culture|stool antigen)\\b/.test(panel);
   let choices=null,allowOther=false;
+  // Match exact catalogue identity before broad textual heuristics. Explicit
+  // quantitative markers take precedence even for an otherwise qualitative code.
+  const identity=String(x.test_code||x.panel_code||'').trim().toUpperCase();
+  const assayLabel=[x.test_name,x.panel_name,x.name].filter(Boolean).join(' ').toLowerCase();
+  const isQuantitative=/\\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\\b/.test(assayLabel);
+  if(code==='RESULT'&&!isQuantitative&&Object.prototype.hasOwnProperty.call(NOVA_LAB_RESULT_PROFILES,identity)){
+    choices=NOVA_LAB_RESULT_PROFILES[identity].slice();
+    allowOther=true;
+  }
   // Explicit panel-code overrides for qualitative tests that contain urine/stool
   // in their names but are not routine microscopy examinations.
   if(code==='RESULT'&&/\\bURINE_PREG\\b|\\bURINE PREG\\b/i.test(String(x.test_code||x.panel_code||'')))
