@@ -6,6 +6,7 @@ from pathlib import Path
 import ast
 import collections
 import json
+import csv
 
 ROOT = Path(__file__).resolve().parents[2]
 CATALOG = ROOT / "hospital" / "lab_catalog.py"
@@ -134,5 +135,27 @@ if __name__ == "__main__":
     lines += ["", "## Important", "", "A defined field is not proof of clinical correctness. Review each template against approved laboratory forms before changing existing results.", ""]
     summary = ROOT / "lab_catalog_review.md"
     summary.write_text("\n".join(lines), encoding="utf-8")
+    # Editable review worksheet, deliberately not an automatic clinical template migration.
+    # One row per existing field so a laboratory reviewer can check units,
+    # reference intervals and intended input types before any code changes.
+    sheet = ROOT / "lab_field_review.csv"
+    with sheet.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["test_code", "test_name", "category", "field_code",
+                         "field_name", "unit", "reference_range",
+                         "review_status", "reviewer_notes"])
+        for test_code, definitions in report["priority_template_details"].items():
+            for definition in definitions:
+                for field in definition["parameter_definitions"]:
+                    if not isinstance(field, list):
+                        continue
+                    values = [str(v) if v is not None else "" for v in field]
+                    values += [""] * max(0, 5 - len(values))
+                    status = "REVIEW REQUIRED"
+                    if not values[0].strip() or not values[1].strip():
+                        status = "MISSING FIELD CODE OR LABEL"
+                    writer.writerow([test_code, definition["name"], definition["category"],
+                                     values[0], values[1], values[2], values[3], status, ""])
+    print("LAB_FIELD_REVIEW:", sheet)
     print("LAB_AUDIT_REPORT:", out)
     print("LAB_AUDIT_REVIEW:", summary)
