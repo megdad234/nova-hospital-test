@@ -210,6 +210,21 @@ function novaLabResultControl(x){
     else if(code==='CONS'||/consistency|appearance/.test(name)){choices=['Formed','Soft','Loose','Watery','Other'];allowOther=true;}
     else if(/^(OVA|PARASITE|CYST|WORM|OCCULT_BLOOD)$/.test(code)||/ova|cyst|parasite|worm|blood/.test(name)){choices=['Not seen','Seen','Other'];allowOther=true;}
   }
+  // Qualitative assays across the wider catalogue: suggest conventional reporting
+  // terms without forcing a choice or replacing laboratory-specific interpretations.
+  // Never classify generic RESULT fields as qualitative by name alone.
+  if(!choices && !urine && !stool){
+    const assay=(panel+' '+name).toLowerCase();
+    const qualitativeCode=/^(HCG|PREGNANCY|HBSAG|HCV|HIV|VDRL|RPR|DENGUE|MALARIA_RDT|ICT_TYPHOID|HP_STOOL|HP_SERUM|RF_LATEX|ASO_LATEX)$/i.test(code);
+    const qualitativeName=/\\b(qualitative|screening|rapid test|antigen detected|antibody detected|reactive|non-reactive|pregnancy test|sickling test)\\b/.test(assay);
+    const resultField=/^(RESULT|SCREEN|SCREENING|AG|AB|HBSAG|HCG|PREGNANCY|VDRL|RPR)$/i.test(code);
+    if(qualitativeCode||(resultField&&qualitativeName)){
+      choices=/pregnancy|\\bhcg\\b/.test(assay)?['Positive','Negative','Indeterminate']:
+        /sickling/.test(assay)?['Positive','Negative','Indeterminate']:
+        ['Negative','Positive','Non-reactive','Reactive','Indeterminate'];
+      allowOther=true;
+    }
+  }
   // Existing results, including unusual microscopy descriptions, remain editable.
   // Mixed fields use a list of suggestions, never a restrictive dropdown.
   const value=String(x.value??'');
