@@ -125,7 +125,7 @@ console.log('LAB_KEYBOARD_OK');
             "function novaLabResultControl(x)",
             "this.nextElementSibling.value=this.value",
             'type="hidden"',
-            "editable?novaLabResultControl(x)",
+            "editable?novaLabResultControl({...x,test_code:x.test_code||inferredPanel})",
             "if(value&&!choices.includes(value))choices=[value,...choices]",
             'inputmode="decimal"',
         ):
@@ -263,7 +263,7 @@ assert.deepStrictEqual(key(0,'ArrowDown'),[-1,0]);
 assert.deepStrictEqual(key(0,'ArrowDown',{ctrlKey:true}),[1,1]);
 assert.deepStrictEqual(key(2,'ArrowUp',{ctrlKey:true}),[1,1]);
 assert.deepStrictEqual(key(1,'ArrowDown'),[-1,0]);
-assert.deepStrictEqual(key(1,'Enter'),[-1,0]);
+assert.deepStrictEqual(key(1,'Enter'),[2,1]);
 assert.deepStrictEqual(key(1,'Enter',{ctrlKey:true}),[2,1]);
 assert.deepStrictEqual(key(0,'Enter',{isComposing:true}),[-1,0]);
 console.log('LAB_KEYBOARD_RUNTIME_OK');
