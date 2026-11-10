@@ -81,6 +81,7 @@ def audit(path=CATALOG):
         parse_warnings.append("TESTS assignment missing")
     rows = []
     priority_details = {}
+    all_field_details = []
     malformed_parameters = []
     duplicate_parameter_codes = {}
     empty_parameter_tests = []
@@ -98,6 +99,27 @@ def audit(path=CATALOG):
         if any(not isinstance(p, (tuple, list)) or len(p) < 2 for p in params):
             malformed_parameters.append(code)
         parameter_codes = [str(p[0]).strip() for p in params if isinstance(p, (tuple, list)) and p]
+        for p in params:
+            if isinstance(p, (tuple, list)) and len(p) >= 2:
+                values = [str(v) if v is not None else "" for v in p]
+                values += [""] * max(0, 5 - len(values))
+                field_code, field_name, unit = values[:3]
+                key = (code + " " + name + " " + field_code + " " + field_name).lower().replace("_", " ")
+                if field_code.upper() in ("COMMENTS", "COMMENT", "NOTES", "ORGANISM", "SENSITIVITY", "INTERPRETATION"):
+                    input_kind = "free_text"
+                elif any(w in key for w in ("culture", "microscopy", "urine examination", "stool general")):
+                    input_kind = "special_review"
+                elif field_code.upper() in ("ABO", "RH", "HCG", "HBSAG", "VDRL", "RPR", "HIV", "HCV") or any(w in key for w in ("rapid screening", "pregnancy test", "qualitative")):
+                    input_kind = "qualitative_review"
+                elif unit.strip() or field_code.upper() in ("WBC", "RBC", "HGB", "PLT", "ESR", "GLUCOSE", "CREATININE"):
+                    input_kind = "numeric_review"
+                else:
+                    input_kind = "free_text_review"
+                all_field_details.append({"test_code": code, "test_name": name, "category": category,
+                                          "field_code": field_code, "field_name": field_name,
+                                          "unit": unit, "reference_range": values[3],
+                                          "suggested_input_kind": input_kind,
+                                          "review_status": "REVIEW REQUIRED" if input_kind.endswith("review") else "DEFINED"})
         blank_labels = [str(p[0]) for p in params if isinstance(p, (tuple, list)) and len(p) >= 2 and not str(p[1]).strip()]
         if blank_labels:
             blank_parameter_labels[code] = blank_labels
@@ -129,6 +151,7 @@ def audit(path=CATALOG):
         "missing_priority_codes": [code for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") if code not in counts],
         "priority_generic_only": [r["code"] for r in rows if r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")],
         "all_tests": rows,
+        "all_field_details": all_field_details,
         "priority_template_details": priority_details,
         "review_required": bool(parse_warnings or malformed_tests or empty_parameter_tests or duplicate_parameter_codes or malformed_parameters or blank_parameter_labels or blank_parameter_codes or any(n > 1 for n in counts.values()) or any(code not in counts for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")) or any(r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") for r in rows)),
         "note": "Static source inspection only. Runtime database may contain additional or locally modified tests."
@@ -188,18 +211,11 @@ if __name__ == "__main__":
         writer.writerow(["test_code", "test_name", "category", "field_code",
                          "field_name", "unit", "reference_range",
                          "review_status", "reviewer_notes"])
-        for test_code, definitions in report["priority_template_details"].items():
-            for definition in definitions:
-                for field in definition["parameter_definitions"]:
-                    if not isinstance(field, list):
-                        continue
-                    values = [str(v) if v is not None else "" for v in field]
-                    values += [""] * max(0, 5 - len(values))
-                    status = "REVIEW REQUIRED"
-                    if not values[0].strip() or not values[1].strip():
-                        status = "MISSING FIELD CODE OR LABEL"
-                    writer.writerow([test_code, definition["name"], definition["category"],
-                                     values[0], values[1], values[2], values[3], status, ""])
+        for field in report["all_field_details"]:
+            writer.writerow([field["test_code"], field["test_name"], field["category"],
+                             field["field_code"], field["field_name"], field["unit"],
+                             field["reference_range"], field["review_status"],
+                             "Suggested input: " + field["suggested_input_kind"]])
     print("LAB_FIELD_REVIEW:", sheet)
     print("LAB_AUDIT_REPORT:", out)
     print("LAB_AUDIT_REVIEW:", summary)
