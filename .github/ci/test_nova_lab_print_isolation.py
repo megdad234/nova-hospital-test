@@ -252,10 +252,10 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const src=fs.readFileSync(process.argv[1],'utf8');
 const a=src.indexOf('function novaLabResultControl(x){');
 const b=src.indexOf('function novaLabGroupedRows(lines,editable){',a);
-const c=src.indexOf('\nfunction ',b+12);
+const c=src.indexOf('\n}',b);
 assert(a>=0&&b>a&&c>b,'lab controls/grouped renderer missing');
 const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-const fn=vm.runInNewContext(src.slice(a,c)+';novaLabGroupedRows',{esc});
+const fn=vm.runInNewContext(src.slice(a,c+2)+';novaLabGroupedRows',{esc});
 const urine=fn([
  {id:1,code:'NIT',name:'Nitrite',section_name:'Macroscopy',value:'Negative'},
  {id:2,code:'LEU',name:'Leukocytes',section_name:'Microscopy',value:'Positive'},
