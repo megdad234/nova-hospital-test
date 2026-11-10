@@ -509,6 +509,12 @@ class NovaReceptionAndLabAcceptance(HospitalServerFixture,unittest.TestCase):
             profile=self.admin.get('/api/hospital/lab/profile/'+str(tid))
             sections={x['section_name'] for x in profile['parameters']}
             self.assertTrue({'Macroscopy','Microscopy'}.issubset(sections))
+        # Verify real API persistence of the expanded malaria panel on a fresh DB.
+        malaria_id=next(x['id'] for x in tests if x['code']=='MALARIA')
+        malaria=self.admin.get('/api/hospital/lab/profile/'+str(malaria_id))
+        codes={p['code'] for p in malaria['parameters']}
+        self.assertTrue({'MP','DENSITY','TYPE','STAGE','PARASITE','COMMENTS'}.issubset(codes),
+                        'Malaria microscopy template missing persisted fields')
         brand=self.admin.post('/api/hospital/lab/brand',{
           'hospital_name':'مستشفى تجريبي','hospital_name_en':'Synthetic Hospital',
           'hospital_phone':'099999999','hospital_website':'hospital.example'})
