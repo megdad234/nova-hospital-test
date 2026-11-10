@@ -96,6 +96,17 @@ const sameCodeElsewhere=fn({id:9,code:'NIT',name:'Nitrite',section_name:'Other a
 assert(!sameCodeElsewhere.includes('<select'));
 const malariaLegacy=fn({id:10,code:'MP',name:'Malaria parasite',section_name:'Malaria',value:'P. falciparum +++'});
 assert(!malariaLegacy.includes('<select')&&malariaLegacy.includes('P. falciparum +++'));
+// Verify the visible select updates the original input used by the save collector.
+const selected=fn({id:11,code:'NIT',name:'Nitrite',section_name:'Urinalysis',value:'Negative'});
+const handler=selected.match(/onchange="([^"]+)"/);
+assert(handler,'qualitative control missing change handler');
+const originalSaveInput={value:'Negative'};
+const visibleSelect={value:'Positive',nextElementSibling:originalSaveInput};
+const runChange=Function('return function(){'+handler[1]+'}')();
+runChange.call(visibleSelect);
+assert.strictEqual(originalSaveInput.value,'Positive','dropdown failed to update saved value');
+const escapedLegacy=fn({id:12,code:'LEU',name:'Leukocyte esterase',section_name:'Urinalysis',value:'<img src=x onerror=1>'});
+assert(!escapedLegacy.includes('<img')&&escapedLegacy.includes('&lt;img'));
 const glucose=fn({id:4,code:'TIME_120',name:'Glucose at 120 min (if ordered)',value:'112.5'});
 assert(glucose.includes('inputmode="decimal"')&&glucose.includes('value="112.5"'));
 const escaped=fn({id:5,code:'PARASITE',name:'Malaria parasite detected',value:'<script>alert(1)</script>'});
