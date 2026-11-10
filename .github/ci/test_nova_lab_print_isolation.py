@@ -214,7 +214,7 @@ assert(stoolMucus.includes('<select')&&stoolMucus.includes('Present'));
 const sameCodeElsewhere=fn({id:9,code:'NIT',name:'Nitrite',section_name:'Other assay',value:'Negative'});
 assert(!sameCodeElsewhere.includes('<select'));
 const malariaLegacy=fn({id:10,code:'MP',name:'Malaria parasite',section_name:'Malaria',value:'P. falciparum +++'});
-assert(!malariaLegacy.includes('<select')&&malariaLegacy.includes('P. falciparum +++'));
+assert(malariaLegacy.includes('<datalist')&&malariaLegacy.includes('P. falciparum +++')&&malariaLegacy.includes('data-line="10"'));
 // Verify the visible select updates the original input used by the save collector.
 const selected=fn({id:11,code:'NIT',name:'Nitrite',section_name:'Urinalysis',value:'Negative'});
 const handler=selected.match(/onchange="([^"]+)"/);
