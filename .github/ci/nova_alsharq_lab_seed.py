@@ -96,6 +96,22 @@ for src,code,price,name,category in ROWS:
     if code not in existing:
         extra.append((code,name,category,src.lower().replace("_"," "),LAB_STRUCTURED_NEW.get(code,[("RESULT","Result","","","","")])))
         existing.add(code)
+# Expand the existing malaria test definition as well: the original catalogue
+# contains MALARIA with only MP, so a missing-code-only seed never upgraded it.
+# Keep MP as the first field for backwards compatibility with existing results.
+# Do not invent reference ranges, units or positive patient findings.
+catalog=catalog.replace(
+    "\\nPOPULAR = ",
+    "\\n# NOVA_MALARIA_TEMPLATE_V2: full microscopy entry on fresh installations.\\n"
+    "for _idx,_test in enumerate(TESTS):\\n"
+    "    if _test[0] == 'MALARIA':\\n"
+    "        _existing_codes = {p[0] for p in _test[4]}\\n"
+    "        _additional = [p for p in " + repr(LAB_STRUCTURED_NEW["MALARIA"]) + " if p[0] not in _existing_codes]\\n"
+    "        TESTS[_idx] = (*_test[:4], list(_test[4]) + _additional, *_test[5:])\\n"
+    "        break\\n"
+    "\\nPOPULAR = ",
+    1
+)
 # GTT is a structured catalogue option on new installs, without a default price.
 if "GTT" not in existing:
     extra.append(("GTT", "Glucose Tolerance Test", "Chemistry", "glucose tolerance test", LAB_STRUCTURED_NEW["GTT"]))
