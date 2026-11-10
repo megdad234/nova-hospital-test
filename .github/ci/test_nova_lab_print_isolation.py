@@ -472,6 +472,53 @@ console.log('LAB_KEYBOARD_RUNTIME_OK');
                               "name": str(field[1]), "unit": str(field[2] or "") if len(field) > 2 else "",
                               "test_code": test_code, "test_name": test_name,
                               "value": "NOVA_EXISTING_VALUE_42"})
+        # Machine-readable, complete field-by-field mapping: every catalogue
+        # parameter is assigned an entry mode and a clinical review status.
+        # The report is generated from the runtime catalogue, after patches.
+        from pathlib import Path
+        import csv
+        import re
+        mapping = []
+        qualitative = {'HIV_RAPID','HCV_RAPID','HBSAG_RAPID','VDRL','RPR',
+                       'HBS_ELISA','HIV','HCV','HBSAG','MALARIA_RDT','MAL_RDT',
+                       'URINE_PREG','PREG','HCG','HP_STOOL','HP_SERUM',
+                       'STOOL_OCCULT','ICT_TYPHOID','SG','DENGUE','BRUCELLA',
+                       'H_PYLORI','BLOOD_GROUP','BGROUP','CROSSMATCH'}
+        numeric = {'CBC','ESR','HB','PCV','RBS','FBS','PPBS','HBA1C',
+                   'LFT','RFT','LIPID','ELECTRO','UREA','CRE','URIC',
+                   'ALT','AST','TBIL','CALCIUM','PHOS','MG','TSH','FT4',
+                   'FT3','TFT','PROLACTIN','FSH','LH','TESTO','PSA',
+                   'PTINR','APTT','D_DIMER','VITD','B12','FERRITIN',
+                   'IRON','TIBC','NA_K','LFT_E','AMYLASE','IRON_FULL',
+                   'AMH','INSULIN','C_PEPTIDE','FERTILITY','PTH',
+                   'ACCP','PT_PTT','TROPONIN_Q','AFP','RETIC','GTT'}
+        mixed = {'MALARIA','URINE','STOOL','SEMEN','WIDAL','BTCT',
+                 'CULTURE','URINE_CULT','STOOL_CULT','BLOOD_CULT',
+                 'URINE_CULTURE','STOOL_CULTURE','BLOOD_CULTURE'}
+        covered = qualitative | numeric | mixed
+        actual = {str(t[0]) for t in module.TESTS}
+        self.assertEqual(actual, covered,
+                         'Catalogue coverage changed: update assay mapping before release')
+        for t in module.TESTS:
+            test_code = str(t[0])
+            for field in t[4]:
+                field_code = str(field[0])
+                if test_code in numeric:
+                    mode = 'numeric_or_method_specific'
+                elif test_code in qualitative:
+                    mode = 'coded_or_method_specific'
+                else:
+                    mode = 'mixed_microscopy_or_free_text'
+                mapping.append((test_code, str(t[1]), field_code,
+                                str(field[1]), mode,
+                                'method_and_reference_intervals_require_local_validation'))
+        self.assertEqual(len(mapping), len(cases))
+        output = ROOT / 'lab_all_97_field_mapping.csv'
+        with output.open('w', encoding='utf-8-sig', newline='') as handle:
+            writer = csv.writer(handle)
+            writer.writerow(('test_code','test_name','field_code','field_name',
+                             'assay_entry_family','clinical_validation'))
+            writer.writerows(mapping)
         self.assertEqual(len(module.TESTS), 97, "Expected the complete NOVA catalogue, not a subset")
         self.assertEqual(len({t[0] for t in module.TESTS}), 97, "Duplicate test identity")
         self.assertTrue(all(t[4] for t in module.TESTS), "Every test requires a result entry")
