@@ -204,7 +204,7 @@ const NOVA_LAB_RESULT_PROFILES={
   // quantitative markers take precedence even for an otherwise qualitative code.
   const identity=String(x.test_code||x.panel_code||'').trim().toUpperCase();
   const assayLabel=[x.test_name,x.panel_name,x.name].filter(Boolean).join(' ').toLowerCase();
-  const isQuantitative=/\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\b/.test(assayLabel);
+  const isQuantitative=/\\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\\b/.test(assayLabel);
   if(code==='RESULT'&&!isQuantitative&&Object.prototype.hasOwnProperty.call(NOVA_LAB_RESULT_PROFILES,identity)){
     choices=NOVA_LAB_RESULT_PROFILES[identity].slice();
     allowOther=true;
@@ -260,7 +260,7 @@ const NOVA_LAB_RESULT_PROFILES={
     const resultField=/^(RESULT|SCREEN|SCREENING|AG|AB|HBSAG|HCG|PREGNANCY|VDRL|RPR)$/i.test(code);
     // Quantitative assays must never receive qualitative choices based on a
     // shared antigen/antibody keyword in their display name.
-    const quantitativeAssay=/\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\b/.test(assay);
+    const quantitativeAssay=/\\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\\b/.test(assay);
     if(!quantitativeAssay&&(qualitativeCode||(resultField&&qualitativeName))){
       choices=/pregnancy|\\bhcg\\b/.test(assay)?['Positive','Negative','Indeterminate']:
         /sickling/.test(assay)?['Positive','Negative','Indeterminate']:
@@ -285,10 +285,10 @@ const NOVA_LAB_RESULT_PROFILES={
   // This is a suggestion list, not a diagnosis or a restrictive result value.
   if(!choices&&!urine&&!stool&&code==='RESULT'){
     const assay=(panel+' '+name).toLowerCase().replace(/_/g,' ');
-    const quantitative=/\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\b/.test(assay);
+    const quantitative=/\\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\\b/.test(assay);
     if(!quantitative){
-      if(/\b(hiv rapid|hcv rapid|hbsag rapid|malaria rdt|stool occult|urine preg|pregnancy test|vdrl screening|rpr screening)\b/.test(assay)){
-        choices=/\b(hiv|hcv|hbsag|vdrl|rpr)\b/.test(assay)?
+      if(/\\b(hiv rapid|hcv rapid|hbsag rapid|malaria rdt|stool occult|urine preg|pregnancy test|vdrl screening|rpr screening)\\b/.test(assay)){
+        choices=/\\b(hiv|hcv|hbsag|vdrl|rpr)\\b/.test(assay)?
           ['Non-reactive','Reactive','Indeterminate','Other']:
           ['Negative','Positive','Indeterminate','Other'];
         allowOther=true;
