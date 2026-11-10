@@ -200,6 +200,7 @@ jobs:
           path: |
             lab_catalog_audit.json
             lab_catalog_review.md
+            lab_field_review.csv
           if-no-files-found: error
           retention-days: 14
       - name: Apply NOVA Batch 05 pharmacy and cashier updates
