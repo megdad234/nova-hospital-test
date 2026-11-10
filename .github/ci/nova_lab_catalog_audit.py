@@ -153,7 +153,7 @@ def audit(path=CATALOG):
         "all_tests": rows,
         "all_field_details": all_field_details,
         "priority_template_details": priority_details,
-        "review_required": bool(parse_warnings or malformed_tests or empty_parameter_tests or duplicate_parameter_codes or malformed_parameters or blank_parameter_labels or blank_parameter_codes or any(n > 1 for n in counts.values()) or bool(generic_result_tests) or any(code not in counts for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")) or any(r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") for r in rows)),
+        "review_required": bool(parse_warnings or malformed_tests or empty_parameter_tests or duplicate_parameter_codes or malformed_parameters or blank_parameter_labels or blank_parameter_codes or any(n > 1 for n in counts.values()) or any(r["generic_result_only"] for r in rows) or any(code not in counts for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")) or any(r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") for r in rows)),
         "note": "Static source inspection only. Runtime database may contain additional or locally modified tests."
     }
 
@@ -181,6 +181,7 @@ if __name__ == "__main__":
         f"- Empty panels: {len(report['empty_parameter_tests'])}",
         f"- Duplicate parameter codes within panels: {len(report['duplicate_parameter_codes'])}",
         f"- Generic-result-only tests: {len(report['generic_result_tests'])}",
+        f"- Fields requiring clinical review: {sum(f['review_status'] == 'REVIEW REQUIRED' for f in report['all_field_details'])}",
         "",
         "## Priority tests",
         "",
