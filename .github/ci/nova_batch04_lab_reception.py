@@ -173,7 +173,8 @@ function novaLabResultControl(x){
   // RESULT code while the clinical test identity is in test_name or panel_name.
   const panel=[x.test_code,x.test_name,x.panel_code,x.panel_name].filter(Boolean).join(' ').toLowerCase().replace(/_/g,' ');
   const context=section+' '+panel;
-  const urine=/\\burine\\b|urinalysis|\\busa\\b|بول/.test(context);
+  // Urine pregnancy and urine cultures are distinct assays, not urinalysis microscopy.
+  const urine=/\\burine\\b|urinalysis|\\busa\\b|بول/.test(context)&&!/\\b(urine preg|urine pregnancy|urine culture)\\b/.test(panel.replace(/_/g,' '));
   // Stool antigen/serology tests are not stool microscopy panels.
   const stool=/\\bstool\\b|faec|fecal|براز/.test(context)&&!/\\b(hp stool|h pylori|occult blood|stool culture|stool antigen)\\b/.test(panel.replace(/_/g,' '));
   let choices=null,allowOther=false;
