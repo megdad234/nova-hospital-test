@@ -169,8 +169,10 @@ function novaChooseLabCategory(category){
 function novaLabResultControl(x){
   const code=String(x.code||'').trim().toUpperCase(),name=String(x.name||'').toLowerCase();
   const section=String(x.section_name||'').toLowerCase();
-  const urine=/\\burine\\b|urinalysis|بول/.test(section);
-  const stool=/\\bstool\\b|faec|fecal|براز/.test(section);
+  const panel=String(x.test_code||x.test_name||x.panel_code||x.panel_name||'').toLowerCase();
+  const context=section+' '+panel;
+  const urine=/\\burine\\b|urinalysis|بول/.test(context);
+  const stool=/\\bstool\\b|faec|fecal|براز/.test(context);
   let choices=null,allowOther=false;
   if(code==='PARASITE' && (name.includes('malaria')||name.includes('parasite detected')))
     choices=['Not detected','Detected'];
