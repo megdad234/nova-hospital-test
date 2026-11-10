@@ -86,6 +86,16 @@ const legacy=fn({id:2,code:'SPECIES',name:'Plasmodium species (if identified)',v
 assert(legacy.includes('Previously recorded species')&&legacy.includes('selected'));
 const unrelated=fn({id:3,code:'METHOD',name:'Method',value:'Other assay'});
 assert(!unrelated.includes('<select')&&unrelated.includes('Other assay'));
+const urineNit=fn({id:6,code:'NIT',name:'Nitrite',section_name:'Urine examination',value:'Negative'});
+assert(urineNit.includes('<select')&&urineNit.includes('Negative')&&urineNit.includes('type="hidden"'));
+const urineLegacy=fn({id:7,code:'LEU',name:'Leukocyte esterase',section_name:'Urinalysis',value:'+++'});
+assert(urineLegacy.includes('<select')&&urineLegacy.includes('+++')&&urineLegacy.includes('selected'));
+const stoolMucus=fn({id:8,code:'MUCUS',name:'Mucus',section_name:'Stool examination',value:'Present'});
+assert(stoolMucus.includes('<select')&&stoolMucus.includes('Present'));
+const sameCodeElsewhere=fn({id:9,code:'NIT',name:'Nitrite',section_name:'Other assay',value:'Negative'});
+assert(!sameCodeElsewhere.includes('<select'));
+const malariaLegacy=fn({id:10,code:'MP',name:'Malaria parasite',section_name:'Malaria',value:'P. falciparum +++'});
+assert(!malariaLegacy.includes('<select')&&malariaLegacy.includes('P. falciparum +++'));
 const glucose=fn({id:4,code:'TIME_120',name:'Glucose at 120 min (if ordered)',value:'112.5'});
 assert(glucose.includes('inputmode="decimal"')&&glucose.includes('value="112.5"'));
 const escaped=fn({id:5,code:'PARASITE',name:'Malaria parasite detected',value:'<script>alert(1)</script>'});
