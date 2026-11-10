@@ -225,6 +225,19 @@ const pregnancy=fn({id:70,code:'HCG',name:'Pregnancy Test',value:'Negative'});
 assert(pregnancy.includes('<datalist')&&pregnancy.includes('Negative'),'pregnancy qualitative suggestions missing');
 const rapidScreen=fn({id:71,code:'RESULT',name:'Qualitative screening result',value:'Reactive'});
 assert(rapidScreen.includes('<datalist')&&rapidScreen.includes('Reactive'),'qualitative screening suggestions missing');
+const analytes=[
+ ['UREA','Urea','mg/dL'],['CREATININE','Creatinine','mg/dL'],
+ ['ALT','ALT','U/L'],['TSH','TSH','mIU/L'],['HBA1C','HbA1c','%'],
+ ['D_DIMER','D-dimer','ng/mL'],['PSA','PSA','ng/mL']
+];
+for(const [code,name,unit] of analytes){
+ const html=fn({id:300,code,name,unit,value:'12.5'});
+ assert(html.includes('inputmode="decimal"'),'missing numeric keyboard for '+code);
+}
+const numericUnknown=fn({id:301,code:'RESULT',name:'Measured value',unit:'mmol/L',value:'4.2'});
+assert(numericUnknown.includes('inputmode="decimal"'),'numeric unit should hint decimal keyboard');
+const urineCells=fn({id:302,code:'RBC',name:'Red blood cells',test_code:'URINE',unit:'/HPF',value:'2-4'});
+assert(!urineCells.includes('inputmode="decimal"'),'microscopy ranges must stay free text');
 const chemistry=fn({id:72,code:'RESULT',name:'Urea',test_name:'Renal Function Tests',value:'28'});
 assert(!chemistry.includes('<datalist')&&!chemistry.includes('<select'),'numeric chemistry must remain unrestricted');
 const cbcNumeric=fn({id:50,code:'HGB',name:'Hemoglobin',section_name:'',value:'12.5'});
