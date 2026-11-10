@@ -228,8 +228,8 @@ function novaLabResultControl(x){
   // Many catalogue entries use a single RESULT parameter. Classify those by
   // their parent test (not by RESULT alone), preserving free-text overrides.
   if(!choices&&!urine&&!stool&&/^(RESULT|SCREEN|SCREENING|AG|AB|IGM|IGG|NS1)$/.test(code)){
-    const assay=(panel+' '+name).toLowerCase();
-    const infection=/\\b(hiv|hbs|hcv|hepatitis|dengue|typhoid|widal|brucella|vdrl|rpr|syphilis|h\\.?\\s*pylori|hp_stool|hp_serum|malaria|ict|rapid|antigen|antibody|serology|sickling|pregnancy|hcg|occult blood)\\b/.test(assay);
+    const assay=(panel+' '+name).toLowerCase().replace(/_/g,' ');
+    const infection=/\\b(hiv|hbs|hcv|hepatitis|dengue|typhoid|widal|brucella|vdrl|rpr|syphilis|h\\.?\\s*pylori|hp stool|hp serum|malaria|ict|rapid|antigen|antibody|serology|sickling|pregnancy|hcg|occult blood)\\b/.test(assay);
     const quantitative=/\\b(quantitative|titre|titer|dilution|elisa index|concentration|viral load)\\b/.test(assay);
     if(infection&&!quantitative){
       choices=/widal|brucella/.test(assay)?['Negative','Positive','Other']:
