@@ -40,6 +40,8 @@ def audit(path=CATALOG):
     duplicate_parameter_codes = {}
     empty_parameter_tests = []
     malformed_tests = []
+    blank_parameter_labels = {}
+    blank_parameter_codes = {}
     for item in tests:
         if not isinstance(item, (tuple, list)) or len(item) < 5:
             malformed_tests.append(repr(item)[:160])
@@ -51,6 +53,12 @@ def audit(path=CATALOG):
         if any(not isinstance(p, (tuple, list)) or len(p) < 2 for p in params):
             malformed_parameters.append(code)
         parameter_codes = [str(p[0]).strip() for p in params if isinstance(p, (tuple, list)) and p]
+        blank_labels = [str(p[0]) for p in params if isinstance(p, (tuple, list)) and len(p) >= 2 and not str(p[1]).strip()]
+        if blank_labels:
+            blank_parameter_labels[code] = blank_labels
+        blank_codes = [str(p[1]) if len(p) > 1 else "" for p in params if isinstance(p, (tuple, list)) and (not p or not str(p[0]).strip())]
+        if blank_codes:
+            blank_parameter_codes[code] = blank_codes
         repeated = sorted(code for code, count in collections.Counter(parameter_codes).items() if count > 1)
         if repeated:
             duplicate_parameter_codes[code] = repeated
@@ -70,12 +78,14 @@ def audit(path=CATALOG):
         "duplicate_parameter_codes": duplicate_parameter_codes,
         "malformed_parameter_codes": sorted(set(malformed_parameters)),
         "duplicate_codes": sorted(code for code, count in counts.items() if count > 1),
+        "blank_parameter_labels": blank_parameter_labels,
+        "blank_parameter_codes": blank_parameter_codes,
         "generic_result_tests": [r for r in rows if r["generic_result_only"]],
         "missing_priority_codes": [code for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") if code not in counts],
         "priority_generic_only": [r["code"] for r in rows if r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")],
         "all_tests": rows,
         "priority_template_details": priority_details,
-        "review_required": bool(parse_warnings or malformed_tests or empty_parameter_tests or duplicate_parameter_codes or malformed_parameters or any(n > 1 for n in counts.values()) or any(code not in counts for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")) or any(r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") for r in rows)),
+        "review_required": bool(parse_warnings or malformed_tests or empty_parameter_tests or duplicate_parameter_codes or malformed_parameters or blank_parameter_labels or blank_parameter_codes or any(n > 1 for n in counts.values()) or any(code not in counts for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")) or any(r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") for r in rows)),
         "note": "Static source inspection only. Runtime database may contain additional or locally modified tests."
     }
 
@@ -119,7 +129,7 @@ if __name__ == "__main__":
             fields = ", ".join(entry["parameter_codes"]) or "—"
             lines.append(f"| {code} | {status} | {fields} |")
     lines += ["", "## Other findings", ""]
-    for key in ("parse_warnings", "malformed_tests", "duplicate_codes", "empty_parameter_tests", "duplicate_parameter_codes", "malformed_parameter_codes"):
+    for key in ("parse_warnings", "malformed_tests", "duplicate_codes", "empty_parameter_tests", "duplicate_parameter_codes", "malformed_parameter_codes", "blank_parameter_labels", "blank_parameter_codes"):
         lines.append(f"- {key}: {json.dumps(report[key], ensure_ascii=False)}")
     lines += ["", "## Important", "", "A defined field is not proof of clinical correctness. Review each template against approved laboratory forms before changing existing results.", ""]
     summary = ROOT / "lab_catalog_review.md"
