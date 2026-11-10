@@ -105,7 +105,12 @@ def audit(path=CATALOG):
                 values += [""] * max(0, 5 - len(values))
                 field_code, field_name, unit = values[:3]
                 key = (code + " " + name + " " + field_code + " " + field_name).lower().replace("_", " ")
-                if field_code.upper() in ("COMMENTS", "COMMENT", "NOTES", "ORGANISM", "SENSITIVITY", "INTERPRETATION"):
+                generic_result = len(params) == 1 and field_code.strip().upper() == "RESULT"
+                if generic_result:
+                    # A generic RESULT has no clinically safe options by itself.
+                    # The named assay and reporting method must be reviewed first.
+                    input_kind = "generic_result_review"
+                elif field_code.upper() in ("COMMENTS", "COMMENT", "NOTES", "ORGANISM", "SENSITIVITY", "INTERPRETATION"):
                     input_kind = "free_text"
                 elif any(w in key for w in ("culture", "microscopy", "urine examination", "stool general")):
                     input_kind = "special_review"
@@ -152,6 +157,7 @@ def audit(path=CATALOG):
         "priority_generic_only": [r["code"] for r in rows if r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")],
         "all_tests": rows,
         "all_field_details": all_field_details,
+        "generic_result_field_count": sum(f["suggested_input_kind"] == "generic_result_review" for f in all_field_details),
         "priority_template_details": priority_details,
         "review_required": bool(parse_warnings or malformed_tests or empty_parameter_tests or duplicate_parameter_codes or malformed_parameters or blank_parameter_labels or blank_parameter_codes or any(n > 1 for n in counts.values()) or any(r["generic_result_only"] for r in rows) or any(code not in counts for code in ("GTT", "MALARIA", "URINE", "STOOL", "CBC")) or any(r["generic_result_only"] and r["code"] in ("GTT", "MALARIA", "URINE", "STOOL", "CBC") for r in rows)),
         "note": "Static source inspection only. Runtime database may contain additional or locally modified tests."
@@ -182,6 +188,7 @@ if __name__ == "__main__":
         f"- Duplicate parameter codes within panels: {len(report['duplicate_parameter_codes'])}",
         f"- Generic-result-only tests: {len(report['generic_result_tests'])}",
         f"- Fields requiring clinical review: {sum(f['review_status'] == 'REVIEW REQUIRED' for f in report['all_field_details'])}",
+        f"- Generic RESULT fields requiring explicit assay review: {report['generic_result_field_count']}",
         "",
         "## Priority tests",
         "",
