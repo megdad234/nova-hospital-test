@@ -115,6 +115,25 @@ class LabCatalogueAuditTests(unittest.TestCase):
             self.assertEqual(report["missing_priority_codes"], ["GTT", "MALARIA", "STOOL"])
             self.assertEqual(p.read_bytes(), original)
 
+    def test_actual_built_catalogue_priority_panels_are_structured(self):
+        # CI runs after the hospital source ZIP and lab seed have been applied.
+        # Verify real catalogue fields, not only synthetic fixture examples.
+        if not module.CATALOG.is_file():
+            self.skipTest("Hospital source not extracted in this environment")
+        report = module.audit(module.CATALOG)
+        self.assertEqual(report["parse_warnings"], [], report["parse_warnings"])
+        self.assertEqual(report["missing_priority_codes"], [])
+        self.assertEqual(report["priority_generic_only"], [])
+        self.assertFalse(report["duplicate_parameter_codes"])
+        self.assertFalse(report["blank_parameter_labels"])
+        self.assertFalse(report["blank_parameter_codes"])
+        panels = report["priority_template_details"]
+        minimum_fields = {"CBC": 17, "URINE": 14, "STOOL": 7, "MALARIA": 1, "GTT": 6}
+        for code, minimum in minimum_fields.items():
+            with self.subTest(test=code):
+                self.assertTrue(panels.get(code), "Missing " + code)
+                self.assertGreaterEqual(len(panels[code][0]["parameter_definitions"]), minimum)
+
     def test_never_executes_catalogue_code(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "lab_catalog.py"
