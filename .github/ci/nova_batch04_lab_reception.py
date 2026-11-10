@@ -319,7 +319,7 @@ const NOVA_LAB_RESULT_PROFILES={
   // while microscopy ranges, titres and qualitative assays remain unrestricted.
   // This is an input hint only, never a medical interpretation or validation.
   const unit=String(x.unit||'').trim();
-  const numericUnit=/^(?:mg\\/d[lL]|g\\/d[lL]|mmol\\/L|µmol\\/L|umol\\/L|mEq\\/L|ng\\/mL|pg\\/mL|µg\\/dL|ug\\/dL|IU\\/L|U\\/L|mIU\\/L|mU\\/L|fL|pg|%|mm\\/hr|mm\\/h)$/i.test(unit);
+  const numericUnit=/^(?:mg[/]d[lL]|g[/]d[lL]|mmol[/]L|µmol[/]L|umol[/]L|mEq[/]L|ng[/]mL|pg[/]mL|µg[/]dL|ug[/]dL|IU[/]L|U[/]L|mIU[/]L|mU[/]L|fL|pg|%|mm[/]hr|mm[/]h)$/i.test(unit);
   const numericAnalyte=/^(?:GLUCOSE|RBS|FBS|FPG|PPBS|UREA|BUN|CREATININE|CREAT|URIC|URIC_ACID|NA|K|CL|CA|CALCIUM|MG|MAGNESIUM|PHOS|PHOSPHORUS|ALT|AST|ALP|GGT|BILIRUBIN|TBIL|DBIL|ALBUMIN|TOTAL_PROTEIN|CHOLESTEROL|TRIGLYCERIDES|TG|HDL|LDL|VLDL|TSH|T3|T4|FT3|FT4|HBA1C|CRP|ESR|PSA|AFP|AMH|INSULIN|C_PEPTIDE|PTH|VITD|B12|IRON|FERRITIN|TIBC|PT|PTT|INR|D_DIMER|TROPONIN|AMYLASE|LIPASE)$/i.test(code);
   const microscopyField=(urine||stool)&&/^(WBC|RBC|PUS|EPI|CRYS|CAST|BACT|YEAST)$/.test(code);
   const numeric=!microscopyCount&&!microscopyField&&!choices&&(
