@@ -238,6 +238,17 @@ const numericUnknown=fn({id:301,code:'RESULT',name:'Measured value',unit:'mmol/L
 assert(numericUnknown.includes('inputmode="decimal"'),'numeric unit should hint decimal keyboard');
 const urineCells=fn({id:302,code:'RBC',name:'Red blood cells',test_code:'URINE',unit:'/HPF',value:'2-4'});
 assert(!urineCells.includes('inputmode="decimal"'),'microscopy ranges must stay free text');
+const panels=[
+ ['HIV','Non-reactive'],['HBS_ELISA','Reactive'],['DENGUE','Negative'],
+ ['ICT_TYPHOID','Positive'],['HP_STOOL','Negative'],['BRUCELLA','Negative'],
+ ['WIDAL','Negative'],['HCG','Positive'],['SG','Positive']
+];
+for(const [test_code,value] of panels){
+ const html=fn({id:410,code:'RESULT',name:'Result',test_code,value});
+ assert(html.includes('<datalist')&&html.includes('value="'+value+'"'),'qualitative panel not classified: '+test_code);
+}
+const quantitativeSerology=fn({id:411,code:'RESULT',name:'Result',test_code:'CRP Quantitative',value:'12.5'});
+assert(!quantitativeSerology.includes('<datalist'),'quantitative assay must stay numeric/free text');
 const chemistry=fn({id:72,code:'RESULT',name:'Urea',test_name:'Renal Function Tests',value:'28'});
 assert(!chemistry.includes('<datalist')&&!chemistry.includes('<select'),'numeric chemistry must remain unrestricted');
 const cbcNumeric=fn({id:50,code:'HGB',name:'Hemoglobin',section_name:'',value:'12.5'});
