@@ -41,6 +41,37 @@ class LabPrintIsolationTests(unittest.TestCase):
         # This laboratory-only test must never replace or normalize the receipt engines.
         self.assertIn("printing-lab", lab)
 
+    def test_lab_report_runtime_prints_patient_and_results_together(self):
+        # Smoke-test the generated report function without changing a database.
+        script = r'''
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const src=fs.readFileSync(process.argv[1],'utf8');
+const a=src.indexOf('async function printReport(id){');
+const b=src.indexOf('\nfunction ',a);
+assert(a>=0,'printReport missing');
+const code=src.slice(a,b<0?undefined:b);
+const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+let html='',printed=0,cleaned=false,listener=null;
+const area={set innerHTML(x){html=x},get innerHTML(){return html},querySelectorAll(){return []}};
+const document={body:{classList:{add(x){assert.strictEqual(x,'printing-lab')},remove(x){cleaned=true}}}};
+const window={addEventListener:(x,fn)=>{listener=fn},removeEventListener:()=>{},print:()=>{printed++}};
+const api=async path=>({brand:{hospital_name:'Hospital'},patient_name:'Test Patient',patient_no:'P001',
+ order_no:'L001',age_years:30,gender:'male',print_time:'2026-11-10T10:00:00',
+ items:[{test_name:'CBC',lines:[{name:'WBC',value:'7.1',unit:'10^9/L',reference_range:'4-11'}]},
+ {test_name:'Pending',lines:[{name:'Hb',value:''}]}]});
+let errors=[];
+const fn=vm.runInNewContext(code+';printReport',{esc,api,$:()=>area,document,window,notice:x=>errors.push(x)});
+fn(5).then(()=>{assert.strictEqual(printed,1);assert.strictEqual(errors.length,0);
+assert(html.includes('Test Patient')&&html.includes('P001')&&html.includes('WBC')&&html.includes('7.1'));
+assert(!html.includes('Pending')&&!html.includes('تقرير جزئي'));
+assert(listener);listener();assert(cleaned&&html==='');console.log('LAB_REPORT_RUNTIME_OK')
+}).catch(e=>{console.error(e);process.exitCode=1});
+'''
+        result = subprocess.run(['node', '-e', script, str(APP)],
+                                capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('LAB_REPORT_RUNTIME_OK', result.stdout)
+
     def test_lab_keyboard_navigation_runtime(self):
         # Exercise the generated handler with a mocked DOM, without patient data.
         script = r"""
