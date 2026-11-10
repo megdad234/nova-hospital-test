@@ -249,6 +249,10 @@ for(const [test_code,value] of panels){
 }
 const quantitativeSerology=fn({id:411,code:'RESULT',name:'Result',test_code:'CRP Quantitative',value:'12.5'});
 assert(!quantitativeSerology.includes('<datalist'),'quantitative assay must stay numeric/free text');
+const legacyNamedAssay=fn({id:420,code:'RESULT',name:'Result',test_code:'LAB-SEROLOGY',test_name:'HIV Rapid Screening',value:'Non-reactive'});
+assert(legacyNamedAssay.includes('<datalist'),'use panel display name when panel code is generic');
+const legacyNamedUrine=fn({id:421,code:'NIT',name:'Nitrite',test_code:'LAB-01',test_name:'Urine Examination',value:'Negative'});
+assert(legacyNamedUrine.includes('<select'),'use urine display name when test code is generic');
 const chemistry=fn({id:72,code:'RESULT',name:'Urea',test_name:'Renal Function Tests',value:'28'});
 assert(!chemistry.includes('<datalist')&&!chemistry.includes('<select'),'numeric chemistry must remain unrestricted');
 const cbcNumeric=fn({id:50,code:'HGB',name:'Hemoglobin',section_name:'',value:'12.5'});
