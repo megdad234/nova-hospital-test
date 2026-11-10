@@ -171,7 +171,7 @@ function novaLabResultControl(x){
   const section=String(x.section_name||'').toLowerCase();
   const panel=String(x.test_code||x.test_name||x.panel_code||x.panel_name||'').toLowerCase();
   const context=section+' '+panel;
-  const urine=/\\burine\\b|urinalysis|بول/.test(context);
+  const urine=/\\burine\\b|urinalysis|\\busa\\b|بول/.test(context);
   const stool=/\\bstool\\b|faec|fecal|براز/.test(context);
   let choices=null,allowOther=false;
   if((code==='PARASITE' && /malaria|parasite detected|blood film|b\\.f/.test(name+' '+panel))||
