@@ -181,7 +181,7 @@ console.log('LAB_GROUP_CONTEXT_OK');
         # escaped regex literals are not directly executable JavaScript).
         generated = APP.read_text(encoding="utf-8")
         start = generated.index("function novaLabResultControl(x){")
-        end = generated.index("\n}", start) + len("\n}")
+        end = generated.index("function novaLabGroupedRows(lines,editable){", start)
         js = generated[start:end]
         script = r"""
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
