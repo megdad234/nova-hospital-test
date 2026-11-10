@@ -284,6 +284,19 @@ const urine=fn([
 ],true);
 assert(urine.includes('<select'),'urine categorical input missing');
 assert(urine.includes('<datalist'),'urine colour suggestions missing');
+const legacyUrine=fn([
+ {id:91,code:'COLOR',name:'Colour',value:'Yellow'},
+ {id:92,code:'SG',name:'Specific gravity',value:'1.015'},
+ {id:93,code:'PH',name:'pH',value:'6'},
+ {id:94,code:'PROT',name:'Protein',value:'Nil'},
+ {id:95,code:'WBC',name:'Pus cells',value:'2-4'}
+],true);
+assert(legacyUrine.includes('<datalist')&&legacyUrine.includes('value="2-4"'),'legacy urine panel should infer urine context');
+const legacyStool=fn([
+ {id:96,code:'CONS',name:'Consistency',value:'Soft'},
+ {id:97,code:'OVA',name:'Ova',value:'Not seen'}
+],true);
+assert(legacyStool.includes('<datalist'),'legacy stool consistency/ova panel should infer stool context');
 const other=fn([{id:4,code:'NIT',name:'Nitrite',section_name:'Other',value:'Negative'}],true);
 assert(!other.includes('<select'),'isolated ambiguous code must stay free-text');
 console.log('LAB_PANEL_CONTEXT_OK');
