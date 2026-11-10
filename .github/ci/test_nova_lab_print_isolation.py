@@ -119,6 +119,32 @@ console.log('LAB_KEYBOARD_OK');
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("LAB_KEYBOARD_OK", result.stdout)
 
+    def test_grouped_lab_rows_propagate_panel_context_runtime(self):
+        # Exercise real generated grouping with ambiguous Macroscopy/Microscopy labels.
+        script = r"""
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const src=fs.readFileSync(process.argv[1],'utf8');
+const a=src.indexOf('function novaLabResultControl(x){');
+const b=src.indexOf('function novaLabGroupedRows(lines,editable){',a);
+const c=src.indexOf('\n}',b);
+assert(a>=0&&b>a&&c>b,'lab control/grouping not found');
+const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const fn=vm.runInNewContext(src.slice(a,b)+src.slice(b,c+2)+';novaLabGroupedRows',{esc});
+const urine=fn([{id:1,code:'NIT',name:'Nitrite',section_name:'Macroscopy',value:'Negative'},
+{id:2,code:'LEU',name:'Leukocytes',section_name:'Microscopy',value:'Negative'}],true);
+assert(urine.includes('<select'),'urine signature should activate qualitative dropdowns');
+const stool=fn([{id:3,code:'MUCUS',name:'Mucus',section_name:'Macroscopy',value:'Present'},
+{id:4,code:'OVA',name:'Ova',section_name:'Microscopy',value:'Not seen'}],true);
+assert(stool.includes('<select'),'stool signature should activate qualitative dropdowns');
+const unrelated=fn([{id:5,code:'NIT',name:'Nitrite',section_name:'Chemistry',value:'Negative'}],true);
+assert(!unrelated.includes('<select'),'isolated code must not trigger panel inference');
+console.log('LAB_GROUP_CONTEXT_OK');
+"""
+        result = subprocess.run(["node", "-e", script, str(APP)],
+                                capture_output=True, text=True, encoding="utf-8", timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("LAB_GROUP_CONTEXT_OK", result.stdout)
+
     def test_lab_dropdown_preserves_existing_save_contract(self):
         patch = (ROOT / ".github/ci/nova_batch04_lab_reception.py").read_text(encoding="utf-8")
         for token in (
