@@ -208,6 +208,32 @@ catalog = catalog.replace(
     "\nPOPULAR = ", 1
 )
 C.write_text(catalog,encoding="utf-8")
+# NOVA_LAB_FULL_CATALOGUE_GATE_V1: validate the ACTUAL generated catalogue
+# after all 47 price-list entries, extras and structured fields are applied.
+# This gate runs in the seed phase, never against the original 58-test ZIP.
+import importlib.util
+import csv
+_spec=importlib.util.spec_from_file_location("nova_lab_catalog_seed_validation",C)
+_mod=importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_mod)
+_all_tests=list(_mod.TESTS)
+_codes=[str(t[0]) for t in _all_tests]
+assert len(_codes)==97, f"Expected 97 complete tests after seed, got {len(_codes)}"
+assert len(set(_codes))==97, "Duplicate test codes after seed"
+assert all(t[4] for t in _all_tests), "Test without any result parameters"
+assert all(len({str(p[0]) for p in t[4]})==len(t[4]) for t in _all_tests), "Duplicate analytes"
+for _code in ("NA_K","LFT_E","IRON_FULL","PT_PTT","SEMEN","DENGUE","FERTILITY"):
+    _panel=next(t for t in _all_tests if t[0]==_code)
+    assert not (len(_panel[4])==1 and _panel[4][0][0]=="RESULT"), _code
+with Path("lab_all_97_field_mapping.csv").open("w",encoding="utf-8-sig",newline="") as _fh:
+    _writer=csv.writer(_fh)
+    _writer.writerow(("test_code","test_name","category","field_code","field_name","unit","reference_range"))
+    for _test in _all_tests:
+        for _field in _test[4]:
+            _writer.writerow((_test[0],_test[1],_test[2],_field[0],_field[1],_field[2],_field[3]))
+print("NOVA_LAB_FULL_CATALOGUE_GATE_OK",len(_all_tests),
+      "tests",sum(len(t[4]) for t in _all_tests),"analytes")
+
 # Insertion happens only when the test code is not present. Never touch a locally edited price.
 prices={code:price for _,code,price,_,_ in ROWS}
 needle="                  (code,name,0,category,aliases,int(code in lab_catalog.POPULAR))).lastrowid"
