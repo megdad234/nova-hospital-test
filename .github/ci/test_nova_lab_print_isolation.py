@@ -190,7 +190,7 @@ const code=src.slice(start,end);
 const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const fn=vm.runInNewContext(code+';novaLabResultControl',{esc});
 const malaria=fn({id:1,code:'PARASITE',name:'Malaria parasite detected',value:'Detected'});
-assert(malaria.includes('<select')&&malaria.includes('selected')&&malaria.includes('type="hidden"'));
+assert(malaria.includes('<datalist')&&malaria.includes('value="Detected"')&&malaria.includes('data-line="3"'));
 assert(malaria.includes('data-line="1"'));
 assert(malaria.includes('this.nextElementSibling.value=this.value'));
 const legacy=fn({id:2,code:'SPECIES',name:'Plasmodium species (if identified)',value:'Previously recorded species'});
