@@ -169,6 +169,7 @@ function novaChooseLabCategory(category){
 // Central catalogue mapping: exact test codes only. Generic RESULT never implies
 // qualitative reporting without a matching assay. These are editable suggestions;
 // no patient values, reference intervals or diagnoses are inserted.
+function novaLabResultControl(x){
 const NOVA_LAB_RESULT_PROFILES={
   HIV_RAPID:['Non-reactive','Reactive','Indeterminate','Other'],
   HCV_RAPID:['Non-reactive','Reactive','Indeterminate','Other'],
@@ -187,7 +188,7 @@ const NOVA_LAB_RESULT_PROFILES={
   SG:['Negative','Positive','Indeterminate','Other'],
   DENGUE:['Negative','Positive','Indeterminate','Other']
 };
-function novaLabResultControl(x){
+
   const code=String(x.code||'').trim().toUpperCase(),name=String(x.name||'').toLowerCase();
   const section=String(x.section_name||'').toLowerCase();
   // Combine code and display name: legacy catalogue entries may carry a generic
