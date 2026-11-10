@@ -176,7 +176,7 @@ function novaLabResultControl(x){
   // Urine pregnancy and urine cultures are distinct assays, not urinalysis microscopy.
   const urine=/\\burinalysis\\b|\\burine examination\\b|\\burine general\\b|\\burine\\b|\\busa\\b|بول/.test(context)&&!/\\b(urine preg|urine pregnancy|urine culture|urine antigen|urine occult)\\b/.test(panel);
   // Stool antigen/serology tests are not stool microscopy panels.
-  const stool=/\\bstool general\\b|\\bstool examination\\b|\\bstool microscopy\\b|\\bfaecal examination\\b|\\bfecal examination\\b|براز/.test(context)&&!/\\b(hp stool|h pylori|occult blood|stool culture|stool antigen)\\b/.test(panel);
+  const stool=/\\bstool\\b|\\bfaec\\w*\\b|\\bfecal\\b|براز/.test(context)&&!/\\b(hp stool|h pylori|occult blood|stool culture|stool antigen)\\b/.test(panel);
   let choices=null,allowOther=false;
   // Explicit panel-code overrides for qualitative tests that contain urine/stool
   // in their names but are not routine microscopy examinations.
