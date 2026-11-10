@@ -327,6 +327,27 @@ const NOVA_LAB_RESULT_PROFILES={
     else if(identity==='HBS_ELISA'&&code==='RESULT')
       {choices=['Non-reactive','Reactive','Equivocal','Other'];allowOther=true;}
   }
+  // NOVA_LAB_CATALOGUE_CHOICES_V2: existing original NOVA assay codes.
+  // Mirrors the OpenELIS result-type model: numeric, coded, or free text.
+  // Preserve arbitrary technician entries using editable suggestion lists.
+  if(!choices){
+    if((identity==='BGROUP'||identity==='BLOOD_GROUP')&&code==='ABO')
+      choices=['A','B','AB','O'];
+    else if((identity==='BGROUP'||identity==='BLOOD_GROUP')&&code==='RH')
+      {choices=['Positive','Negative','Weak D','Indeterminate','Other'];allowOther=true;}
+    else if((identity==='MAL_RDT'||identity==='MALARIA_RDT')&&code==='RDT')
+      {choices=['Negative','Positive','Invalid','Indeterminate','Other'];allowOther=true;}
+    else if((identity==='PREG'||identity==='HCG'||identity==='URINE_PREG')&&code==='HCG')
+      {choices=['Negative','Positive','Invalid','Indeterminate','Other'];allowOther=true;}
+    else if(['HBSAG','HCV','HIV'].includes(identity)&&['HB','HCV','HIV'].includes(code))
+      {choices=['Non-reactive','Reactive','Indeterminate','Other'];allowOther=true;}
+    else if(identity==='H_PYLORI'&&code==='HP')
+      {choices=['Negative','Positive','Indeterminate','Other'];allowOther=true;}
+    else if(['CULTURE','URINE_CULT','STOOL_CULT','BLOOD_CULT'].includes(identity)&&code==='ORGANISM')
+      choices=null; // organism identification must remain free text
+    else if(['CULTURE','URINE_CULT','STOOL_CULT','BLOOD_CULT'].includes(identity)&&code==='SENS')
+      choices=null; // antibiotic susceptibility must remain free text
+  }
   // Existing results, including unusual microscopy descriptions, remain editable.
   // Mixed fields use a list of suggestions, never a restrictive dropdown.
   const value=String(x.value??'');
@@ -338,7 +359,7 @@ const NOVA_LAB_RESULT_PROFILES={
   // This is an input hint only, never a medical interpretation or validation.
   const unit=String(x.unit||'').trim();
   const numericUnit=/^(?:mg[/]d[lL]|g[/]d[lL]|mmol[/]L|µmol[/]L|umol[/]L|mEq[/]L|ng[/]mL|pg[/]mL|µg[/]dL|ug[/]dL|IU[/]L|U[/]L|mIU[/]L|mU[/]L|fL|pg|%|mm[/]hr|mm[/]h)$/i.test(unit);
-  const numericAnalyte=/^(?:GLUCOSE|RBS|FBS|FPG|PPBS|UREA|BUN|CREATININE|CREAT|URIC|URIC_ACID|NA|K|CL|CA|CALCIUM|MG|MAGNESIUM|PHOS|PHOSPHORUS|ALT|AST|ALP|GGT|BILIRUBIN|TBIL|DBIL|ALBUMIN|TOTAL_PROTEIN|CHOLESTEROL|TRIGLYCERIDES|TG|HDL|LDL|VLDL|TSH|T3|T4|FT3|FT4|HBA1C|CRP|ESR|PSA|AFP|AMH|INSULIN|C_PEPTIDE|PTH|VITD|B12|IRON|FERRITIN|TIBC|PT|PTT|INR|D_DIMER|TROPONIN|AMYLASE|LIPASE)$/i.test(code);
+  const numericAnalyte=/^(?:GLUCOSE|RBS|FBS|FPG|PPBS|UREA|BUN|CREATININE|CREAT|URIC|URIC_ACID|NA|K|CL|CA|CALCIUM|MG|MAGNESIUM|PHOS|PHOSPHORUS|ALT|AST|ALP|GGT|BILIRUBIN|TBIL|DBIL|ALBUMIN|TOTAL_PROTEIN|CHOLESTEROL|TRIGLYCERIDES|TG|HDL|LDL|VLDL|TSH|T3|T4|FT3|FT4|HBA1C|CRP|ESR|PSA|AFP|AMH|INSULIN|C_PEPTIDE|PTH|VITD|B12|IRON|FERRITIN|TIBC|PT|PTT|INR|D_DIMER|TROPONIN|AMYLASE|LIPASE|GLU|A1C|ALB|TP|CRE|TC|PRL|TESTO|DD|VD|FER|FE|BHCG|MPV|NEUT_ABS|LYMPH_ABS|RETIC|CONCENTRATION|TOTAL_COUNT|PROGRESSIVE|NONPROGRESSIVE|IMMOTILE|MORPHOLOGY|VITALITY|TRANSFERRIN_SAT|ESTRADIOL|PROGESTERONE|TESTOSTERONE|VOLUME)$/i.test(code);
   const microscopyField=(urine||stool)&&/^(WBC|RBC|PUS|EPI|CRYS|CAST|BACT|YEAST)$/.test(code);
   const numeric=!microscopyCount&&!microscopyField&&!choices&&(
     /^(FASTING|TIME_30|TIME_60|TIME_90|TIME_120|TIME_150|TIME_180|TIME_240|WBC|RBC|HGB|HB|HCT|MCV|MCH|MCHC|PLT|PLATELETS|RDW|NEUT|LYMPH|MONO|EOS|BASO)$/.test(code)||
