@@ -439,6 +439,61 @@ console.log('LAB_KEYBOARD_RUNTIME_OK');
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("LAB_KEYBOARD_RUNTIME_OK", result.stdout)
 
+    def test_entire_catalogue_result_controls_runtime(self):
+        """Exercise every seeded catalogue field, not a hand-picked shortlist.
+
+        Verify the renderer never drops the original saved value or line ID.
+        A generic RESULT without assay context must stay editable.
+        """
+        import importlib.util
+        import json
+        catalog_path = ROOT / "hospital/lab_catalog.py"
+        if not catalog_path.exists():
+            self.skipTest("Catalogue source not extracted")
+        spec = importlib.util.spec_from_file_location("nova_all_lab_fields", catalog_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        cases = []
+        for test in module.TESTS:
+            test_code, test_name = str(test[0]), str(test[1])
+            for field in test[4]:
+                if not isinstance(field, (tuple, list)) or len(field) < 2:
+                    continue
+                cases.append({"id": len(cases) + 1, "code": str(field[0]),
+                              "name": str(field[1]), "unit": str(field[2] or "") if len(field) > 2 else "",
+                              "test_code": test_code, "test_name": test_name,
+                              "value": "NOVA_EXISTING_VALUE_42"})
+        self.assertGreater(len(cases), 60, "Catalogue-wide coverage unexpectedly small")
+        patch = (ROOT / ".github/ci/nova_batch04_lab_reception.py").read_text(encoding="utf-8")
+        start = patch.index("const NOVA_LAB_RESULT_PROFILES=")
+        end = patch.index("function novaLabResultKeyboard(event){", start)
+        js = patch[start:end]
+        script = r"""
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const cases=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));
+const code=fs.readFileSync(process.argv[2],'utf8');
+const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const ctx=vm.createContext({esc});
+vm.runInContext(code,ctx);
+for(const x of cases){
+ const html=ctx.novaLabResultControl(x);
+ assert(html.includes('value="NOVA_EXISTING_VALUE_42"'),'existing value lost: '+x.test_code+'/'+x.code);
+ assert(html.includes('data-line="'+x.id+'"'),'line identifier lost: '+x.test_code+'/'+x.code);
+ assert(html.includes('<input')||html.includes('<select'),'missing editable field: '+x.test_code+'/'+x.code);
+}
+console.log('ALL_CATALOGUE_FIELDS_OK '+cases.length);
+"""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "cases.json"
+            code = Path(tmp) / "renderer.js"
+            data.write_text(json.dumps(cases, ensure_ascii=False), encoding="utf-8")
+            code.write_text(js, encoding="utf-8")
+            result = subprocess.run(["node", "-e", script, str(data), str(code)],
+                                    capture_output=True, text=True, encoding="utf-8", timeout=45)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("ALL_CATALOGUE_FIELDS_OK", result.stdout)
+
     def test_lab_page_is_scoped(self):
         styles = [p.read_text(encoding="utf-8") for p in ROOT.glob("hospital/static/*.css")]
         joined = "\n".join(styles)
