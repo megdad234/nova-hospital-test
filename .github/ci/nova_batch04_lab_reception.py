@@ -186,17 +186,24 @@ function novaLabResultControl(x){
   else if(code==='STAGE'&&/malaria|parasite|blood film|b\\.f/.test(name+' '+panel))
     {choices=['Ring','Late Trophozoite','Gametocyte','Schizont','Ring and Gametocyte','Other'];allowOther=true;}
   if(urine){
-    if(code==='NIT')choices=['Negative','Positive'];
+    if(/^(WBC|RBC|PUS)$/.test(code)||/pus cells|red blood cells|r\\.b\\.c/.test(name)){
+      // Microscopic cell counts are free-text ranges such as 2-4 / HPF.
+    }
+    else if(code==='NIT')choices=['Nil','Positive','Negative'];
     else if(code==='LEU')choices=['Negative','Trace','Positive'];
-    else if(code==='KET'||/ketone/.test(name))choices=['Negative','Trace','+','++','+++'];
+    else if(code==='KET'||/ketone/.test(name))choices=['Nil','Trace','(+)','(++)','(+++)','Negative','+','++','+++'];
     else if(/^(PRO|PROT|PROTEIN|GLU|GLUC|GLUCOSE|BLOOD|BLD)$/.test(code))
-      choices=['Negative','Trace','+','++','+++','++++'];
+      choices=['Nil','Trace','(+)','(++)','(+++)','(++++)','Negative','+','++','+++','++++'];
     else if(/^(COLOR|COLOUR)$/.test(code)||/colour|color/.test(name))
-      {choices=['Yellow','Pale yellow','Amber','Dark yellow','Red','Brown','Other'];allowOther=true;}
+      {choices=['Yellow','Deep Yellow','Pale Yellow','Reddish','Brownish','Black','Amber','Dark','Other'];allowOther=true;}
     else if(/^(APPEARANCE|APPEAR|CLARITY)$/.test(code)||/appearance|clarity/.test(name))
       {choices=['Clear','Slightly cloudy','Cloudy','Turbid','Other'];allowOther=true;}
+    else if(/^(BIL|BILI|BILIRUBIN|URO|UROBILINOGEN|YEAST|MUC|THREADS)$/.test(code)||/bilirubin|urobilinogen|yeast|mucous thread/.test(name))
+      {choices=['Nil','Trace','(+)','(++)','(+++)','(++++)','Present','Other'];allowOther=true;}
+    else if(/^(CRYS|CRYSTALS)$/.test(code)||/crystal/.test(name))
+      {choices=['Nil','Calcium oxalate','Uric acid','Triple phosphate','Amorphous urates','Amorphous phosphates','Other'];allowOther=true;}
     else if(/^(CRYS|EPI|CAST|BACT|PARASITE)$/.test(code)||/crystal|cast|bacteria|epithelial|parasite/.test(name))
-      {choices=['Absent','Present','Few','Moderate','Many','Other'];allowOther=true;}
+      {choices=['Nil','Few','Moderate','Many','(+)','(++)','(+++)','Absent','Present','Other'];allowOther=true;}
   }else if(stool){
     if(code==='MUCUS')choices=['Absent','Present'];
     else if(/colour|color/.test(name)){choices=['Brown','Yellow','Green','Black','Red','Other'];allowOther=true;}
@@ -252,7 +259,7 @@ function novaLabGroupedRows(lines,editable){
   // Section labels such as Macroscopy/Microscopy are not panel identifiers.
   // Infer only from distinctive parameter signatures when the API omits parent metadata.
   const codes=new Set((lines||[]).map(x=>String(x.code||'').trim().toUpperCase()));
-  const urineSignature=['NIT','LEU','KET'].filter(c=>codes.has(c)).length>=2;
+  const urineSignature=(['NIT','LEU','KET','PROT','GLUC','CRYS','EPI'].filter(c=>codes.has(c)).length>=3)||(['NIT','PROT','GLUC'].filter(c=>codes.has(c)).length>=2);
   const stoolSignature=codes.has('MUCUS')&&
     [...codes].some(c=>/^(OVA|CYST|WORM|PARASITE|CONS|CONSISTENCY|OCCULT_BLOOD)$/.test(c));
   const inferredPanel=urineSignature?'URINE':stoolSignature?'STOOL':'';
