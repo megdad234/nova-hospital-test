@@ -8,6 +8,36 @@ APP = ROOT / "hospital/static/app.js"
 CSS = ROOT / "hospital/static/style.css"
 
 class LabPrintIsolationTests(unittest.TestCase):
+    def test_composite_catalogue_templates_are_structured(self):
+        """Validate generated multi-analyte panels without inventing clinical ranges."""
+        import importlib.util
+        catalog_path = ROOT / "hospital/lab_catalog.py"
+        if "NOVA_LAB_STRUCTURED_CATALOG_V1" not in catalog_path.read_text(encoding="utf-8"):
+            self.skipTest("Structured catalogue seed has not run")
+        spec = importlib.util.spec_from_file_location("nova_structured_lab", catalog_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        tests = {row[0]: row for row in module.TESTS}
+        required = {
+            "NA_K": ("NA", "K"),
+            "LFT_E": ("ALT", "AST", "ALP", "TBIL", "DBIL", "ALBUMIN", "NA", "K", "CL"),
+            "IRON_FULL": ("IRON", "TIBC", "TRANSFERRIN_SAT", "FERRITIN"),
+            "PT_PTT": ("PT", "INR", "APTT"),
+            "SEMEN": ("VOLUME", "PH", "CONCENTRATION", "PROGRESSIVE", "MORPHOLOGY"),
+            "DENGUE": ("NS1", "IGM", "IGG"),
+            "FERTILITY": ("FSH", "LH", "PROLACTIN", "ESTRADIOL"),
+        }
+        for panel, expected in required.items():
+            with self.subTest(panel=panel):
+                self.assertIn(panel, tests)
+                fields = tests[panel][4]
+                codes = [str(field[0]) for field in fields]
+                self.assertEqual(len(codes), len(set(codes)))
+                self.assertTrue(set(expected).issubset(codes))
+                self.assertFalse(len(fields) == 1 and codes[0] == "RESULT")
+                self.assertTrue(all(not str(field[3]).strip() for field in fields),
+                                "Reference intervals require local lab validation")
+
     def test_malaria_catalogue_has_complete_entry_fields(self):
         # Regression: MALARIA existed with only MP in the original catalogue.
         # Test the generated catalogue, not just the CI patch text.
