@@ -167,38 +167,74 @@ function novaChooseLabCategory(category){
 // Fixed choices only where the result has a well-defined categorical meaning.
 // Preserve every existing saved value, including values outside these options.
 function novaLabResultControl(x){
-  const code=String(x.code||'').toUpperCase(),name=String(x.name||'').toLowerCase();
-  let choices=null;
+  const code=String(x.code||'').trim().toUpperCase(),name=String(x.name||'').toLowerCase();
+  const section=String(x.section_name||'').toLowerCase();
+  const urine=/\\burine\\b|urinalysis|بول/.test(section);
+  const stool=/\\bstool\\b|faec|fecal|براز/.test(section);
+  let choices=null,allowOther=false;
   if(code==='PARASITE' && (name.includes('malaria')||name.includes('parasite detected')))
     choices=['Not detected','Detected'];
   else if(code==='SPECIES' && name.includes('plasmodium'))
     choices=['P. falciparum','P. vivax','P. malariae','P. ovale','P. knowlesi','Mixed infection','Not identified'];
-  // Restrict common qualitative options to the exact urine/stool panel and field.
-  // Always retain legacy values and allow free-text entry for descriptive findings.
-  const section=String(x.section_name||'').toLowerCase();
-  const urine=/\\burine\\b|urinalysis|بول/.test(section);
-  const stool=/\\bstool\\b|faec|fecal|براز/.test(section);
-  if(urine && code==='NIT')choices=['Negative','Positive'];
-  else if(urine && code==='LEU')choices=['Negative','Trace','Positive'];
-  else if(urine && code==='KET')choices=['Negative','Trace','+','++','+++'];
-  else if(stool && code==='MUCUS')choices=['Absent','Present'];
-  // Descriptive fields (e.g. urine crystals, stool parasites, malaria MP)
-  // remain free text to preserve microscopy detail.
-  // METHOD is shared by multiple tests; keep it as free text to avoid
-  // incorrectly forcing a malaria-specific method on unrelated assays.
+  if(urine){
+    if(code==='NIT')choices=['Negative','Positive'];
+    else if(code==='LEU')choices=['Negative','Trace','Positive'];
+    else if(code==='KET'||/ketone/.test(name))choices=['Negative','Trace','+','++','+++'];
+    else if(/^(PRO|PROTEIN|GLU|GLUCOSE|BLOOD|BLD)$/.test(code))
+      choices=['Negative','Trace','+','++','+++','++++'];
+    else if(/^(COLOR|COLOUR)$/.test(code)||/colour|color/.test(name))
+      {choices=['Yellow','Pale yellow','Amber','Dark yellow','Red','Brown','Other'];allowOther=true;}
+    else if(/^(APPEARANCE|APPEAR|CLARITY)$/.test(code)||/appearance|clarity/.test(name))
+      {choices=['Clear','Slightly cloudy','Cloudy','Turbid','Other'];allowOther=true;}
+    else if(/crystal|cast|bacteria|epithelial|parasite/.test(name))
+      {choices=['Absent','Present','Few','Moderate','Many','Other'];allowOther=true;}
+  }else if(stool){
+    if(code==='MUCUS')choices=['Absent','Present'];
+    else if(/colour|color/.test(name)){choices=['Brown','Yellow','Green','Black','Red','Other'];allowOther=true;}
+    else if(/consistency|appearance/.test(name)){choices=['Formed','Soft','Loose','Watery','Other'];allowOther=true;}
+    else if(/ova|cyst|parasite|worm|blood/.test(name)){choices=['Not seen','Seen','Other'];allowOther=true;}
+  }
+  // Existing results, including unusual microscopy descriptions, remain editable.
+  // Mixed fields use a list of suggestions, never a restrictive dropdown.
   const value=String(x.value??'');
-  const attrs=' data-line="'+x.id+'" aria-label="نتيجة '+esc(x.name)+'"';
+  const attrs=' data-line="'+esc(x.id)+'" aria-label="نتيجة '+esc(x.name)+'"';
+  const numeric=(/^(FASTING|TIME_30|TIME_60|TIME_120|TIME_180)$/.test(code)&&/glucose/i.test(name))||
+    (/^(WBC|RBC|HGB|HB|HCT|MCV|MCH|MCHC|PLT|PLATELETS|RDW|NEUT|LYMPH|MONO|EOS|BASO)$/.test(code)&&/blood|cbc|hematol|haematol/i.test(section));
+  if(choices&&allowOther){
+    const listId='nova-lab-choices-'+String(x.id).replace(/[^a-zA-Z0-9_-]/g,'');
+    return '<input list="'+listId+'"'+attrs+' value="'+esc(value)+'" maxlength="4000" autocomplete="off" dir="auto">'+
+      '<datalist id="'+listId+'">'+choices.map(v=>'<option value="'+esc(v)+'"></option>').join('')+'</datalist>';
+  }
   if(choices){
-    if(value && !choices.includes(value))choices=[value,...choices];
-    // Keep the existing input[data-line] save contract untouched.
-    // The visible dropdown mirrors its value into the original save input.
+    if(value&&!choices.includes(value))choices=[value,...choices];
     return '<select aria-label="نتيجة '+esc(x.name)+'" onchange="this.nextElementSibling.value=this.value"><option value="">— اختر النتيجة —</option>'+
       choices.map(v=>'<option value="'+esc(v)+'"'+(v===value?' selected':'')+'>'+esc(v)+'</option>').join('')+
       '</select><input type="hidden"'+attrs+' value="'+esc(value)+'">';
   }
-  const numeric=/^(FASTING|TIME_30|TIME_60|TIME_120|TIME_180)$/.test(code) && /glucose/i.test(name);
   return '<input'+attrs+' value="'+esc(value)+'" maxlength="4000" autocomplete="off" dir="auto"'+
-    (numeric?' inputmode="decimal" aria-label="Glucose result in mg/dL"':'')+'>';
+    (numeric?' inputmode="decimal"':'')+'>';
+}
+function novaLabResultKeyboard(event){
+  const target=event.target;
+  if(!target||!target.matches||!target.matches('input[data-line],select'))return;
+  if(!target.closest('.lab-results')&&!target.closest('.nova-lab-results'))return;
+  if(event.key!=='ArrowDown'&&event.key!=='ArrowUp'&&event.key!=='Enter')return;
+  // Select arrows must remain native for choosing options.
+  if(target.tagName==='SELECT'&&event.key!=='Enter')return;
+  if(event.key==='Enter'&&event.shiftKey)return;
+  const fields=[...target.closest('table').querySelectorAll('input[data-line]:not([type="hidden"]),select')];
+  const index=fields.indexOf(target);
+  if(index<0)return;
+  const step=event.key==='ArrowUp'?-1:1;
+  const next=fields[index+step];
+  if(!next)return;
+  // Do not hijack arrow keys while editing free text or a datalist.
+  if(target.tagName==='INPUT'&&event.key!=='Enter')return;
+  event.preventDefault();next.focus();
+}
+if(typeof document!=='undefined'&&!window.__novaLabKeyboardBound){
+  window.__novaLabKeyboardBound=true;
+  document.addEventListener('keydown',novaLabResultKeyboard);
 }
 function novaLabGroupedRows(lines,editable){
   const groups=new Map();
