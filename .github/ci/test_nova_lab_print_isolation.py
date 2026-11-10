@@ -120,6 +120,21 @@ console.log('LAB_CONTROL_RUNTIME_OK');
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("LAB_CONTROL_RUNTIME_OK", result.stdout)
 
+    def test_lab_save_collection_uses_original_line_identifiers(self):
+        # Guard the frontend/backend boundary without writing patient records.
+        source = APP.read_text(encoding="utf-8")
+        self.assertIn('data-line="'+ "'+x.id+'" + '"', source)
+        self.assertIn('this.nextElementSibling.value=this.value', source)
+        # Every editable qualitative control has one original hidden input
+        # carrying the same data-line key as ordinary text results.
+        patch = (ROOT / ".github/ci/nova_batch04_lab_reception.py").read_text(encoding="utf-8")
+        start = patch.index("function novaLabResultControl(x){")
+        end = patch.index("function novaLabGroupedRows(lines,editable){", start)
+        renderer = patch[start:end]
+        self.assertIn('type="hidden"', renderer)
+        self.assertIn("const attrs=' data-line=", renderer)
+        self.assertIn("value=\"'+esc(value)+'\"", renderer)
+
     def test_lab_page_is_scoped(self):
         styles = [p.read_text(encoding="utf-8") for p in ROOT.glob("hospital/static/*.css")]
         joined = "\n".join(styles)
