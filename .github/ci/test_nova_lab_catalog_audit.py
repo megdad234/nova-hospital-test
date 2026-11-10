@@ -102,10 +102,10 @@ class LabCatalogueAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "lab_catalog.py"
             p.write_text(
-                "CBC_FIELDS=[('WBC','White cells','10^9/L','','','')]\\n"
-                "URINE_FIELDS=[('COLOR','Colour','','','','')]\\n"
-                "BASE=[('CBC','CBC','Hematology',(),CBC_FIELDS)]\\n"
-                "TESTS=BASE+[('URINE','Urine','Urinalysis',(),URINE_FIELDS)]\\n",
+                "CBC_FIELDS=[('WBC','White cells','10^9/L','','','')]\n"
+                "URINE_FIELDS=[('COLOR','Colour','','','','')]\n"
+                "BASE=[('CBC','CBC','Hematology',(),CBC_FIELDS)]\n"
+                "TESTS=BASE+[('URINE','Urine','Urinalysis',(),URINE_FIELDS)]\n",
                 encoding="utf-8"
             )
             original = p.read_bytes()
