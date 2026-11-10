@@ -472,7 +472,13 @@ console.log('LAB_KEYBOARD_RUNTIME_OK');
                               "name": str(field[1]), "unit": str(field[2] or "") if len(field) > 2 else "",
                               "test_code": test_code, "test_name": test_name,
                               "value": "NOVA_EXISTING_VALUE_42"})
-        self.assertGreater(len(cases), 60, "Catalogue-wide coverage unexpectedly small")
+        self.assertEqual(len(module.TESTS), 97, "Expected the complete NOVA catalogue, not a subset")
+        self.assertEqual(len({t[0] for t in module.TESTS}), 97, "Duplicate test identity")
+        self.assertTrue(all(t[4] for t in module.TESTS), "Every test requires a result entry")
+        self.assertGreater(len(cases), 120, "Not all named analytes were expanded")
+        # Test the actual generated JS with every assay, including exact typed
+        # result choices and numeric fields; a rendering-only smoke test is not enough.
+
         generated = APP.read_text(encoding="utf-8")
         start = generated.index("function novaLabResultControl(x){")
         end = generated.index("function novaLabGroupedRows(lines,editable){", start)
@@ -489,6 +495,23 @@ for(const x of cases){
  assert(html.includes('value="NOVA_EXISTING_VALUE_42"'),'existing value lost: '+x.test_code+'/'+x.code);
  assert(html.includes('data-line="'+x.id+'"'),'line identifier lost: '+x.test_code+'/'+x.code);
  assert(html.includes('<input')||html.includes('<select'),'missing editable field: '+x.test_code+'/'+x.code);
+}
+const typed=[
+ ['BGROUP','ABO','<select'],['BLOOD_GROUP','RH','<select'],
+ ['DENGUE','NS1','<datalist'],['DENGUE','IGM','<datalist'],
+ ['SEMEN','VISCOSITY','<datalist'],['SEMEN','LIQUEFACTION','<datalist'],
+ ['URINE','COLOR','<datalist'],['STOOL','CONS','<datalist'],
+ ['MALARIA','DENSITY','<datalist'],['MALARIA','STAGE','<datalist'],
+ ['HIV_RAPID','RESULT','<datalist'],['MAL_RDT','RDT','<datalist'],
+ ['RBS','GLU','inputmode="decimal"'],['CBC','HGB','inputmode="decimal"'],
+ ['RFT','CRE','inputmode="decimal"'],['TFT','TSH','inputmode="decimal"'],
+ ['NA_K','NA','inputmode="decimal"'],['IRON_FULL','TIBC','inputmode="decimal"']
+];
+for(const [test,field,expected] of typed){
+ const x=cases.find(y=>y.test_code===test&&y.code===field);
+ assert(x,'missing '+test+'/'+field);
+ const html=ctx.novaLabResultControl(x);
+ assert(html.includes(expected),'wrong result type '+test+'/'+field+' expected '+expected+': '+html);
 }
 console.log('ALL_CATALOGUE_FIELDS_OK '+cases.length);
 """
