@@ -76,11 +76,10 @@ existing={item.elts[0].value for node in tree.body if isinstance(node,ast.Assign
 # Existing catalogue definitions and already installed databases remain untouched.
 LAB_STRUCTURED_NEW = {
     "MALARIA": [
-        ("METHOD", "Method", "", "", "", ""),
-        ("PARASITE", "Malaria parasite detected", "", "", "", ""),
-        ("SPECIES", "Plasmodium species (if identified)", "", "", "", ""),
-        ("STAGE", "Parasite stage (if identified)", "", "", "", ""),
-        ("DENSITY", "Parasite density / grading (if reported)", "", "", "", ""),
+        ("DENSITY", "Malaria Density", "", "", "", ""),
+        ("TYPE", "Malaria Type", "", "", "", ""),
+        ("STAGE", "Malaria Stage", "", "", "", ""),
+        ("PARASITE", "B.F. for Malaria", "", "", "", ""),
         ("COMMENTS", "Microscopy comments", "", "", "", ""),
     ],
     "GTT": [
