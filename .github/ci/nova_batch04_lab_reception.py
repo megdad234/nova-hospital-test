@@ -182,7 +182,7 @@ function novaLabResultControl(x){
     if(code==='NIT')choices=['Negative','Positive'];
     else if(code==='LEU')choices=['Negative','Trace','Positive'];
     else if(code==='KET'||/ketone/.test(name))choices=['Negative','Trace','+','++','+++'];
-    else if(/^(PRO|PROTEIN|GLU|GLUCOSE|BLOOD|BLD)$/.test(code))
+    else if(/^(PRO|PROT|PROTEIN|GLU|GLUC|GLUCOSE|BLOOD|BLD)$/.test(code))
       choices=['Negative','Trace','+','++','+++','++++'];
     else if(/^(COLOR|COLOUR)$/.test(code)||/colour|color/.test(name))
       {choices=['Yellow','Pale yellow','Amber','Dark yellow','Red','Brown','Other'];allowOther=true;}
@@ -193,8 +193,8 @@ function novaLabResultControl(x){
   }else if(stool){
     if(code==='MUCUS')choices=['Absent','Present'];
     else if(/colour|color/.test(name)){choices=['Brown','Yellow','Green','Black','Red','Other'];allowOther=true;}
-    else if(/consistency|appearance/.test(name)){choices=['Formed','Soft','Loose','Watery','Other'];allowOther=true;}
-    else if(/ova|cyst|parasite|worm|blood/.test(name)){choices=['Not seen','Seen','Other'];allowOther=true;}
+    else if(code==='CONS'||/consistency|appearance/.test(name)){choices=['Formed','Soft','Loose','Watery','Other'];allowOther=true;}
+    else if(/^(OVA|PARASITE|CYST|WORM|OCCULT_BLOOD)$/.test(code)||/ova|cyst|parasite|worm|blood/.test(name)){choices=['Not seen','Seen','Other'];allowOther=true;}
   }
   // Existing results, including unusual microscopy descriptions, remain editable.
   // Mixed fields use a list of suggestions, never a restrictive dropdown.
