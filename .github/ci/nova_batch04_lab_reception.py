@@ -279,9 +279,10 @@ function novaLabGroupedRows(lines,editable){
   // Section labels such as Macroscopy/Microscopy are not panel identifiers.
   // Infer only from distinctive parameter signatures when the API omits parent metadata.
   const codes=new Set((lines||[]).map(x=>String(x.code||'').trim().toUpperCase()));
-  const urineSignature=(['NIT','LEU','KET'].filter(c=>codes.has(c)).length>=2)||(['NIT','LEU','KET','PROT','GLUC','CRYS','EPI'].filter(c=>codes.has(c)).length>=3)||(['NIT','PROT','GLUC'].filter(c=>codes.has(c)).length>=2);
-  const stoolSignature=codes.has('MUCUS')&&
-    [...codes].some(c=>/^(OVA|CYST|WORM|PARASITE|CONS|CONSISTENCY|OCCULT_BLOOD)$/.test(c));
+  const urineSignature=(['NIT','LEU','KET'].filter(c=>codes.has(c)).length>=2)||(['NIT','LEU','KET','PROT','GLUC','CRYS','EPI'].filter(c=>codes.has(c)).length>=3)||(['NIT','PROT','GLUC'].filter(c=>codes.has(c)).length>=2)||(['COLOR','APPEAR','SG','PH','PROT','GLUC','WBC','RBC','CRYS','EPI'].filter(c=>codes.has(c)).length>=4&&['SG','PH','CRYS','EPI'].some(c=>codes.has(c)));
+  const stoolSignature=(codes.has('MUCUS')&&
+    [...codes].some(c=>/^(OVA|CYST|WORM|PARASITE|CONS|CONSISTENCY|OCCULT_BLOOD)$/.test(c)))||
+    (['CONS','CONSISTENCY'].some(c=>codes.has(c))&&['OVA','CYST','WORM'].some(c=>codes.has(c)));
   const inferredPanel=urineSignature?'URINE':stoolSignature?'STOOL':'';
   const groups=new Map();
   for(const line of lines||[]){
