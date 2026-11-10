@@ -116,6 +116,30 @@ catalog=catalog.replace(
 if "GTT" not in existing:
     extra.append(("GTT", "Glucose Tolerance Test", "Chemistry", "glucose tolerance test", LAB_STRUCTURED_NEW["GTT"]))
     existing.add("GTT")
+# Additional commonly requested tests absent from the initial price list.
+# Only add missing codes; leave price at zero pending local pricing approval.
+# Do not invent clinical reference intervals or patient results.
+COMMON_EXTRA_TESTS = [
+ ("HIV_RAPID","HIV Rapid Screening","Serology",[("RESULT","Screening result","","","","")]),
+ ("HCV_RAPID","HCV Antibody Rapid Screening","Serology",[("RESULT","Screening result","","","","")]),
+ ("HBSAG_RAPID","HBsAg Rapid Screening","Serology",[("RESULT","Screening result","","","","")]),
+ ("VDRL","VDRL Screening","Serology",[("RESULT","Screening result","","","","")]),
+ ("RPR","RPR Screening","Serology",[("RESULT","Screening result","","","","")]),
+ ("MALARIA_RDT","Malaria Rapid Diagnostic Test","Parasitology",[("RESULT","Rapid test result","","","","")]),
+ ("STOOL_OCCULT","Stool Occult Blood","Parasitology",[("RESULT","Occult blood result","","","","")]),
+ ("ESR","Erythrocyte Sedimentation Rate","Hematology",[("ESR","ESR","mm/hr","","","")]),
+ ("RETIC","Reticulocyte Count","Hematology",[("RETIC","Reticulocyte count","%","","","")]),
+ ("BLOOD_GROUP","ABO and Rh Blood Group","Blood Bank",[("ABO","ABO group","","","",""),("RH","Rh(D)","","","","")]),
+ ("CROSSMATCH","Blood Crossmatch","Blood Bank",[("RESULT","Compatibility result","","","",""),("COMMENTS","Comments","","","","")]),
+ ("URINE_CULTURE","Urine Culture","Microbiology",[("GROWTH","Culture growth","","","",""),("ORGANISM","Organism","","","",""),("SENSITIVITY","Susceptibility / comments","","","","")]),
+ ("STOOL_CULTURE","Stool Culture","Microbiology",[("GROWTH","Culture growth","","","",""),("ORGANISM","Organism","","","",""),("SENSITIVITY","Susceptibility / comments","","","","")]),
+ ("BLOOD_CULTURE","Blood Culture","Microbiology",[("GROWTH","Culture growth","","","",""),("ORGANISM","Organism","","","",""),("SENSITIVITY","Susceptibility / comments","","","","")]),
+ ("URINE_PREG","Urine Pregnancy Test","Serology",[("RESULT","Pregnancy test result","","","","")]),
+]
+for code,name,category,params in COMMON_EXTRA_TESTS:
+    if code not in existing:
+        extra.append((code,name,category,name.lower(),params))
+        existing.add(code)
 anchor="\nPOPULAR = "
 assert anchor in catalog
 catalog=catalog.replace(anchor,"\n# AL_SHARQ_LAB_SEED_V1 — new test definitions; no invented clinical intervals.\nTESTS.extend("+repr(extra)+")\n"+anchor,1)
