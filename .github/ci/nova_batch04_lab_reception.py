@@ -174,9 +174,9 @@ function novaLabResultControl(x){
   const panel=[x.test_code,x.test_name,x.panel_code,x.panel_name].filter(Boolean).join(' ').toLowerCase().replace(/_/g,' ');
   const context=section+' '+panel;
   // Urine pregnancy and urine cultures are distinct assays, not urinalysis microscopy.
-  const urine=/\\burine\\b|urinalysis|\\busa\\b|بول/.test(context)&&!/\\b(urine preg|urine pregnancy|urine culture)\\b/.test(panel.replace(/_/g,' '));
+  const urine=/\\burinalysis\\b|\\burine examination\\b|\\burine general\\b|\\busa\\b|بول/.test(context)&&!/\\b(urine preg|urine pregnancy|urine culture)\\b/.test(panel);
   // Stool antigen/serology tests are not stool microscopy panels.
-  const stool=/\\bstool\\b|faec|fecal|براز/.test(context)&&!/\\b(hp stool|h pylori|occult blood|stool culture|stool antigen)\\b/.test(panel.replace(/_/g,' '));
+  const stool=/\\bstool general\\b|\\bstool examination\\b|\\bstool microscopy\\b|\\bfaecal examination\\b|\\bfecal examination\\b|براز/.test(context)&&!/\\b(hp stool|h pylori|occult blood|stool culture|stool antigen)\\b/.test(panel);
   let choices=null,allowOther=false;
   // Explicit panel-code overrides for qualitative tests that contain urine/stool
   // in their names but are not routine microscopy examinations.
@@ -238,7 +238,7 @@ function novaLabResultControl(x){
   // their parent test (not by RESULT alone), preserving free-text overrides.
   if(!choices&&!urine&&!stool&&/^(RESULT|SCREEN|SCREENING|AG|AB|IGM|IGG|NS1)$/.test(code)){
     const assay=(panel+' '+name).toLowerCase().replace(/_/g,' ');
-    const infection=/\\b(hiv|hbs|hcv|hepatitis|dengue|typhoid|widal|brucella|vdrl|rpr|syphilis|h\\.?\\s*pylori|hp stool|hp serum|\\bhp\\b|malaria|ict|rapid|antigen|antibody|serology|sickling|pregnancy|hcg|occult blood)\\b/.test(assay);
+    const infection=/\\b(hiv|hbs|hcv|hepatitis|dengue|typhoid|widal|brucella|vdrl|rpr|syphilis|h\\.?\\s*pylori|hp stool|hp serum|\\bhp\\b|malaria|ict|rapid|antigen|antibody|sickling|pregnancy|hcg|occult blood)\\b/.test(assay);
     const quantitative=/\\b(quantitative|titre|titer|dilution|elisa index|concentration|viral load)\\b/.test(assay);
     if((infection||panel==='sg')&&!quantitative){
       choices=/widal|brucella/.test(assay)?['Negative','Positive','Other']:
