@@ -513,6 +513,14 @@ console.log('LAB_KEYBOARD_RUNTIME_OK');
                                 str(field[1]), mode,
                                 'method_and_reference_intervals_require_local_validation'))
         self.assertEqual(len(mapping), len(cases))
+        self.assertEqual(len({row[0] for row in mapping}), 97)
+        self.assertTrue(all(row[2] and row[3] for row in mapping),
+                        'Every analyte requires a code and display label')
+        self.assertTrue(all(not (str(t[4][0][0]) == 'RESULT' and len(t[4]) == 1)
+                            for t in module.TESTS if t[0] in
+                            {'NA_K','LFT_E','IRON_FULL','PT_PTT','SEMEN','DENGUE','FERTILITY'}),
+                        'Composite tests must not fall back to a generic RESULT')
+
         output = ROOT / 'lab_all_97_field_mapping.csv'
         with output.open('w', encoding='utf-8-sig', newline='') as handle:
             writer = csv.writer(handle)
