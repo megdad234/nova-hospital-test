@@ -178,6 +178,11 @@ function novaLabResultControl(x){
   // Stool antigen/serology tests are not stool microscopy panels.
   const stool=/\\bstool\\b|faec|fecal|براز/.test(context)&&!/\\b(hp stool|h pylori|occult blood|stool culture|stool antigen)\\b/.test(panel.replace(/_/g,' '));
   let choices=null,allowOther=false;
+  // Explicit panel-code overrides for qualitative tests that contain urine/stool
+  // in their names but are not routine microscopy examinations.
+  if(code==='RESULT'&&/\\bURINE_PREG\\b|\\bURINE PREG\\b/i.test(String(x.test_code||x.panel_code||'')))
+    {choices=['Positive','Negative','Indeterminate'];allowOther=true;}
+
   if((code==='PARASITE' && /malaria|parasite detected|blood film|b\\.f/.test(name+' '+panel))||
      (code==='MP' && /malaria|parasite|blood film|b\.f/.test(name+' '+panel)))
     {choices=['No malaria parasite seen','Malaria parasite seen','Other'];allowOther=true;}
