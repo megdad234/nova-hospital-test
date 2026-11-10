@@ -249,6 +249,10 @@ for(const [test_code,value] of panels){
 }
 const quantitativeSerology=fn({id:411,code:'RESULT',name:'Result',test_code:'CRP Quantitative',value:'12.5'});
 assert(!quantitativeSerology.includes('<datalist'),'quantitative assay must stay numeric/free text');
+for(const test_name of ['HIV antibody quantitative','HCG concentration','Dengue antigen titre','Hepatitis antibody viral load']){
+ const html=fn({id:412,code:'RESULT',name:'Result',test_code:'LAB-SEROLOGY',test_name,value:'12.5'});
+ assert(!html.includes('<datalist')&&!html.includes('<select'),'quantitative test misclassified: '+test_name);
+}
 const legacyNamedAssay=fn({id:420,code:'RESULT',name:'Result',test_code:'LAB-SEROLOGY',test_name:'HIV Rapid Screening',value:'Non-reactive'});
 assert(legacyNamedAssay.includes('<datalist'),'use panel display name when panel code is generic');
 const legacyNamedUrine=fn({id:421,code:'NIT',name:'Nitrite',test_code:'LAB-01',test_name:'Urine Examination',value:'Negative'});
