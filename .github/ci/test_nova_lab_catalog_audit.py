@@ -98,6 +98,23 @@ class LabCatalogueAuditTests(unittest.TestCase):
             self.assertTrue(report["review_required"])
             self.assertEqual(p.read_bytes(), original)
 
+    def test_resolves_named_static_panels_without_executing_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "lab_catalog.py"
+            p.write_text(
+                "CBC_FIELDS=[('WBC','White cells','10^9/L','','','')]\\n"
+                "URINE_FIELDS=[('COLOR','Colour','','','','')]\\n"
+                "BASE=[('CBC','CBC','Hematology',(),CBC_FIELDS)]\\n"
+                "TESTS=BASE+[('URINE','Urine','Urinalysis',(),URINE_FIELDS)]\\n",
+                encoding="utf-8"
+            )
+            original = p.read_bytes()
+            report = module.audit(p)
+            self.assertEqual(report["parse_warnings"], [])
+            self.assertEqual(report["parsed_tests"], 2)
+            self.assertEqual(report["missing_priority_codes"], ["GTT", "MALARIA", "STOOL"])
+            self.assertEqual(p.read_bytes(), original)
+
     def test_never_executes_catalogue_code(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "lab_catalog.py"
