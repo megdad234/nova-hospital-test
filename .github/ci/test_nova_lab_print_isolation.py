@@ -8,6 +8,26 @@ APP = ROOT / "hospital/static/app.js"
 CSS = ROOT / "hospital/static/style.css"
 
 class LabPrintIsolationTests(unittest.TestCase):
+    def test_malaria_catalogue_has_complete_entry_fields(self):
+        # Regression: MALARIA existed with only MP in the original catalogue.
+        # Test the generated catalogue, not just the CI patch text.
+        import importlib.util
+        import sys
+        catalog_path = ROOT / "hospital/lab_catalog.py"
+        spec = importlib.util.spec_from_file_location("nova_lab_catalog_check", catalog_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        malaria = [row for row in module.TESTS if row[0] == "MALARIA"]
+        self.assertEqual(len(malaria), 1, "MALARIA must be one panel")
+        fields = [row[0] for row in malaria[0][4]]
+        for field in ("MP", "DENSITY", "TYPE", "STAGE", "PARASITE", "COMMENTS"):
+            self.assertIn(field, fields, "Missing malaria entry: " + field)
+        self.assertEqual(len(fields), len(set(fields)), "Duplicate malaria fields")
+        self.assertFalse(any(str(row[3]).strip() or str(row[4]).strip()
+                             for row in malaria[0][4] if row[0] in
+                             ("DENSITY", "TYPE", "STAGE", "PARASITE", "COMMENTS")),
+                         "Do not fabricate units or reference intervals")
+
     def test_lab_print_renderer_and_disclaimer(self):
         source = APP.read_text(encoding="utf-8")
         self.assertIn("async function printReport(id)", source)
