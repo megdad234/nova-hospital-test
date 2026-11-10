@@ -240,6 +240,20 @@ function novaLabResultControl(x){
       allowOther=true;
     }
   }
+  // Structured choices for newly seeded blood-bank and microbiology panels.
+  // The organism and susceptibility fields intentionally remain free text.
+  if(!choices){
+    if(code==='ABO'&&/blood group|abo/.test(panel))choices=['A','B','AB','O'];
+    else if(code==='RH'&&/blood group|rh/.test(panel))choices=['Positive','Negative','Weak D','Indeterminate'];
+    else if(code==='RESULT'&&/crossmatch/.test(panel))
+      {choices=['Compatible','Incompatible','Indeterminate','Other'];allowOther=true;}
+    else if(code==='GROWTH'&&/culture/.test(panel))
+      {choices=['No growth','Growth detected','Mixed growth','Pending','Other'];allowOther=true;}
+    else if(code==='RESULT'&&/urine pregnancy/.test(panel))
+      {choices=['Positive','Negative','Indeterminate'];allowOther=true;}
+    else if(code==='RESULT'&&/stool occult/.test(panel))
+      {choices=['Positive','Negative','Indeterminate'];allowOther=true;}
+  }
   // Existing results, including unusual microscopy descriptions, remain editable.
   // Mixed fields use a list of suggestions, never a restrictive dropdown.
   const value=String(x.value??'');
