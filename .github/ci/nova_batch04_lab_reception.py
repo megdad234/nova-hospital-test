@@ -214,7 +214,12 @@ function novaLabResultControl(x){
   // Mixed fields use a list of suggestions, never a restrictive dropdown.
   const value=String(x.value??'');
   const attrs=' data-line="'+esc(x.id)+'" aria-label="نتيجة '+esc(x.name)+'"';
-  const numeric=/^(FASTING|TIME_30|TIME_60|TIME_90|TIME_120|TIME_150|TIME_180|TIME_240|WBC|RBC|HGB|HB|HCT|MCV|MCH|MCHC|PLT|PLATELETS|RDW|NEUT|LYMPH|MONO|EOS|BASO)$/.test(code);
+  // WBC/RBC in urine or stool are microscopy ranges (e.g. 2-4 /HPF), not CBC decimals.
+  const microscopyCount=(urine||stool)&&/^(WBC|RBC|PUS)$/.test(code);
+  const numeric=!microscopyCount&&(
+    /^(FASTING|TIME_30|TIME_60|TIME_90|TIME_120|TIME_150|TIME_180|TIME_240|WBC|RBC|HGB|HB|HCT|MCV|MCH|MCHC|PLT|PLATELETS|RDW|NEUT|LYMPH|MONO|EOS|BASO)$/.test(code)||
+    (urine&&/^(SG|PH)$/.test(code))
+  );
   if(choices&&allowOther){
     const listId='nova-lab-choices-'+String(x.id).replace(/[^a-zA-Z0-9_-]/g,'');
     return '<input list="'+listId+'"'+attrs+' value="'+esc(value)+'" maxlength="4000" autocomplete="off" dir="auto">'+
