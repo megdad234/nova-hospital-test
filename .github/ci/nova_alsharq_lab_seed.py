@@ -256,3 +256,11 @@ if T.exists():
     assert test.count(old)==1, "Unexpected CBC price assertion; review before changing tests"
     T.write_text(test.replace(old,"self.assertEqual(cbc['price'],15000)"),encoding="utf-8")
 print("Al Sharq seed prepared:",len(ROWS),"prices;",len(extra),"new definitions")
+# Run the complete 97-assay UI field regression AFTER the catalogue is seeded.
+# Previously this test ran only before seeding and silently skipped the full audit.
+import subprocess
+import sys
+print("NOVA_POST_SEED_FULL_FIELD_REGRESSION_START",flush=True)
+subprocess.run([sys.executable, ".github/ci/test_nova_lab_print_isolation.py"], check=True)
+print("NOVA_POST_SEED_FULL_FIELD_REGRESSION_PASS",flush=True)
+
