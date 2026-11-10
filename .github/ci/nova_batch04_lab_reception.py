@@ -173,6 +173,17 @@ function novaLabResultControl(x){
     choices=['Not detected','Detected'];
   else if(code==='SPECIES' && name.includes('plasmodium'))
     choices=['P. falciparum','P. vivax','P. malariae','P. ovale','P. knowlesi','Mixed infection','Not identified'];
+  // Restrict common qualitative options to the exact urine/stool panel and field.
+  // Always retain legacy values and allow free-text entry for descriptive findings.
+  const section=String(x.section_name||'').toLowerCase();
+  const urine=/\\burine\\b|urinalysis|بول/.test(section);
+  const stool=/\\bstool\\b|faec|fecal|براز/.test(section);
+  if(urine && code==='NIT')choices=['Negative','Positive'];
+  else if(urine && code==='LEU')choices=['Negative','Trace','Positive'];
+  else if(urine && code==='KET')choices=['Negative','Trace','+','++','+++'];
+  else if(stool && code==='MUCUS')choices=['Absent','Present'];
+  // Descriptive fields (e.g. urine crystals, stool parasites, malaria MP)
+  // remain free text to preserve microscopy detail.
   // METHOD is shared by multiple tests; keep it as free text to avoid
   // incorrectly forcing a malaria-specific method on unrelated assays.
   const value=String(x.value??'');
