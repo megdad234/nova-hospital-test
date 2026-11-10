@@ -309,6 +309,24 @@ const NOVA_LAB_RESULT_PROFILES={
     else if(code==='RESULT'&&/stool occult/.test(panel))
       {choices=['Positive','Negative','Indeterminate'];allowOther=true;}
   }
+  // NOVA_LAB_TYPED_OPTIONS_V1: choices are tied to the exact assay and
+  // analyte, not guessed from an unrelated test's section name.
+  // Other permits laboratories to record method-specific observations.
+  if(!choices){
+    if(identity==='DENGUE'&&/^(NS1|IGM|IGG)$/.test(code))
+      {choices=['Negative','Positive','Equivocal','Invalid','Other'];allowOther=true;}
+    else if(identity==='SEMEN'&&code==='APPEARANCE')
+      {choices=['Normal','Abnormal','Other'];allowOther=true;}
+    else if(identity==='SEMEN'&&code==='VISCOSITY')
+      {choices=['Normal','Increased','Decreased','Other'];allowOther=true;}
+    else if(identity==='SEMEN'&&code==='LIQUEFACTION')
+      {choices=['Complete','Incomplete','Other'];allowOther=true;}
+    else if(identity==='SEMEN'&&code==='COMMENTS')choices=null;
+    else if(identity==='BRUCELLA'&&code==='RESULT')
+      {choices=['Negative','Positive','Indeterminate','Other'];allowOther=true;}
+    else if(identity==='HBS_ELISA'&&code==='RESULT')
+      {choices=['Non-reactive','Reactive','Equivocal','Other'];allowOther=true;}
+  }
   // Existing results, including unusual microscopy descriptions, remain editable.
   // Mixed fields use a list of suggestions, never a restrictive dropdown.
   const value=String(x.value??'');
