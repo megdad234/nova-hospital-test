@@ -147,6 +147,11 @@ catalog=catalog.replace(anchor,"\n# AL_SHARQ_LAB_SEED_V1 — new test definition
 # Use field identities, not fabricated patient results or clinical reference intervals.
 # The source catalogue remains the authority for test codes and pricing.
 STRUCTURED_FIELDS = {
+    "WIDAL": [("O", "Salmonella Typhi O"), ("H", "Salmonella Typhi H")],
+    "MAL_RDT": [("RDT", "Malaria Rapid Test")],
+    "BGROUP": [("ABO", "ABO group"), ("RH", "Rh(D)")],
+    "PTINR": [("PT", "Prothrombin Time"), ("INR", "INR")],
+    "BTCT": [("BT", "Bleeding Time"), ("CT", "Clotting Time")],
     "NA_K": [("NA", "Sodium"), ("K", "Potassium")],
     "LFT_E": [("ALT", "ALT (SGPT)"), ("AST", "AST (SGOT)"),
               ("ALP", "Alkaline Phosphatase"), ("TBIL", "Total Bilirubin"),
