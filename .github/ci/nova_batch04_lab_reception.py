@@ -174,9 +174,9 @@ function novaLabResultControl(x){
   const urine=/\\burine\\b|urinalysis|بول/.test(context);
   const stool=/\\bstool\\b|faec|fecal|براز/.test(context);
   let choices=null,allowOther=false;
-  if((code==='PARASITE' && (name.includes('malaria')||name.includes('parasite detected')))||
+  if((code==='PARASITE' && /malaria|parasite detected|blood film|b\\.f/.test(name+' '+panel))||
      (code==='MP' && /malaria|parasite|blood film|b\.f/.test(name+' '+panel)))
-    {choices=['Not detected','Detected','Other'];allowOther=true;}
+    {choices=['No malaria parasite seen','Malaria parasite seen','Other'];allowOther=true;}
   else if(code==='SPECIES' && name.includes('plasmodium'))
     choices=['P. falciparum','P. vivax','P. malariae','P. ovale','P. knowlesi','Mixed infection','Not identified'];
   if(code==='DENSITY'&&/malaria|blood film|b\\.f/.test(name+' '+panel))
