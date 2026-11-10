@@ -147,6 +147,46 @@ console.log('LAB_CONTROL_RUNTIME_OK');
         self.assertIn("const attrs=' data-line=", renderer)
         self.assertIn("value=\"'+esc(value)+'\"", renderer)
 
+    def test_lab_keyboard_navigation_runtime(self):
+        script = r"""
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const src=fs.readFileSync(process.argv[1],'utf8');
+const a=src.indexOf('function novaLabResultKeyboard(event){');
+const b=src.indexOf("if(typeof document!=='undefined'&&!window.__novaLabKeyboardBound)",a);
+assert(a>=0&&b>a,'keyboard handler not found');
+const fn=vm.runInNewContext(src.slice(a,b)+';novaLabResultKeyboard');
+let focused=-1,prevented=0;
+const fields=[0,1,2].map(i=>({
+ tagName:i===1?'SELECT':'INPUT',
+ matches:q=>q==='input[data-line]'||q==='input[data-line],select',
+ nextElementSibling:{matches:q=>q==='input[data-line]'},
+ focus(){focused=i}
+}));
+const table={querySelector:q=>q==='input[data-line]'?fields[0]:null,
+ querySelectorAll:()=>fields};
+fields.forEach(f=>f.closest=q=>q==='table'?table:null);
+function key(index,k,mods={}){
+ focused=-1;prevented=0;
+ fn({target:fields[index],key:k,preventDefault(){prevented++},
+ altKey:false,metaKey:false,ctrlKey:false,shiftKey:false,isComposing:false,...mods});
+ return [focused,prevented];
+}
+assert.deepStrictEqual(key(0,'Enter'),[1,1]);
+assert.deepStrictEqual(key(2,'Enter',{shiftKey:true}),[1,1]);
+assert.deepStrictEqual(key(0,'ArrowDown'),[-1,0]);
+assert.deepStrictEqual(key(0,'ArrowDown',{ctrlKey:true}),[1,1]);
+assert.deepStrictEqual(key(2,'ArrowUp',{ctrlKey:true}),[1,1]);
+assert.deepStrictEqual(key(1,'ArrowDown'),[-1,0]);
+assert.deepStrictEqual(key(1,'Enter'),[-1,0]);
+assert.deepStrictEqual(key(1,'Enter',{ctrlKey:true}),[2,1]);
+assert.deepStrictEqual(key(0,'Enter',{isComposing:true}),[-1,0]);
+console.log('LAB_KEYBOARD_RUNTIME_OK');
+"""
+        result = subprocess.run(["node", "-e", script, str(APP)],
+                                capture_output=True, text=True, encoding="utf-8", timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("LAB_KEYBOARD_RUNTIME_OK", result.stdout)
+
     def test_lab_page_is_scoped(self):
         styles = [p.read_text(encoding="utf-8") for p in ROOT.glob("hospital/static/*.css")]
         joined = "\n".join(styles)
