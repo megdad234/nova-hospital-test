@@ -253,6 +253,18 @@ const legacyNamedAssay=fn({id:420,code:'RESULT',name:'Result',test_code:'LAB-SER
 assert(legacyNamedAssay.includes('<datalist'),'use panel display name when panel code is generic');
 const legacyNamedUrine=fn({id:421,code:'NIT',name:'Nitrite',test_code:'LAB-01',test_name:'Urine Examination',value:'Negative'});
 assert(legacyNamedUrine.includes('<select'),'use urine display name when test code is generic');
+for(const [test_code,code,value,expected] of [
+ ['BLOOD_GROUP','ABO','A','<select'],['BLOOD_GROUP','RH','Positive','<select'],
+ ['CROSSMATCH','RESULT','Compatible','<datalist'],
+ ['URINE_CULTURE','GROWTH','No growth','<datalist'],
+ ['STOOL_OCCULT','RESULT','Negative','<datalist'],
+ ['URINE_PREG','RESULT','Positive','<datalist']
+]){
+ const html=fn({id:501,code,name:code,test_code,value});
+ assert(html.includes(expected),'missing structured choice '+test_code+'/'+code);
+}
+const organism=fn({id:502,code:'ORGANISM',name:'Organism',test_code:'URINE_CULTURE',value:'E. coli'});
+assert(!organism.includes('<select')&&!organism.includes('<datalist'),'organism identification must remain editable');
 const chemistry=fn({id:72,code:'RESULT',name:'Urea',test_name:'Renal Function Tests',value:'28'});
 assert(!chemistry.includes('<datalist')&&!chemistry.includes('<select'),'numeric chemistry must remain unrestricted');
 const cbcNumeric=fn({id:50,code:'HGB',name:'Hemoglobin',section_name:'',value:'12.5'});
