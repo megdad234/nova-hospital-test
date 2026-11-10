@@ -203,7 +203,7 @@ function novaLabResultControl(x){
   // quantitative markers take precedence even for an otherwise qualitative code.
   const identity=String(x.test_code||x.panel_code||'').trim().toUpperCase();
   const assayLabel=[x.test_name,x.panel_name,x.name].filter(Boolean).join(' ').toLowerCase();
-  const isQuantitative=/\\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\\b/.test(assayLabel);
+  const isQuantitative=/\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\b/.test(assayLabel);
   if(code==='RESULT'&&!isQuantitative&&Object.prototype.hasOwnProperty.call(NOVA_LAB_RESULT_PROFILES,identity)){
     choices=NOVA_LAB_RESULT_PROFILES[identity].slice();
     allowOther=true;
