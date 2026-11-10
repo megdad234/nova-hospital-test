@@ -198,8 +198,7 @@ function novaLabResultControl(x){
   // Mixed fields use a list of suggestions, never a restrictive dropdown.
   const value=String(x.value??'');
   const attrs=' data-line="'+esc(x.id)+'" aria-label="نتيجة '+esc(x.name)+'"';
-  const numeric=(/^(FASTING|TIME_30|TIME_60|TIME_120|TIME_180)$/.test(code)&&/glucose/i.test(name))||
-    (/^(WBC|RBC|HGB|HB|HCT|MCV|MCH|MCHC|PLT|PLATELETS|RDW|NEUT|LYMPH|MONO|EOS|BASO)$/.test(code)&&/blood|cbc|hematol|haematol/i.test(section));
+  const numeric=/^(FASTING|TIME_30|TIME_60|TIME_90|TIME_120|TIME_150|TIME_180|TIME_240|WBC|RBC|HGB|HB|HCT|MCV|MCH|MCHC|PLT|PLATELETS|RDW|NEUT|LYMPH|MONO|EOS|BASO)$/.test(code);
   if(choices&&allowOther){
     const listId='nova-lab-choices-'+String(x.id).replace(/[^a-zA-Z0-9_-]/g,'');
     return '<input list="'+listId+'"'+attrs+' value="'+esc(value)+'" maxlength="4000" autocomplete="off" dir="auto">'+
@@ -225,7 +224,7 @@ function novaLabResultKeyboard(event){
   // Native up/down must remain available to select an option or edit text.
   // Ctrl+up/down provides explicit navigation for text fields.
   if(event.key!=='Enter'&&!event.ctrlKey)return;
-  if(event.key==='Enter'&&target.tagName==='SELECT'&&!event.ctrlKey)return;
+  // Enter advances from a closed select; native arrow keys still select options.
   const fields=[...table.querySelectorAll('input[data-line]:not([type="hidden"]),select')]
     .filter(el=>el.tagName!=='SELECT'||el.nextElementSibling?.matches('input[data-line]'));
   const index=fields.indexOf(target);
