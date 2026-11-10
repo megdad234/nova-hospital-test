@@ -108,6 +108,10 @@ select.closest=x=>x==='table'?table:null;
 e={target:select,key:'ArrowDown',altKey:false,ctrlKey:false,metaKey:false,isComposing:false,shiftKey:false,preventDefault(){this.prevented=true}};
 handler(e);assert(!e.prevented,'native dropdown arrow was hijacked');
 e={...e,key:'Enter',prevented:false};handler(e);assert(!e.prevented,'last select should not jump');
+fields.unshift(select);focused=-1;
+e={...e,key:'Enter',prevented:false};handler(e);
+assert.strictEqual(focused,0,'Enter should advance from a dropdown to the next editable field');
+assert(e.prevented,'Enter navigation should suppress implicit form submission');
 console.log('LAB_KEYBOARD_OK');
 """
         result = subprocess.run(["node", "-e", script, str(APP)],
