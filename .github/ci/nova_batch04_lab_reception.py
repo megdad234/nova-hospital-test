@@ -231,7 +231,7 @@ function novaLabResultControl(x){
   // their parent test (not by RESULT alone), preserving free-text overrides.
   if(!choices&&!urine&&!stool&&/^(RESULT|SCREEN|SCREENING|AG|AB|IGM|IGG|NS1)$/.test(code)){
     const assay=(panel+' '+name).toLowerCase().replace(/_/g,' ');
-    const infection=/\\b(hiv|hbs|hcv|hepatitis|dengue|typhoid|widal|brucella|vdrl|rpr|syphilis|h\\.?\\s*pylori|hp stool|hp serum|malaria|ict|rapid|antigen|antibody|serology|sickling|pregnancy|hcg|occult blood)\\b/.test(assay);
+    const infection=/\\b(hiv|hbs|hcv|hepatitis|dengue|typhoid|widal|brucella|vdrl|rpr|syphilis|h\\.?\\s*pylori|hp stool|hp serum|\\bhp\\b|malaria|ict|rapid|antigen|antibody|serology|sickling|pregnancy|hcg|occult blood)\\b/.test(assay);
     const quantitative=/\\b(quantitative|titre|titer|dilution|elisa index|concentration|viral load)\\b/.test(assay);
     if((infection||panel==='sg')&&!quantitative){
       choices=/widal|brucella/.test(assay)?['Negative','Positive','Other']:
