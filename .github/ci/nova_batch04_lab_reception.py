@@ -242,6 +242,13 @@ if(typeof document!=='undefined'&&!window.__novaLabKeyboardBound){
   document.addEventListener('keydown',novaLabResultKeyboard);
 }
 function novaLabGroupedRows(lines,editable){
+  // Section labels such as Macroscopy/Microscopy are not panel identifiers.
+  // Infer only from distinctive parameter signatures when the API omits parent metadata.
+  const codes=new Set((lines||[]).map(x=>String(x.code||'').trim().toUpperCase()));
+  const urineSignature=['NIT','LEU','KET'].filter(c=>codes.has(c)).length>=2;
+  const stoolSignature=codes.has('MUCUS')&&
+    [...codes].some(c=>/^(OVA|CYST|WORM|PARASITE|CONSISTENCY|OCCULT_BLOOD)$/.test(c));
+  const inferredPanel=urineSignature?'URINE':stoolSignature?'STOOL':'';
   const groups=new Map();
   for(const line of lines||[]){
     const section=line.section_name||'';
@@ -251,7 +258,7 @@ function novaLabGroupedRows(lines,editable){
   return [...groups.entries()].map(([section,rows])=>
     (section?'<tr class="nova-lab-section"><th colspan="4">'+esc(section)+'</th></tr>':'')+
     rows.map(x=>'<tr><td><b>'+esc(x.name)+'</b></td>'+
-      '<td>'+(editable?novaLabResultControl(x):'<b dir="auto">'+esc(x.value)+'</b>')+'</td>'+
+      '<td>'+(editable?novaLabResultControl({...x,test_code:x.test_code||inferredPanel}):'<b dir="auto">'+esc(x.value)+'</b>')+'</td>'+
       '<td dir="ltr">'+(esc(x.unit)||'—')+'</td>'+
       '<td dir="ltr" class="reference">'+(esc(x.reference_range)||'—')+'</td></tr>').join('')
   ).join('');
