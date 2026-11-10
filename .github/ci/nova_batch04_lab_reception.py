@@ -250,6 +250,20 @@ function novaLabResultControl(x){
       allowOther=true;
     }
   }
+  // Explicitly recognize common qualitative catalogue panels by assay identity.
+  // This is a suggestion list, not a diagnosis or a restrictive result value.
+  if(!choices&&!urine&&!stool&&code==='RESULT'){
+    const assay=(panel+' '+name).toLowerCase().replace(/_/g,' ');
+    const quantitative=/\b(quantitative|titre|titer|dilution|concentration|viral load|index value)\b/.test(assay);
+    if(!quantitative){
+      if(/\b(hiv rapid|hcv rapid|hbsag rapid|malaria rdt|stool occult|urine preg|pregnancy test|vdrl screening|rpr screening)\b/.test(assay)){
+        choices=/\b(hiv|hcv|hbsag|vdrl|rpr)\b/.test(assay)?
+          ['Non-reactive','Reactive','Indeterminate','Other']:
+          ['Negative','Positive','Indeterminate','Other'];
+        allowOther=true;
+      }
+    }
+  }
   // Structured choices for newly seeded blood-bank and microbiology panels.
   // The organism and susceptibility fields intentionally remain free text.
   if(!choices){
