@@ -251,7 +251,7 @@ function novaLabResultControl(x){
       {choices=['Compatible','Incompatible','Indeterminate','Other'];allowOther=true;}
     else if(code==='GROWTH'&&/culture/.test(panel))
       {choices=['No growth','Growth detected','Mixed growth','Pending','Other'];allowOther=true;}
-    else if(code==='RESULT'&&/urine pregnancy/.test(panel))
+    else if(code==='RESULT'&&/urine (?:preg|pregnancy)|pregnancy test/.test(panel))
       {choices=['Positive','Negative','Indeterminate'];allowOther=true;}
     else if(code==='RESULT'&&/stool occult/.test(panel))
       {choices=['Positive','Negative','Indeterminate'];allowOther=true;}
