@@ -11,7 +11,7 @@ SOURCES={
  "unlinked_options.json":"83235fa9548c08fddb13bb6661636af669d20eb7"
 }
 def git_blob_id(data):
- return hashlib.sha1(b"blob "+str(len(data)).encode()+b"\\0"+data).hexdigest()
+ return hashlib.sha1(b"blob "+str(len(data)).encode()+bytes([0])+data).hexdigest()
 def bundle(root,token=None):
  root=pathlib.Path(root)
  destination=root/"hospital"/"royallab_source"
