@@ -1,5 +1,5 @@
 import unittest,sqlite3,importlib.util,pathlib
-P=pathlib.Path(__file__).resolve().parents[2]/"hospital/royallab_staging.py"
+P=pathlib.Path(__file__).resolve().parents[1]/"hospital/royallab_staging.py"
 spec=importlib.util.spec_from_file_location("royallab_staging",P)
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 def fixture():
