@@ -326,8 +326,12 @@ jobs:
         run: |
           python .github/ci/royallab_order_route_patch.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab order API patch rejected; installer blocked' }
-          python -m py_compile hospital/gateway.py hospital/royallab_nova_live_order_overlay.py
+          python -m py_compile hospital/gateway.py hospital/royallab_nova_live_order_overlay.py hospital/royallab_nova_binding_loader.py hospital/royallab_nova_binding_schema.py hospital/royallab_nova_order_detail_gate.py hospital/royallab_nova_order_detail_types.py hospital/royallab_nova_typed_form_contract.py hospital/royallab_nova_order_line_resolver.py hospital/royallab_nova_parameter_plan.py hospital/royallab_catalog_preview.py hospital/royallab_field_adapter.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab order API invalid; installer blocked' }
+          python -m unittest discover -s tests -p 'test_royallab_order_route_patch.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab order API regression failed; installer blocked' }
+          python -m unittest discover -s tests -p 'test_royallab_clinical_binding_integration.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab clinical binding integration failed; installer blocked' }
           python .github/ci/royallab_lab_print_patch.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab JS print patch rejected; installer blocked' }
           python .github/ci/royallab_typed_input_patch.py
