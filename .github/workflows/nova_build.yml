@@ -108,6 +108,8 @@ on:
       - 'tests/test_royallab_native_result_form.py'
       - 'hospital/royallab_native_catalog_store.py'
       - 'tests/test_royallab_native_catalog_store.py'
+      - '.github/ci/royallab_bundle_source.py'
+      - '.github/ci/royallab_native_bundle_smoke.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -384,6 +386,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab typed UI regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_lab_a4_css_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab A4 CSS regression failed; installer blocked' }
+      - name: Bundle pinned Royal Lab original catalog into Windows source
+        shell: pwsh
+        env:
+          ROYALLAB_SOURCE_TOKEN: ${{ secrets.ROYALLAB_SOURCE_TOKEN }}
+        run: |
+          python .github/ci/royallab_bundle_source.py --root .
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab original catalog unavailable or source integrity failed' }
+          python .github/ci/royallab_native_bundle_smoke.py
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab real source native SQLite import failed' }
       - name: Block misleading Royal Lab installer until live migration is proven
         shell: pwsh
         run: |
