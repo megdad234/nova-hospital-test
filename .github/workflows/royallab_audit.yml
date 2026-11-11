@@ -8,6 +8,8 @@ on:
       - 'tests/test_royallab_staging.py'
       - 'hospital/royallab_field_adapter.py'
       - 'tests/test_royallab_field_adapter.py'
+      - '.github/ci/royallab_import_offline.py'
+      - 'tests/test_royallab_import_offline.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
