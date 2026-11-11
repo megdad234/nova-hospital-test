@@ -78,6 +78,10 @@ on:
       - 'pharmacy/static/nova_batch13_purchase.css'
       - 'pharmacy/tests/test_nova_batch13.py'
       - 'docs/NOVA_BATCH13_PURCHASE_APPROVED_AR.md'
+      - '.github/ci/royallab_order_route_patch.py'
+      - 'hospital/royallab_nova_*.py'
+      - 'hospital/royallab_catalog_preview.py'
+      - 'hospital/royallab_field_adapter.py'
       - '.github/ci/royallab_lab_print_patch.py'
       - '.github/ci/royallab_lab_a4_css_patch.py'
       - 'tests/test_royallab_lab_a4_css_patch.py'
@@ -320,6 +324,10 @@ jobs:
       - name: Apply isolated Royal Lab print notice correction only
         shell: pwsh
         run: |
+          python .github/ci/royallab_order_route_patch.py
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab order API patch rejected; installer blocked' }
+          python -m py_compile hospital/gateway.py hospital/royallab_nova_live_order_overlay.py
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab order API invalid; installer blocked' }
           python .github/ci/royallab_lab_print_patch.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab JS print patch rejected; installer blocked' }
           python .github/ci/royallab_typed_input_patch.py
