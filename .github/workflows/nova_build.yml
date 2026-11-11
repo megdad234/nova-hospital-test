@@ -78,6 +78,8 @@ on:
       - 'pharmacy/static/nova_batch13_purchase.css'
       - 'pharmacy/tests/test_nova_batch13.py'
       - 'docs/NOVA_BATCH13_PURCHASE_APPROVED_AR.md'
+      - '.github/ci/royallab_lab_print_patch.py'
+      - 'tests/test_royallab_lab_print_patch.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -313,6 +315,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'NOVA refund synthetic regression failed' }
           node --check hospital/static/admin-ui.js
           if ($LASTEXITCODE -ne 0) { throw 'NOVA refund admin UI invalid' }
+      - name: Apply isolated Royal Lab print notice correction only
+        shell: pwsh
+        run: |
+          python .github/ci/royallab_lab_print_patch.py
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab print patch rejected; installer blocked' }
+          node --check hospital/static/app.js
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab report JS invalid; installer blocked' }
+          python -m unittest discover -s tests -p 'test_royallab_lab_print_patch.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab print regression failed; installer blocked' }
       - name: Build Windows installer freshly from fully patched source (no cached executable)
         shell: pwsh
         run: |
