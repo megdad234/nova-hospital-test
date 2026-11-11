@@ -1,7 +1,7 @@
 import pathlib,sqlite3,sys,unittest
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]/"hospital"))
 from royallab_nova_draft_service import save_reviewed_draft
-from test_royallab_actual_nova_save import fixture,load_original_save,FORM
+from tests.test_royallab_actual_nova_save import fixture,load_original_save,FORM
 class DraftServiceTests(unittest.TestCase):
  def test_save_via_original_nova_with_verified_line(self):
   c=fixture()
