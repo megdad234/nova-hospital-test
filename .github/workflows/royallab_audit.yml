@@ -25,6 +25,8 @@ on:
       - '.github/ci/royallab_save_contract_audit.py'
       - '.github/ci/royallab_save_fixture_audit.py'
       - 'tests/test_royallab_actual_nova_save.py'
+      - 'hospital/royallab_nova_line_mapping.py'
+      - 'tests/test_royallab_nova_line_mapping.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
