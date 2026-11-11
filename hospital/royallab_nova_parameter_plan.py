@@ -4,6 +4,9 @@ Exact source IDs are stored in the NOVA parameter code, never inferred from labe
 Does not add tests, change prices, create order lines or approve clinical use.
 """
 import re
+
+def _inactive(value):
+    return value is False or value == 0 or value in ('False','false','0')
 def source_code(source_format_id):
     value=str(source_format_id or "").strip()
     if not re.fullmatch(r"[0-9]{1,18}",value):raise ValueError("Invalid Royal Lab format ID")
@@ -17,6 +20,8 @@ def plan_existing_parameters(conn,test_id,fields):
     seen=set();mapped=[];missing=[];blocked=[]
     for field in fields:
         if not isinstance(field,dict):raise ValueError("Invalid source field")
+        if _inactive(field.get("active")):
+            blocked.append({"source_format_id":str(field.get("source_format_id")),"reason":"inactive_source_analyte"});continue
         sid=field.get("source_format_id")
         if sid is None:
             blocked.append({"source_format_id":None,"reason":"missing_source_format_id"});continue
