@@ -3,7 +3,7 @@
 No database writes or new route. Only explicit reviewed item-to-form bindings are
 eligible for typed metadata. Never infer matches from a test name.
 """
-from royallab_nova_order_detail_types import attach_reviewed_types
+from hospital.royallab_nova_order_detail_types import attach_reviewed_types
 
 def reviewed_order_detail(conn,order_detail,bindings):
     if not isinstance(order_detail,dict) or not isinstance(bindings,dict):
