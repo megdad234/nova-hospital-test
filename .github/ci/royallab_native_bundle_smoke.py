@@ -18,7 +18,8 @@ def run(root=ROOT):
    form=test_form(db,cid,t['source_test_id'])
    for f in form['fields']:
     count+=1;kinds[f['kind']]=kinds.get(f['kind'],0)+1
-  if not count:raise RuntimeError('Real Royal Lab forms contain no fields')
+  if count<1000:raise RuntimeError('Real Royal Lab source has too few fields')
+  if kinds.get('select',0)+kinds.get('select_or_text',0)+kinds.get('select_or_number',0)<1:raise RuntimeError('Real Royal Lab dropdowns missing')
  return {'source_test_count':len(tests),'field_count':count,
          'kinds':kinds,'live_patient_results_written':False,
          'installed_windows_dropdowns_verified':False}
