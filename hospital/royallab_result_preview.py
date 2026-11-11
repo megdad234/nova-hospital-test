@@ -26,7 +26,7 @@ def validate_preview(form,values):
             result[key]={"status":"invalid","reason":"unsupported_value_type"}
             continue
         text=str(value).strip()
-        options={str(o.get("label","")).strip() for o in f.get("options",[]) if o.get("label") is not None}
+        options={str(o.get("label","")).strip() for o in f.get("options",[]) if isinstance(o,dict) and o.get("label") is not None and o.get("active") not in (False,0,"False","false","0")}
         if kind in ("select","select_or_text","select_or_number") and text in options:
             result[key]={"status":"valid_option","value":text}
         elif kind=="select":
