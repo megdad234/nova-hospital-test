@@ -4,7 +4,7 @@ spec=importlib.util.spec_from_file_location('royallab_native_gateway_patch',p)
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 class GatewayPatchTests(unittest.TestCase):
  def test_auth_and_original_order_route_preserved(self):
-  src="from hospital import core, lab, finance, admin, royallab_nova_live_order_overlay\n"+"                    "+m.ANCHOR+"\n"
+  src="from hospital import core, lab, finance, admin, royallab_nova_live_order_overlay\n"+"                    if path==\'/api/hospital/patients\':\n                        return self.reply({})\n                    if path==\'/api/hospital/patients\':\n                        return self.reply({})\n                    "+m.ANCHOR+"\n"
   out=m.patch(src)
   self.assertIn("core.require_role(role,'admin','reception','lab')",out)
   self.assertIn("core.require_role(role,'admin','lab')",out)
