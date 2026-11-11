@@ -18,6 +18,11 @@ class ResolverTests(unittest.TestCase):
   p=resolve_order_lines(self.db,10,[{"source_format_id":"21","kind":"number"},{"source_format_id":"22","kind":"unknown"}])
   self.assertFalse(p["ready"]);self.assertEqual(len(p["unresolved"]),2)
   self.assertEqual(p["source_to_line"],{})
+ def test_stale_line_parameter_code_rejected(self):
+  self.db.execute("UPDATE hospital_lab_parameters SET code='WRONG' WHERE id=1")
+  result=resolve_order_lines(self.db,10,[{'source_format_id':'20','kind':'number'}])
+  self.assertFalse(result['ready'])
+  self.assertEqual(result['source_to_line'],{})
  def test_duplicate_and_missing_order(self):
   with self.assertRaises(ValueError):resolve_order_lines(self.db,10,[{"source_format_id":"20","kind":"number"},{"source_format_id":"20","kind":"number"}])
   with self.assertRaises(ValueError):resolve_order_lines(self.db,99,[{"source_format_id":"20","kind":"number"}])
