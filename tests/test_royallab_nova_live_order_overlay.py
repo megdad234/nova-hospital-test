@@ -21,6 +21,12 @@ class LiveOverlayTests(unittest.TestCase):
   create_schema(self.c)
   for role in ('reception','cashier','frontdesk','patient'):
    self.assertIs(overlay_order_detail(self.c,self.detail,role),self.detail)
+ def test_reviewed_but_not_clinically_approved_preserves_legacy(self):
+  create_schema(self.c)
+  self.c.execute("""INSERT INTO royal_lab_approved_item_bindings
+  (item_id,batch_id,nova_test_id,source_test_id,reviewed,reviewed_by,reviewed_at)
+  VALUES(22,1,7,'7',1,3,'2026-11-11')""")
+  self.assertIs(overlay_order_detail(self.c,self.detail,'lab'),self.detail)
  def test_unreviewed_binding_preserves_legacy(self):
   create_schema(self.c)
   self.c.execute("""INSERT INTO royal_lab_approved_item_bindings
