@@ -8,7 +8,7 @@ def resolve_order_lines(conn,item_id,fields):
     item=conn.execute("SELECT test_id FROM hospital_order_items WHERE id=?",(item_id,)).fetchone()
     if not item:raise ValueError("Order item not found")
     if not isinstance(fields,list) or not fields:raise ValueError("Source fields required")
-    rows=conn.execute("""SELECT l.id,l.code,l.parameter_id,p.test_id,p.active
+    rows=conn.execute("""SELECT l.id,l.code,l.parameter_id,p.test_id,p.active,p.code
       FROM hospital_lab_lines l LEFT JOIN hospital_lab_parameters p ON p.id=l.parameter_id
       WHERE l.item_id=?""",(item_id,)).fetchall()
     by_code={}
@@ -26,7 +26,7 @@ def resolve_order_lines(conn,item_id,fields):
         if field.get("kind") in ("unknown","related"):
             unresolved.append({"source_format_id":str(sid),"reason":"unsupported_format"});continue
         row=by_code.get(code)
-        if not row or row[2] is None or row[3]!=item[0] or row[4]!=1:
+        if not row or row[2] is None or row[3]!=item[0] or row[4]!=1 or row[5]!=code:
             unresolved.append({"source_format_id":str(sid),"reason":"missing_or_inactive_order_line"});continue
         mapping[str(sid)]=int(row[0])
     return {"item_id":item_id,"source_to_line":mapping,"unresolved":unresolved,
