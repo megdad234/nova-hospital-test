@@ -321,13 +321,15 @@ jobs:
         shell: pwsh
         run: |
           python .github/ci/royallab_lab_print_patch.py
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab JS print patch rejected; installer blocked' }
           python .github/ci/royallab_lab_a4_css_patch.py
-          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab print patch rejected; installer blocked' }
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab A4 CSS patch rejected; installer blocked' }
           node --check hospital/static/app.js
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab report JS invalid; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_lab_print_patch.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab JS print regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_lab_a4_css_patch.py' -v
-          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab print regression failed; installer blocked' }
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab A4 CSS regression failed; installer blocked' }
       - name: Build Windows installer freshly from fully patched source (no cached executable)
         shell: pwsh
         run: |
