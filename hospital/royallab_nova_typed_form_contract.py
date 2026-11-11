@@ -2,7 +2,7 @@
 
 No HTML injection, no patient-result writes, no clinical auto-approval.
 """
-from royallab_nova_order_line_resolver import resolve_order_lines
+from hospital.royallab_nova_order_line_resolver import resolve_order_lines
 ALLOWED={"number","text","select","select_or_text","select_or_number"}
 def reviewed_order_form(conn,item_id,source_form):
     if not isinstance(source_form,dict) or not isinstance(source_form.get("fields"),list):
