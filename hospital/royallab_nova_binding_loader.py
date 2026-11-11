@@ -4,6 +4,7 @@ Never infers a mapping from a name, does not grant clinical approval, and
 requires the saved NOVA test identity to match the bound item.
 """
 import json
+import sqlite3
 from hospital.royallab_catalog_preview import test_form
 
 def load_reviewed_bindings(conn,items,batch_id):
@@ -28,6 +29,6 @@ def load_reviewed_bindings(conn,items,batch_id):
             form=test_form(conn,batch_id,row[0])
             if form.get('review_flags') or str(form.get('source_test_id'))!=str(row[0]):continue
             out[item['id']]={'item_id':item['id'],'reviewed':True,'form':form}
-        except (ValueError,KeyError,TypeError,json.JSONDecodeError):
+        except (ValueError,KeyError,TypeError,json.JSONDecodeError,sqlite3.Error):
             continue
     return out
