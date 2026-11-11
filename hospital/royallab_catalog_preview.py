@@ -2,7 +2,7 @@
 Never enables clinical use or writes to operational hospital_lab_* tables.
 """
 import json
-from royallab_field_adapter import build_fields
+from hospital.royallab_field_adapter import build_fields
 
 def _source(conn,batch_id):
     rows=conn.execute("SELECT payload_json FROM royal_lab_source_tests WHERE batch_id=? ORDER BY source_test_id",(batch_id,)).fetchall()
