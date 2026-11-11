@@ -89,6 +89,9 @@ on:
       - 'tests/test_royallab_nova_resolved_draft.py'
       - '.github/ci/royallab_typed_input_patch.py'
       - 'tests/test_royallab_typed_input_patch.py'
+      - 'hospital/royallab_nova_typed_form_contract.py'
+      - 'tests/test_royallab_nova_typed_form_contract.py'
+      - 'tests/test_royallab_source_bool.py'
       - '.github/ci/royallab_lab_print_patch.py'
       - '.github/ci/royallab_lab_a4_css_patch.py'
       - 'tests/test_royallab_lab_a4_css_patch.py'
@@ -337,6 +340,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab order API invalid; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_order_route_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab order API regression failed; installer blocked' }
+          python -m unittest discover -s tests -p 'test_royallab_nova_typed_form_contract.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab source typed contract regression failed; installer blocked' }
+          python -m unittest discover -s tests -p 'test_royallab_source_bool.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab source boolean regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_clinical_binding_integration.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab clinical binding integration failed; installer blocked' }
           python .github/ci/royallab_lab_print_patch.py
