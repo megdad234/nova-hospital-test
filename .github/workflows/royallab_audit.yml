@@ -29,6 +29,8 @@ on:
       - 'tests/test_royallab_nova_line_mapping.py'
       - 'hospital/royallab_nova_draft_service.py'
       - 'tests/test_royallab_nova_draft_service.py'
+      - 'hospital/royallab_lab_a4_preview.py'
+      - 'tests/test_royallab_lab_a4_preview.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
