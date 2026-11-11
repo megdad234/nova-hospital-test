@@ -27,6 +27,7 @@ on:
       - 'tests/test_royallab_actual_nova_save.py'
       - 'hospital/royallab_nova_parameter_activation.py'
       - 'tests/test_royallab_nova_parameter_activation.py'
+      - 'tests/test_royallab_parameter_lifecycle.py'
       - 'hospital/royallab_nova_parameter_install.py'
       - 'tests/test_royallab_nova_parameter_install.py'
       - 'hospital/royallab_nova_parameter_plan.py'
