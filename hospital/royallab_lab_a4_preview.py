@@ -47,7 +47,7 @@ def render_lab_a4_preview(report):
 body{font-family:Arial,Tahoma,sans-serif;direction:rtl;color:#172b3a;margin:0;font-size:11pt}
 header{border-bottom:2px solid #244c6b;padding-bottom:8mm;margin-bottom:7mm}
 h1{text-align:center;font-size:18pt;margin:0 0 6mm}.details{display:flex;flex-wrap:wrap;gap:5mm 12mm}
-h2{font-size:12pt;margin:0 0 3mm}.test{margin-bottom:6mm;break-inside:avoid-page;page-break-inside:avoid}
+h2{font-size:12pt;margin:0 0 3mm;break-after:avoid-page;page-break-after:avoid}.test{margin-bottom:6mm;break-inside:auto;page-break-inside:auto}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
 th,td{border-bottom:1px solid #d9e2e9;text-align:right;padding:2.5mm 2mm;overflow-wrap:anywhere}
