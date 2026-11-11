@@ -1,7 +1,7 @@
 import pathlib,sys,unittest
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]/"hospital"))
 from royallab_nova_resolved_draft import save_resolved_review_draft
-from test_royallab_actual_nova_save import fixture,load_original_save
+from tests.test_royallab_actual_nova_save import fixture,load_original_save
 FORM={"mode":"review_only","can_save_patient_results":False,
       "fields":[{"source_format_id":"20","kind":"select","options":[{"label":"Positive"},{"label":"Negative"}]}]}
 def setup(status="paid"):
