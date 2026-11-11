@@ -10,6 +10,8 @@ on:
       - 'tests/test_royallab_field_adapter.py'
       - '.github/ci/royallab_import_offline.py'
       - 'tests/test_royallab_import_offline.py'
+      - 'hospital/royallab_catalog_preview.py'
+      - 'tests/test_royallab_catalog_preview.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
