@@ -39,6 +39,8 @@ on:
       - '.github/ci/royallab_print_integration_smoke.py'
       - '.github/ci/royallab_actual_line_schema_audit.py'
       - '.github/ci/royallab_print_css_audit.py'
+      - '.github/ci/royallab_lab_a4_css_patch.py'
+      - 'tests/test_royallab_lab_a4_css_patch.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
