@@ -22,7 +22,8 @@ def native_catalog(library):
                                              "order":o.get("order")}
                                             for o in f.get("options",[])],
                                  "numeric_ranges":f.get("numeric_ranges",[]),
-                                 "text_ranges":f.get("text_ranges",[])}
+                                 "text_ranges":f.get("text_ranges",[]),
+                                 "types":f.get("types",[])}
                                 for f in t["fields"]]}
                      for t in mapped["tests"]],
             "detached_analytes":mapped["detached_analytes"],
@@ -60,7 +61,15 @@ def validate_result_values(test_form,values):
             except decimal.InvalidOperation:raise ValueError("Invalid numeric result")
             if not n.is_finite():raise ValueError("Non-finite numeric result")
             out[sid]=str(n)
-        elif kind in ("text","select_or_text","select_or_number"):
+        elif kind=="select_or_number":
+            import decimal
+            labels={str(o["id"]) for o in f["options"] if o.get("active") is not False}
+            if str(value) not in labels:
+                try:n=decimal.Decimal(str(value))
+                except decimal.InvalidOperation:raise ValueError("Invalid numeric or source option result")
+                if not n.is_finite():raise ValueError("Non-finite numeric result")
+            out[sid]=str(value)
+        elif kind in ("text","select_or_text"):
             if not isinstance(value,(str,int,float)):raise ValueError("Invalid result value")
             out[sid]=str(value)
         else:raise ValueError("Unsupported result kind")
