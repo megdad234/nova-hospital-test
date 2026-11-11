@@ -22,6 +22,12 @@ class BindingLoaderTests(unittest.TestCase):
     (item_id,batch_id,nova_test_id,source_test_id,reviewed,reviewed_by,reviewed_at)
     VALUES(22,1,8,'7',1,3,'2026-11-11')""")
   self.assertEqual(load_reviewed_bindings(self.c,[{'id':22,'test_id':7}],1),{})
+ def test_reviewed_but_not_clinically_approved_rejected(self):
+  create_schema(self.c)
+  self.c.execute("""INSERT INTO royal_lab_approved_item_bindings
+   (item_id,batch_id,nova_test_id,source_test_id,reviewed,reviewed_by,reviewed_at)
+   VALUES(22,1,7,'7',1,3,'2026-11-11')""")
+  self.assertEqual(load_reviewed_bindings(self.c,[{'id':22}],1),{})
  def test_unreviewed_binding_rejected(self):
   create_schema(self.c)
   self.c.execute("""INSERT INTO royal_lab_approved_item_bindings
