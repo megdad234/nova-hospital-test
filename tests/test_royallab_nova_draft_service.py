@@ -19,7 +19,7 @@ class DraftServiceTests(unittest.TestCase):
  def test_cross_order_line_rejected_before_save(self):
   c=fixture()
   try:
-   c.execute("INSERT INTO hospital_lab_lines VALUES(12,99,'',NULL,'manual')")
+   c.execute("INSERT INTO hospital_lab_lines(id,item_id,value,modified_at,source,code,name,unit) VALUES(12,99,'',NULL,'manual','R1','Royal result','')")
    called=[]
    with self.assertRaises(ValueError):
     save_reviewed_draft(c,{"id":7},FORM,{"r1":"Positive"},{"r1":12},22,0,lambda *a:called.append(1))
