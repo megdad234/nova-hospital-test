@@ -10,7 +10,14 @@ class LabA4Tests(unittest.TestCase):
   self.assertIn("Negative",html)
   self.assertLess(html.index("Patient One"),html.index("Negative"))
   self.assertNotIn("تقرير جزئي",html)
-  self.assertIn("break-inside:avoid-page",html)
+  self.assertIn("tr{break-inside:avoid;page-break-inside:avoid}",html)
+ def test_long_test_table_can_span_pages_without_splitting_rows(self):
+  html=render_lab_a4_preview({"patient_name":"Patient","items":[{"result_status":"approved",
+   "test_name":"Extended Panel","lines":[{"name":"Parameter "+str(i),"value":str(i),"unit":"mg/L","reference_range":""} for i in range(150)]}]})
+  self.assertIn(".test{margin-bottom:6mm;break-inside:auto;page-break-inside:auto}",html)
+  self.assertIn("thead{display:table-header-group}",html)
+  self.assertIn("break-after:avoid-page",html)
+  self.assertEqual(html.count("<tr>"),151)
  def test_original_nova_report_flat_fields(self):
   html=render_lab_a4_preview({"order_no":"LAB-100","patient_name":"Ahmed Ali",
    "patient_no":"P-20","age_years":35,"gender":"male","print_time":"2026-11-11",
