@@ -98,6 +98,8 @@ on:
       - '.github/ci/royallab_lab_a4_css_patch.py'
       - 'tests/test_royallab_lab_a4_css_patch.py'
       - 'tests/test_royallab_lab_print_patch.py'
+      - '.github/ci/royallab_source_bundle_preflight.py'
+      - 'tests/test_royallab_source_bundle_preflight.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -348,6 +350,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab source typed contract regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_source_bool.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab source boolean regression failed; installer blocked' }
+          python -m unittest discover -s tests -p 'test_royallab_source_bundle_preflight.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab source integrity preflight tests failed' }
           python -m unittest discover -s tests -p 'test_royallab_visibility_diagnosis.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab visibility diagnosis regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_clinical_binding_integration.py' -v
