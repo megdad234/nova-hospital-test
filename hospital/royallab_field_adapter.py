@@ -17,7 +17,9 @@ def build_fields(library):
         for f in formats:
             kinds=set(f.get("types") or [])
             options=[{"id":str(o.get("id","")),"label":o.get("label",""),"active":o.get("active"),"order":o.get("order"),"is_normal":o.get("is_normal")} for o in f.get("options",[])]
-            if "ColoseEndedResultFormat" in kinds and options:
+            if "ColoseEndedResultFormat" in kinds and options and ({"StringResultFormat","OpenEndedResultFormat","DoubleResultFormat","IntegerResultFormat"} & kinds):
+                kind="select_or_text"
+            elif "ColoseEndedResultFormat" in kinds and options:
                 kind="select"
             elif "DoubleResultFormat" in kinds or "IntegerResultFormat" in kinds:
                 kind="number"
@@ -26,6 +28,8 @@ def build_fields(library):
             elif "RelatedResultFormat" in kinds:
                 kind="related"
             else:kind="unknown"
+            if kind=="select_or_text" and ("DoubleResultFormat" in kinds or "IntegerResultFormat" in kinds):
+                kind="select_or_number"
             fields.append({"source_analyte_id":str(a["analyte_id"]),"source_format_id":str(f.get("id","")),
                 "label":f.get("title") or a.get("name",""),"kind":kind,
                 "types":sorted(kinds),"unit":f.get("unit") or "","options":options,
@@ -43,5 +47,6 @@ def build_fields(library):
         if not test["fields"]:test["review_flags"].append("no_source_analytes")
         if any(f["kind"]=="unknown" for f in test["fields"]):test["review_flags"].append("unknown_result_format")
         if any(f["kind"]=="related" for f in test["fields"]):test["review_flags"].append("related_result_format_requires_ui_support")
+        if any(f["kind"].startswith("select_or_") for f in test["fields"]):test["review_flags"].append("mixed_format_requires_combobox")
     return {"tests":list(by_test.values()),"detached_analytes":detached,
             "field_kinds":dict(Counter(f["kind"] for t in by_test.values() for f in t["fields"]))}
