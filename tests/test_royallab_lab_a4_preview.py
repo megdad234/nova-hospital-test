@@ -18,6 +18,17 @@ class LabA4Tests(unittest.TestCase):
   self.assertIn("thead{display:table-header-group}",html)
   self.assertIn("break-after:avoid-page",html)
   self.assertEqual(html.count("<tr>"),151)
+ def test_original_nova_section_snapshots_and_empty_results(self):
+  html=render_lab_a4_preview({"patient_name":"Patient","items":[{"result_status":"approved","test_name":"Urine",
+   "lines":[{"name":"Color","value":"Yellow","section_name":"Macroscopy","unit":"","reference_range":""},
+            {"name":"Unused","value":"","section_name":"Macroscopy","unit":"","reference_range":""},
+            {"name":"RBC","value":"0-2","section_name":"Microscopy","unit":"/HPF","reference_range":""}]}]})
+  self.assertIn("Macroscopy",html)
+  self.assertIn("Microscopy",html)
+  self.assertNotIn("Unused",html)
+  self.assertEqual(html.count('class="group"'),2)
+  self.assertLess(html.index("Macroscopy"),html.index("Color"))
+  self.assertLess(html.index("Microscopy"),html.index("RBC"))
  def test_original_nova_report_flat_fields(self):
   html=render_lab_a4_preview({"order_no":"LAB-100","patient_name":"Ahmed Ali",
    "patient_no":"P-20","age_years":35,"gender":"male","print_time":"2026-11-11",
