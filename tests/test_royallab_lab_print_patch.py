@@ -12,7 +12,7 @@ class LabPrintPatchTests(unittest.TestCase):
   self.assertIn("window.print()",after)
   self.assertIn("lab/report/",after)
   self.assertEqual(before.count("تقرير جزئي — توجد فحوصات أخرى"),1)
-  self.assertEqual(len(before)-len(after),len(before[before.index("${d.partial?"):before.index("':''}",before.index("${d.partial?"))+4]))
+  self.assertEqual(before[:before.index("${d.partial?")]+before[before.index("}",before.index("${d.partial?"))+1:],after)
  def test_fails_closed_on_unexpected_source(self):
   with self.assertRaises(RuntimeError):patch_lab_print_js("other JS")
 if __name__=="__main__":unittest.main()
