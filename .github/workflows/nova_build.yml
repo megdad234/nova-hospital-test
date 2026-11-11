@@ -83,6 +83,8 @@ on:
       - 'hospital/royallab_catalog_preview.py'
       - 'hospital/royallab_field_adapter.py'
       - '.github/ci/royallab_import_offline.py'
+      - '.github/ci/royallab_release_gate.py'
+      - 'hospital/royallab_live_release_manifest.json'
       - 'tests/test_royallab_import_offline.py'
       - 'hospital/royallab_staging.py'
       - 'tests/test_royallab_nova_draft_service.py'
@@ -364,6 +366,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab typed UI regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_lab_a4_css_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab A4 CSS regression failed; installer blocked' }
+      - name: Block misleading Royal Lab installer until live migration is proven
+        shell: pwsh
+        run: |
+          python .github/ci/royallab_release_gate.py
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab live integration incomplete; refusing to publish unchanged installer' }
       - name: Build Windows installer freshly from fully patched source (no cached executable)
         shell: pwsh
         run: |
