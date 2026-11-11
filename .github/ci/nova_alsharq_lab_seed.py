@@ -229,6 +229,23 @@ assert all(len({str(p[0]) for p in t[4]})==len(t[4]) for t in _all_tests), "Dupl
 for _code in ("NA_K","LFT_E","IRON_FULL","PT_PTT","SEMEN","DENGUE","FERTILITY"):
     _panel=next(t for t in _all_tests if t[0]==_code)
     assert not (len(_panel[4])==1 and _panel[4][0][0]=="RESULT"), _code
+# A single consolidated review queue: avoid pretending every field is clinically
+# finalized just because its renderer is editable. This is a data audit, not
+# a patient-result test, and does not alter the installed database.
+_review_rows=[]
+for _test in _all_tests:
+    _code,_name=_test[0],_test[1]
+    _fields=_test[4]
+    if len(_fields)==1 and str(_fields[0][0])=="RESULT":
+        _review_rows.append((_code,_name,"generic_result","Define assay-specific choices or measurements from validated method"))
+    for _field in _fields:
+        if len(_field)<6:
+            _review_rows.append((_code,_name,"incomplete_field_metadata",str(_field[0])))
+with Path("lab_catalogue_clinical_review_queue.csv").open("w",encoding="utf-8-sig",newline="") as _review_file:
+    _review_writer=csv.writer(_review_file)
+    _review_writer.writerow(("test_code","test_name","issue","required_action"))
+    _review_writer.writerows(_review_rows)
+print("NOVA_LAB_CLINICAL_REVIEW_QUEUE",len(_review_rows),"items")
 with Path("lab_all_97_field_mapping.csv").open("w",encoding="utf-8-sig",newline="") as _fh:
     _writer=csv.writer(_fh)
     _writer.writerow(("test_code","test_name","category","field_code","field_name","unit","reference_range"))
