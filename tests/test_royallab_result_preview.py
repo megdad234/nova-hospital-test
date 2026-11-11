@@ -19,6 +19,9 @@ class ResultPreviewTests(unittest.TestCase):
   self.assertFalse(out["all_valid"])
   self.assertEqual(out["results"]["1"]["status"],"invalid")
   self.assertEqual(out["results"]["4"]["status"],"requires_review")
+ def test_inactive_original_option_is_not_accepted(self):
+  self.form['fields'][0]['options'].append({'label':'Turbid','active':'False'})
+  self.assertEqual(validate_preview(self.form,{'1':'Turbid'})['results']['1']['status'],'invalid')
  def test_reject_nan_and_infinity(self):
   for x in ("NaN","Infinity","-Infinity"):
    with self.subTest(x=x):
