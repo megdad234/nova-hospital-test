@@ -2,7 +2,7 @@
 
 Read-only; strict code and test ownership, never matches by translated labels.
 """
-from royallab_nova_parameter_plan import source_code
+from hospital.royallab_nova_parameter_plan import source_code
 def resolve_order_lines(conn,item_id,fields):
     if type(item_id) is not int or item_id<=0:raise ValueError("Order item required")
     item=conn.execute("SELECT test_id FROM hospital_order_items WHERE id=?",(item_id,)).fetchone()
