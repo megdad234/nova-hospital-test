@@ -15,7 +15,7 @@ def patch(source):
  body.printing-lab #print-area table{break-inside:auto;page-break-inside:auto}
  body.printing-lab #print-area thead{display:table-header-group}
  body.printing-lab #print-area tr{break-inside:avoid-page;page-break-inside:avoid}
- body.printing-lab #print-area .lab-print-group th{background:#e4f0e9;font-weight:700;break-after:avoid-page}
+ body.printing-lab #print-area .lab-print-group th,body.printing-lab #print-area .nova-lab-section th{background:#e4f0e9;font-weight:700;break-after:avoid-page}
  body.printing-lab #print-area .print-foot{break-inside:avoid-page}
 }
 """
