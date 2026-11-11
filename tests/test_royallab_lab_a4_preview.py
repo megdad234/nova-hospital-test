@@ -11,6 +11,14 @@ class LabA4Tests(unittest.TestCase):
   self.assertLess(html.index("Patient One"),html.index("Negative"))
   self.assertNotIn("تقرير جزئي",html)
   self.assertIn("break-inside:avoid-page",html)
+ def test_original_nova_report_flat_fields(self):
+  html=render_lab_a4_preview({"order_no":"LAB-100","patient_name":"Ahmed Ali",
+   "patient_no":"P-20","age_years":35,"gender":"male","print_time":"2026-11-11",
+   "brand":{"hospital_name":"NOVA Hospital","lab_title":"نتائج المعمل"},
+   "items":[{"result_status":"approved","test_name":"CBC",
+             "lines":[{"name":"Hemoglobin","value":"13.2","unit":"g/dL","reference_range":"12-16"}]}]})
+  for term in ("LAB-100","Ahmed Ali","P-20","NOVA Hospital","نتائج المعمل","Hemoglobin","13.2","g/dL"):
+   self.assertIn(term,html)
  def test_reject_unapproved_and_escape_untrusted_content(self):
   with self.assertRaises(PermissionError):
    render_lab_a4_preview({"items":[{"result_status":"draft"}]})
