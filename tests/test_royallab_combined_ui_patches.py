@@ -2,7 +2,7 @@
 import pathlib,subprocess,sys,tempfile,unittest,zipfile
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'.github/ci'))
-from royallab_lab_print_patch import patch as print_patch
+from royallab_lab_print_patch import patch_lab_print_js as print_patch
 from royallab_typed_input_patch import patch as typed_patch
 class CombinedUiTests(unittest.TestCase):
  def test_real_source_print_and_typed_patches_compile_and_keep_save(self):
