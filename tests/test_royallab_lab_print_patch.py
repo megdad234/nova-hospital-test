@@ -1,4 +1,4 @@
-import pathlib,sys,unittest,zipfile
+import pathlib,sys,unittest,zipfile,re
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]/".github"/"ci"))
 from royallab_lab_print_patch import patch_lab_print_js
 class LabPrintPatchTests(unittest.TestCase):
@@ -23,6 +23,16 @@ class LabPrintPatchTests(unittest.TestCase):
   self.assertNotIn('تقرير جزئي',updated)
   self.assertIn('nova-lab-section',updated)
   self.assertIn('window.print()',updated)
+ def test_actual_batch04_generated_print_template(self):
+  root=pathlib.Path(__file__).resolve().parents[1]
+  batch=(root/'.github/ci/nova_batch04_lab_reception.py').read_text(encoding='utf-8')
+  match=re.search(r'async function printReport\\(id\\)\\{.*?window\\.print\\(\\);.*?\\}\\s*\\}"""\\)',batch,re.S)
+  self.assertIsNotNone(match)
+  template=match.group(0).split('"""')[0].replace('@{','${').replace('~','`')
+  output=patch_lab_print_js(template)
+  self.assertNotIn('تقرير جزئي',output)
+  self.assertIn('nova-lab-section',output)
+  self.assertIn('window.print()',output)
  def test_fails_closed_on_unexpected_source(self):
   with self.assertRaises(RuntimeError):patch_lab_print_js("other JS")
 if __name__=="__main__":unittest.main()
