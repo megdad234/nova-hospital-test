@@ -11,10 +11,12 @@ def attach_reviewed_types(conn,items,reviewed_forms):
     for item in items:
         if not isinstance(item,dict):raise ValueError("Invalid NOVA order item")
         clone={**item,"lines":[dict(line) for line in item.get("lines",[])]}
-        form=reviewed_forms.get(item.get("id"))
+        # Require exact numeric item identity; never trust a caller-provided label.
+        item_id=item.get("id")
+        form=reviewed_forms.get(item_id) if type(item_id) is int else None
         if form is not None:
             try:
-                typed=reviewed_order_form(conn,item["id"],form)
+                typed=reviewed_order_form(conn,item_id,form)
                 by_id={field["line_id"]:field for field in typed["fields"]}
                 for line in clone["lines"]:
                     definition=by_id.get(line.get("id"))
