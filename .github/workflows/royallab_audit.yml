@@ -54,6 +54,7 @@ on:
       - 'tests/test_royallab_nova_order_detail_types.py'
       - 'hospital/royallab_nova_typed_form_contract.py'
       - 'tests/test_royallab_nova_typed_form_contract.py'
+      - 'tests/test_royallab_source_bool.py'
       - 'hospital/royallab_nova_resolved_draft.py'
       - 'tests/test_royallab_nova_resolved_draft.py'
       - 'hospital/royallab_nova_order_line_resolver.py'
