@@ -20,6 +20,8 @@ on:
       - 'hospital/royallab_integration_preflight.py'
       - 'tests/test_royallab_integration_preflight.py'
       - '.github/ci/royallab_lab_code_excerpts.py'
+      - 'hospital/royallab_nova_save_bridge.py'
+      - 'tests/test_royallab_nova_save_bridge.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
