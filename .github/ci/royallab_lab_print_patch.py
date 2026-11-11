@@ -11,7 +11,10 @@ def patch_lab_print_js(source):
     # report. It already renders section_name headings; only remove its notice.
     batch04_notice="${d.partial?'<p class=\"small\">تقرير جزئي — توجد فحوصات أخرى لم تُنشر بعد.</p>':''}"
     if source.count(batch04_notice)==1 and source.count(anchor)==0:
-        if source.count('class="nova-lab-section"')!=1 or source.count('async function printReport(id)')!=1:
+        start=source.find('async function printReport(id)')
+        end=source.find('async function ',start+20)
+        report=source[start:end if end!=-1 else None]
+        if start<0 or source.count('async function printReport(id)')!=1 or 'nova-lab-section' not in report or 'window.print()' not in report or report.count(batch04_notice)!=1:
             raise RuntimeError("Unexpected NOVA04 laboratory report structure")
         return source.replace(batch04_notice,"",1)
     if source.count(anchor)!=1:
