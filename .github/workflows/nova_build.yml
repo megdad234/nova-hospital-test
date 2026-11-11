@@ -79,6 +79,8 @@ on:
       - 'pharmacy/tests/test_nova_batch13.py'
       - 'docs/NOVA_BATCH13_PURCHASE_APPROVED_AR.md'
       - '.github/ci/royallab_lab_print_patch.py'
+      - '.github/ci/royallab_lab_a4_css_patch.py'
+      - 'tests/test_royallab_lab_a4_css_patch.py'
       - 'tests/test_royallab_lab_print_patch.py'
   workflow_dispatch:
 permissions:
@@ -319,10 +321,12 @@ jobs:
         shell: pwsh
         run: |
           python .github/ci/royallab_lab_print_patch.py
+          python .github/ci/royallab_lab_a4_css_patch.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab print patch rejected; installer blocked' }
           node --check hospital/static/app.js
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab report JS invalid; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_lab_print_patch.py' -v
+          python -m unittest discover -s tests -p 'test_royallab_lab_a4_css_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab print regression failed; installer blocked' }
       - name: Build Windows installer freshly from fully patched source (no cached executable)
         shell: pwsh
