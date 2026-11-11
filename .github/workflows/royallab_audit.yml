@@ -14,6 +14,8 @@ on:
       - 'tests/test_royallab_catalog_preview.py'
       - 'hospital/royallab_result_preview.py'
       - 'tests/test_royallab_result_preview.py'
+      - 'hospital/royallab_form_preview_html.py'
+      - 'tests/test_royallab_form_preview_html.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
