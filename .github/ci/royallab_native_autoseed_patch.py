@@ -9,6 +9,7 @@ INJECT="""    c.executescript(SCHEMA)
     # ROYALLAB_NATIVE_AUTOSEED: preserve original source tests and all ranges.
     from hospital.royallab_native_catalog_store import install_file as _royallab_install
     import sys as _royallab_sys
+    from pathlib import Path
     _royallab_roots = (
         Path(__file__).resolve().parent / 'royallab_source',
         Path(getattr(_royallab_sys, '_MEIPASS', '')) / 'hospital' / 'royallab_source',
