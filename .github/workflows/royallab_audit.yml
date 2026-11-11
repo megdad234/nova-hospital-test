@@ -24,6 +24,7 @@ on:
       - 'tests/test_royallab_nova_save_bridge.py'
       - '.github/ci/royallab_save_contract_audit.py'
       - '.github/ci/royallab_save_fixture_audit.py'
+      - 'tests/test_royallab_actual_nova_save.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
