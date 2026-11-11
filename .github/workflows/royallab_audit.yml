@@ -33,6 +33,7 @@ on:
       - 'tests/test_royallab_lab_a4_preview.py'
       - '.github/ci/royallab_report_contract_audit.py'
       - '.github/ci/royallab_print_route_scan.py'
+      - '.github/ci/royallab_print_js_excerpt.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
@@ -56,5 +57,7 @@ jobs:
         run: python .github/ci/royallab_report_contract_audit.py
       - name: Locate existing laboratory print routes and partial report text
         run: python .github/ci/royallab_print_route_scan.py
+      - name: Inspect exact original lab JavaScript print implementation
+        run: python .github/ci/royallab_print_js_excerpt.py
       - name: Verify isolated staging invariants
         run: python -m unittest discover -s tests -p 'test_royallab_*.py' -v
