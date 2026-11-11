@@ -16,7 +16,7 @@ class ImportTests(unittest.TestCase):
    first=runner.run(db,library,options);second=runner.run(db,library,options)
    self.assertEqual(first["batch_id"],second["batch_id"])
    self.assertEqual(first["counts"]["royal_lab_source_analytes"],1245)
-   with sqlite3.connect(db) as c:
+   with closing(sqlite3.connect(db)) as c:
     self.assertEqual(c.execute("SELECT * FROM hospital_lab_tests").fetchall(),[(7,"original")])
  def test_refuse_nonexistent_database(self):
   with tempfile.TemporaryDirectory() as d:
