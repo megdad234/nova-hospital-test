@@ -340,6 +340,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab order API invalid; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_order_route_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab order API regression failed; installer blocked' }
+          python -m unittest discover -s tests -p 'test_royallab_nova_parameter_plan.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab inactive parameter import regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_nova_typed_form_contract.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab source typed contract regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_source_bool.py' -v
