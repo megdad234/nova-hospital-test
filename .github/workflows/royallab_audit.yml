@@ -31,6 +31,7 @@ on:
       - 'tests/test_royallab_nova_draft_service.py'
       - 'hospital/royallab_lab_a4_preview.py'
       - 'tests/test_royallab_lab_a4_preview.py'
+      - '.github/ci/royallab_report_contract_audit.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
@@ -50,5 +51,7 @@ jobs:
         run: python .github/ci/royallab_save_contract_audit.py
       - name: Inspect original lab save prerequisites for real SQLite integration test
         run: python .github/ci/royallab_save_fixture_audit.py
+      - name: Inspect original NOVA report data and print routes
+        run: python .github/ci/royallab_report_contract_audit.py
       - name: Verify isolated staging invariants
         run: python -m unittest discover -s tests -p 'test_royallab_*.py' -v
