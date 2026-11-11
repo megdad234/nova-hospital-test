@@ -18,9 +18,13 @@ def bundle(root,token=None):
  destination.mkdir(parents=True,exist_ok=True)
  report={"upstream_commit":COMMIT,"files":{}}
  for name,expected in SOURCES.items():
-  req=urllib.request.Request(BASE+name,headers={"User-Agent":"NOVA-RoyalLab-pinned-source-bundler"})
-  if token:req.add_header("Authorization","Bearer "+token)
-  with urllib.request.urlopen(req,timeout=120) as response:data=response.read()
+  target=destination/name
+  if target.is_file():
+   data=target.read_bytes()
+  else:
+   req=urllib.request.Request(BASE+name,headers={"User-Agent":"NOVA-RoyalLab-pinned-source-bundler"})
+   if token:req.add_header("Authorization","Bearer "+token)
+   with urllib.request.urlopen(req,timeout=120) as response:data=response.read()
   if git_blob_id(data)!=expected:
    raise RuntimeError("Royal Lab source changed or corrupted: "+name)
   json.loads(data.decode("utf-8-sig"))
