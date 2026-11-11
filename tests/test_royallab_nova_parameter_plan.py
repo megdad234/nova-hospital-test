@@ -15,6 +15,14 @@ class ParameterPlanTests(unittest.TestCase):
   p=plan_existing_parameters(self.db,3,[{"source_format_id":"123","kind":"text","label":"Colour","unit":""},{"source_format_id":"124","kind":"number","label":"RBC","unit":"/HPF"}])
   self.assertEqual(len(p["blocked"]),1);self.assertEqual(len(p["missing"]),1)
   self.assertEqual(self.db.execute("SELECT name FROM hospital_lab_parameters WHERE id=11").fetchone()[0],"Color")
+ def test_inactive_source_never_installed_or_activated(self):
+  for value in (False,0,"False","false","0"):
+   with self.subTest(value=value):
+    p=plan_existing_parameters(self.db,3,[{"source_format_id":"123","kind":"select","label":"Color","unit":"","active":value}])
+    self.assertFalse(p["ready"])
+    self.assertEqual(p["blocked"][0]["reason"],"inactive_source_analyte")
+    self.assertFalse(p["mapped"])
+    self.assertFalse(p["missing"])
  def test_reject_unsupported_and_duplicate(self):
   p=plan_existing_parameters(self.db,3,[{"source_format_id":"5","kind":"unknown","label":"Unknown"}])
   self.assertEqual(p["blocked"][0]["reason"],"unsupported_format")
