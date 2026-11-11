@@ -34,6 +34,8 @@ on:
       - '.github/ci/royallab_report_contract_audit.py'
       - '.github/ci/royallab_print_route_scan.py'
       - '.github/ci/royallab_print_js_excerpt.py'
+      - '.github/ci/royallab_lab_print_patch.py'
+      - 'tests/test_royallab_lab_print_patch.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
