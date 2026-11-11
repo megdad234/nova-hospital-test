@@ -32,6 +32,8 @@ on:
       - 'tests/test_royallab_nova_parameter_install.py'
       - 'hospital/royallab_nova_parameter_plan.py'
       - 'tests/test_royallab_nova_parameter_plan.py'
+      - '.github/ci/royallab_order_route_patch.py'
+      - 'tests/test_royallab_order_route_patch.py'
       - '.github/ci/royallab_order_route_audit.py'
       - '.github/ci/royallab_typed_input_patch.py'
       - 'tests/test_royallab_typed_input_patch.py'
