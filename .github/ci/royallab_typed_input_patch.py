@@ -8,9 +8,17 @@ ANCHOR='''<input data-line="${x.id}" value="${esc(x.value)}" maxlength="4000" ar
 REPLACEMENT='''${royalLabInput(x)}'''
 HELPER='''function royalLabInput(x){const m=x.royal_lab_field;if(!m||!['number','text','select','select_or_text','select_or_number'].includes(m.kind))return `<input data-line="${x.id}" value="${esc(x.value)}" maxlength="4000" aria-label="نتيجة ${esc(x.name)}" autocomplete="off" dir="auto">`;const value=String(x.value??'');const opts=Array.isArray(m.options)?m.options.filter(v=>typeof v==='string'&&v.trim()):[];const label=esc(x.name);if(m.kind==='select'&&opts.length){const values=['',...opts];if(value&&!values.includes(value))return `<input data-line="${x.id}" value="${esc(value)}" maxlength="4000" aria-label="نتيجة ${label}" autocomplete="off" dir="auto">`;return `<select data-line="${x.id}" aria-label="نتيجة ${label}">${values.map(v=>`<option value="${esc(v)}" ${v===value?'selected':''}>${esc(v||'— اختر —')}</option>`).join('')}</select>`}if((m.kind==='select_or_text'||m.kind==='select_or_number')&&opts.length){const listId='royal-options-'+Number(x.id);return `<input data-line="${x.id}" list="${listId}" value="${esc(value)}" maxlength="4000" aria-label="نتيجة ${label}" autocomplete="off" dir="auto"><datalist id="${listId}">${opts.map(v=>`<option value="${esc(v)}"></option>`).join('')}</datalist>`}return `<input data-line="${x.id}" ${m.kind==='number'?'inputmode="decimal"':''} value="${esc(value)}" maxlength="4000" aria-label="نتيجة ${label}" autocomplete="off" dir="auto">`}
 '''
+GROUPED_ANCHOR="""'<input data-line="'+x.id+'" value="'+esc(x.value)+'" maxlength="4000" aria-label="نتيجة '+esc(x.name)+'" autocomplete="off" dir="auto">'"""
+GROUPED_REPLACEMENT="'royalLabInput(x)'"
 def patch(source):
-    if source.count(ANCHOR)!=1:raise ValueError("Expected original NOVA result input anchor exactly once")
     if 'function royalLabInput(' in source:raise ValueError("Typed widget already installed")
+    # NOVA Batch04 rewrites resultTable as novaLabGroupedRows; the original
+    # input anchor no longer exists in the real Windows installer build.
+    if source.count(GROUPED_ANCHOR)==1 and source.count(ANCHOR)==0:
+        if source.count('function novaLabGroupedRows(lines,editable)')!=1:
+            raise ValueError("Unexpected grouped lab input renderer")
+        return HELPER+source.replace(GROUPED_ANCHOR,GROUPED_REPLACEMENT,1)
+    if source.count(ANCHOR)!=1:raise ValueError("Expected exactly one known NOVA result input anchor")
     return HELPER+source.replace(ANCHOR,REPLACEMENT,1)
 def apply(root):
     p=Path(root)/'hospital/static/app.js'
