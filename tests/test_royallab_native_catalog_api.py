@@ -5,7 +5,7 @@ from hospital.royallab_native_catalog_api import current_catalog_id,catalog_resp
 class NativeAPI(unittest.TestCase):
  def setUp(self):
   self.conn=sqlite3.connect(':memory:')
-  self.lib={'tests':[{'TestID':i,'Name':'CBC' if i==1 else 'Test '+str(i)} for i in range(367)],'analytes':[{'analyte_id':i,'test_id':1,'name':'Field','result_formats':[{'id':i+1,'title':'Field','types':['ColoseEndedResultFormat'] if i==0 else ['DoubleResultFormat'],'options':[{'id':10,'label':'Negative','active':True}] if i==0 else [],'unit':'g/dL','numeric_ranges':[{'low':2,'high':9}]}]} for i in range(1245)]}
+  self.lib={'tests':[{'TestID':i,'Name':'CBC' if i==1 else 'Test '+str(i)} for i in range(367)],'analytes':[{'analyte_id':i,'test_id':1,'name':'Field','numeric_ranges':[{'low':2,'high':9}],'result_formats':[{'id':i+1,'title':'Field','types':['ColoseEndedResultFormat'] if i==0 else ['DoubleResultFormat'],'options':[{'id':10,'label':'Negative','active':True}] if i==0 else [],'unit':'g/dL','numeric_ranges':[{'low':2,'high':9}]}]} for i in range(1245)]}
  def tearDown(self):self.conn.close()
  def test_no_catalog(self):
   with self.assertRaises(LookupError):catalog_response(self.conn)
