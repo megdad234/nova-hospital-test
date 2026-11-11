@@ -19,6 +19,7 @@ on:
       - '.github/ci/royallab_nova_integration_audit.py'
       - 'hospital/royallab_integration_preflight.py'
       - 'tests/test_royallab_integration_preflight.py'
+      - '.github/ci/royallab_lab_code_excerpts.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
@@ -32,5 +33,7 @@ jobs:
         run: python .github/ci/royallab_source_audit.py
       - name: Map original NOVA lab save and print integration points
         run: python .github/ci/royallab_nova_integration_audit.py
+      - name: Inspect original NOVA lab integration code excerpts
+        run: python .github/ci/royallab_lab_code_excerpts.py
       - name: Verify isolated staging invariants
         run: python -m unittest discover -s tests -p 'test_royallab_*.py' -v
