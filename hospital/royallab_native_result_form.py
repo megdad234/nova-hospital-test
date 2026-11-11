@@ -52,7 +52,7 @@ def validate_result_values(test_form,values):
         if value is None or value=="":out[sid]=None;continue
         if isinstance(value,bool):raise ValueError("Boolean is not a valid result")
         if kind=="select":
-            ids={str(o["id"]) for o in f["options"] if o.get("active") is not False}
+            ids={str(o["id"]) for o in f["options"] if o.get("active") not in (False,0,"False","false","0")}
             if str(value) not in ids:raise ValueError("Result is not a listed source option")
             out[sid]=str(value)
         elif kind=="number":
@@ -63,7 +63,7 @@ def validate_result_values(test_form,values):
             out[sid]=str(n)
         elif kind=="select_or_number":
             import decimal
-            labels={str(o["id"]) for o in f["options"] if o.get("active") is not False}
+            labels={str(o["id"]) for o in f["options"] if o.get("active") not in (False,0,"False","false","0")}
             if str(value) not in labels:
                 try:n=decimal.Decimal(str(value))
                 except decimal.InvalidOperation:raise ValueError("Invalid numeric or source option result")
