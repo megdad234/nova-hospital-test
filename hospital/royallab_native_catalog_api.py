@@ -8,7 +8,9 @@ from hospital.royallab_native_catalog_store import list_tests,test_form
 from hospital.royallab_native_result_form import validate_result_values
 
 def current_catalog_id(conn):
- if not conn.execute("SELECT 1 FROM sqlite_master WHERE type=\'table\' AND name=\'royal_lab_native_catalogs\'").fetchone():\n  raise LookupError("Royal Lab original catalog has not been installed")\n row=conn.execute("SELECT id FROM royal_lab_native_catalogs ORDER BY id DESC LIMIT 1").fetchone()
+ if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='royal_lab_native_catalogs'").fetchone():
+  raise LookupError("Royal Lab original catalog has not been installed")
+ row=conn.execute("SELECT id FROM royal_lab_native_catalogs ORDER BY id DESC LIMIT 1").fetchone()
  if not row:raise LookupError("Royal Lab original catalog has not been installed")
  return row[0]
 
