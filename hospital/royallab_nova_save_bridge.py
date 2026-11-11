@@ -7,13 +7,14 @@ from royallab_result_preview import validate_preview
 
 def prepare_nova_save_payload(form,entered,source_to_line,item_id,expected_version):
     if not isinstance(source_to_line,dict):raise ValueError("Reviewed line mapping required")
+    if len(entered)>120:raise ValueError("NOVA allows at most 120 result values per save")
     checked=validate_preview(form,entered)
     if not checked["all_valid"]:raise ValueError("Unresolved or invalid Royal Lab results")
-    if not isinstance(item_id,int) or item_id<=0:raise ValueError("Invalid NOVA order item")
-    if not isinstance(expected_version,int) or expected_version<0:raise ValueError("Invalid result version")
+    if type(item_id) is not int or item_id<=0:raise ValueError("Invalid NOVA order item")
+    if type(expected_version) is not int or expected_version<0:raise ValueError("Invalid result version")
     if not set(entered).issubset(source_to_line):raise ValueError("Missing reviewed NOVA line mapping")
     line_ids=list(source_to_line.values())
-    if any(not isinstance(x,int) or x<=0 for x in line_ids) or len(set(line_ids))!=len(line_ids):
+    if any(type(x) is not int or x<=0 for x in line_ids) or len(set(line_ids))!=len(line_ids):
         raise ValueError("Ambiguous NOVA line mapping")
     values=[]
     for source_id in entered:
