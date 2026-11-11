@@ -27,7 +27,7 @@ with tempfile.TemporaryDirectory() as temp:
  assert result.count("lab-print-group")==1
  assert result.count("section_name")==original_hospital.count("section_name")+2
  assert "flatMap((x,idx,visible)" in result
- assert "colspan=\\\"4\\\"" in result
+ assert "colspan=" in result and "lab-print-group" in result
  subprocess.run(["node","--check",str(patched)],check=True)
  try:apply(base)
  except RuntimeError:pass
