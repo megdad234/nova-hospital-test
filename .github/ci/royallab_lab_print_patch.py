@@ -7,14 +7,15 @@ from pathlib import Path
 
 def patch_lab_print_js(source):
     anchor="${d.partial?'<p class=\"small\">تقرير جزئي — توجد فحوصات أخرى لم تُجهز للطباعة.</p>':''}"
-    if source.count(anchor)>1:
-        raise RuntimeError("Duplicate lab-only partial-report message")
-    # Earlier NOVA build stages may already remove the partial-report notice.
-    # Accept that state only if no alternate partial notice remains in printReport.
-    if anchor not in source:
-        segment=source[source.find("async function printReport("):source.find("async function printReport(")+6000]
-        if not segment or "تقرير جزئي" in segment or "d.partial?" in segment:
-            raise RuntimeError("Unexpected alternate lab partial-report notice")
+    # Batch04 replaces the original one-line printReport with a grouped clinical
+    # report. It already renders section_name headings; only remove its notice.
+    batch04_notice="${d.partial?'<p class=\"small\">تقرير جزئي — توجد فحوصات أخرى لم تُنشر بعد.</p>':''}"
+    if source.count(batch04_notice)==1 and source.count(anchor)==0:
+        if source.count('class="nova-lab-section"')!=1 or source.count('async function printReport(id)')!=1:
+            raise RuntimeError("Unexpected NOVA04 laboratory report structure")
+        return source.replace(batch04_notice,"",1)
+    if source.count(anchor)!=1:
+        raise RuntimeError("Expected exactly one known lab-only partial-report notice")
     # Preserve the existing report endpoint, approval filter, and print window.
     # Only add visual section headings for NOVA Batch04 section_name snapshots.
     old="(i.lines||[]).filter(x=>String(x.value??'').trim()!=='').map(x=>"
