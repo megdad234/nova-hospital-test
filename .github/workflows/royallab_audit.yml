@@ -1,0 +1,17 @@
+name: RoyalLab NOVA read-only source audit
+on:
+  push:
+    branches: [feature/royallab-full-migration-20261111]
+    paths:
+      - '.github/ci/royallab_source_audit.py'
+      - '.github/workflows/royallab_audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit original laboratory source without editing it
+        run: python .github/ci/royallab_source_audit.py
