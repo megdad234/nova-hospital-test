@@ -36,6 +36,7 @@ on:
       - '.github/ci/royallab_print_js_excerpt.py'
       - '.github/ci/royallab_lab_print_patch.py'
       - 'tests/test_royallab_lab_print_patch.py'
+      - '.github/ci/royallab_print_integration_smoke.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
@@ -61,5 +62,7 @@ jobs:
         run: python .github/ci/royallab_print_route_scan.py
       - name: Inspect exact original lab JavaScript print implementation
         run: python .github/ci/royallab_print_js_excerpt.py
+      - name: Validate extracted original lab print patch and unchanged pharmacy JS
+        run: python .github/ci/royallab_print_integration_smoke.py
       - name: Verify isolated staging invariants
         run: python -m unittest discover -s tests -p 'test_royallab_*.py' -v
