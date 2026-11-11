@@ -19,7 +19,7 @@ def patch(source):
  if 'royallab-native/tests' in source:raise ValueError("Native routes already installed")
  source=source.replace(IMPORT,IMPORT+", royallab_native_catalog_api",1)
  # Routes inherit existing authentication and database connection context.
- return source.replace(ANCHOR,ROUTES+ANCHOR,1)
+ return source.replace(ANCHOR,ROUTES+"                    "+ANCHOR,1)
 def apply(root):
  p=Path(root)/'hospital/gateway.py'
  p.write_text(patch(p.read_text(encoding='utf-8')),encoding='utf-8')
