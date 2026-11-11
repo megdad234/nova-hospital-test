@@ -106,6 +106,8 @@ on:
       - 'tests/test_royallab_nova_test_match_plan.py'
       - 'hospital/royallab_native_result_form.py'
       - 'tests/test_royallab_native_result_form.py'
+      - 'hospital/royallab_native_catalog_store.py'
+      - 'tests/test_royallab_native_catalog_store.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -358,6 +360,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab source boolean regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_source_bundle_preflight.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab source integrity preflight tests failed' }
+          python -m unittest discover -s tests -p 'test_royallab_native_catalog_store.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native SQLite catalogue regression failed' }
           python -m unittest discover -s tests -p 'test_royallab_native_result_form.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native forms contract failed' }
           python -m unittest discover -s tests -p 'test_royallab_nova_test_match_plan.py' -v
