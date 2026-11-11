@@ -7,7 +7,7 @@ class ImportTests(unittest.TestCase):
  def test_copy_only_import_and_repeat(self):
   with tempfile.TemporaryDirectory() as d:
    d=pathlib.Path(d);db=d/"copy.db";library=d/"library.json";options=d/"unlinked.json"
-   with closing(sqlite3.connect(db)) as c:
+   with closing(sqlite3.connect(db)) as c, c:
     c.execute("CREATE TABLE hospital_lab_tests(id INTEGER PRIMARY KEY,name TEXT)")
     c.execute("INSERT INTO hospital_lab_tests VALUES(7,'original')")
    library.write_text(json.dumps({"tests":[{"TestID":str(i),"Name":"T"} for i in range(367)],
