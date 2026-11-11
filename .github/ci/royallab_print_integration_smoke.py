@@ -24,8 +24,15 @@ with tempfile.TemporaryDirectory() as temp:
  assert result.count("window.print()")==original_hospital.count("window.print()")
  assert hashlib.sha256(pharmacy.read_bytes()).hexdigest()==original
  assert result.count("lab/report/")==original_hospital.count("lab/report/")
+ assert result.count("lab-print-group")==1
+ assert result.count("section_name")==original_hospital.count("section_name")+2
+ assert "flatMap((x,idx,visible)" in result
+ assert "colspan=\\\"4\\\"" in result
  subprocess.run(["node","--check",str(patched)],check=True)
  try:apply(base)
  except RuntimeError:pass
  else:raise AssertionError("Repeated patch must fail closed")
+ try:apply_css(base)
+ except RuntimeError:pass
+ else:raise AssertionError("Repeated CSS patch must fail closed")
  print("LAB_PRINT_PATCH_EXTRACTED_SOURCE_OK; A4_CSS_ADDITIVE_OK; PHARMACY_SHA256_UNCHANGED; NODE_SYNTAX_OK; REPEAT_REJECTED")
