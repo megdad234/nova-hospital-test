@@ -4,6 +4,8 @@ on:
     branches: [feature/royallab-full-migration-20261111]
     paths:
       - '.github/ci/royallab_source_audit.py'
+      - 'hospital/royallab_staging.py'
+      - 'tests/test_royallab_staging.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
@@ -15,3 +17,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Audit original laboratory source without editing it
         run: python .github/ci/royallab_source_audit.py
+      - name: Verify isolated staging invariants
+        run: python -m unittest discover -s tests -p 'test_royallab_staging.py' -v
