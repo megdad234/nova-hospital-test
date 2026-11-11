@@ -3,6 +3,7 @@ Usage: python .github/ci/royallab_import_offline.py --database COPY.db --library
 NEVER run against a production database. Creates only royal_lab_* staging tables.
 """
 import argparse,hashlib,json,pathlib,sqlite3,sys
+from contextlib import closing
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"hospital"))
 from royallab_staging import stage,verify
@@ -19,9 +20,12 @@ def run(database,library_path,unlinked_path):
     if len(mapped["tests"])!=367:raise ValueError("Missing Royal Lab tests")
     if len(unlinked)!=2551:raise ValueError("Missing unresolved options")
     digest=hashlib.sha256(lib_bytes+b"\\0"+opt_bytes).hexdigest()
-    with sqlite3.connect(db) as conn:
-        batch=stage(conn,library,unlinked,digest)
-        counts=verify(conn,batch)
+    # sqlite3.Connection context manager commits but does NOT close the file.
+    # Explicit close is required on Windows to release temporary database locks.
+    with closing(sqlite3.connect(db)) as conn:
+        with conn:
+            batch=stage(conn,library,unlinked,digest)
+            counts=verify(conn,batch)
     return {"batch_id":batch,"sha256":digest,"counts":counts,
         "detached_analytes":len(mapped["detached_analytes"]),"field_kinds":mapped["field_kinds"]}
 if __name__=="__main__":
