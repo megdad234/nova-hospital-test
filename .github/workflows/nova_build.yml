@@ -5,6 +5,8 @@ on:
     paths:
       - 'NOVA_Hospital_GitHub_Ready_Source.zip'
       - '.github/workflows/nova_build.yml'
+      - '.gitattributes'
+      - 'hospital/royallab_source/*.json'
       - '.github/ci/windows_sqlite_test_cleanup.py'
       - '.github/ci/patch_upgrade_hash.py'
       - '.github/ci/nova_price_list_*.py'
