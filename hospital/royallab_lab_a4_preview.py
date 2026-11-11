@@ -23,8 +23,17 @@ def render_lab_a4_preview(report):
         if not isinstance(lines,list):raise ValueError("Invalid laboratory lines")
         section=['<section class="test"><h2>'+_e(item.get("test_name") or item.get("name") or "Laboratory test")+'</h2>']
         section.append('<table><thead><tr><th>البند</th><th>النتيجة</th><th>الوحدة</th><th>المدى المرجعي</th></tr></thead><tbody>')
+        last_group=None
         for line in lines:
             if not isinstance(line,dict):raise ValueError("Invalid result line")
+            # NOVA Batch04 stores a section_name snapshot on each result line.
+            # Empty results are drafts and are not printed by the original NOVA UI.
+            if not str(line.get("value") if line.get("value") is not None else "").strip():
+                continue
+            group=str(line.get("section_name") or "").strip()
+            if group and group!=last_group:
+                section.append('<tr class="group"><th colspan="4">'+_e(group)+'</th></tr>')
+            last_group=group
             section.append("<tr>"+''.join("<td>"+_e(line.get(k))+"</td>" for k in ("name","value","unit","reference_range"))+"</tr>")
         section.append("</tbody></table></section>")
         rows.append("".join(section))
@@ -51,6 +60,6 @@ h2{font-size:12pt;margin:0 0 3mm;break-after:avoid-page;page-break-after:avoid}.
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
 th,td{border-bottom:1px solid #d9e2e9;text-align:right;padding:2.5mm 2mm;overflow-wrap:anywhere}
-th{background:#edf3f7;font-size:9pt}
+th{background:#edf3f7;font-size:9pt}.group th{background:#e5edf3;font-weight:bold;break-after:avoid-page}
 @media screen{body{max-width:210mm;margin:auto;padding:12mm;box-shadow:0 0 8px #ddd}}"""
     return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير المختبر</title><style>'+css+'</style></head><body>'+header+''.join(rows)+'</body></html>'
