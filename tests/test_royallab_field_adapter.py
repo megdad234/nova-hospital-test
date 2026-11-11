@@ -7,6 +7,7 @@ class AdapterTests(unittest.TestCase):
   analytes=[{"analyte_id":str(i),"test_id":str(i%367),"name":"A","result_formats":[]} for i in range(1245)]
   analytes[0]["test_id"]="9999"
   analytes[1]["result_formats"]=[{"id":"1","types":["ColoseEndedResultFormat"],"options":[{"id":"1","label":"Positive"},{"id":"2","label":"Negative"}]}]
+  analytes[3]["result_formats"]=[{"id":"3","types":["ColoseEndedResultFormat","StringResultFormat"],"options":[{"id":"3","label":"Trace"}]}]
   analytes[2]["result_formats"]=[{"id":"2","types":["DoubleResultFormat"],"unit":"mg/dL","options":[]}]
   result=m.build_fields({"tests":tests,"analytes":analytes})
   self.assertEqual(len(result["tests"]),367)
@@ -15,6 +16,7 @@ class AdapterTests(unittest.TestCase):
   fields=[f for t in result["tests"] for f in t["fields"]]
   self.assertEqual(next(f for f in fields if f["source_format_id"]=="1")["kind"],"select")
   self.assertEqual(next(f for f in fields if f["source_format_id"]=="2")["unit"],"mg/dL")
+  self.assertEqual(next(f for f in fields if f["source_format_id"]=="3")["kind"],"select_or_text")
  def test_reject_partial_source(self):
   with self.assertRaises(ValueError):m.build_fields({"tests":[],"analytes":[]})
 if __name__=="__main__":unittest.main()
