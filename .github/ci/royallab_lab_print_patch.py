@@ -9,6 +9,21 @@ def patch_lab_print_js(source):
     anchor="${d.partial?'<p class=\"small\">تقرير جزئي — توجد فحوصات أخرى لم تُجهز للطباعة.</p>':''}"
     if source.count(anchor)!=1:
         raise RuntimeError("Expected exactly one lab-only partial-report message")
+    # Preserve the existing report endpoint, approval filter, and print window.
+    # Only add visual section headings for NOVA Batch04 section_name snapshots.
+    old="(i.lines||[]).filter(x=>String(x.value??'').trim()!=='').map(x=>"
+    new="(i.lines||[]).filter(x=>String(x.value??'').trim()!=='').flatMap((x,idx,visible)=>{const group=String(x.section_name||'').trim();const previous=idx?String(visible[idx-1].section_name||'').trim():'';return [...(group&&group!==previous?[`<tr class=\"lab-print-group\"><th colspan=\"4\">${esc(group)}</th></tr>`]:[]),"
+    if source.count(old)!=1:raise RuntimeError("Expected exactly one lab-only result row mapping")
+    # Match only the end of the exact result row template, not any other table.
+    start=source.index(old)
+    end_marker='</tr>`))}</section>'
+    end=source.find(end_marker,start)
+    if end<0:raise RuntimeError("Lab report row end anchor missing")
+    source=source[:start]+source[start:].replace(old,new,1)
+    start=source.index(new)
+    end=source.find(end_marker,start)
+    if end<0:raise RuntimeError("Lab report mapping closure missing")
+    source=source[:end]+source[end:].replace(end_marker,'</tr>`]}))}</section>',1)
     return source.replace(anchor,"",1)
 
 def apply(root):
