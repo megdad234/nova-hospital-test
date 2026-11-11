@@ -4,7 +4,7 @@ Never infers a mapping from a name, does not grant clinical approval, and
 requires the saved NOVA test identity to match the bound item.
 """
 import json
-from royallab_catalog_preview import test_form
+from hospital.royallab_catalog_preview import test_form
 
 def load_reviewed_bindings(conn,items,batch_id):
     if type(batch_id) is not int or batch_id<=0:return {}
