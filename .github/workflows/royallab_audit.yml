@@ -43,6 +43,7 @@ on:
       - 'hospital/royallab_nova_binding_schema.py'
       - 'hospital/royallab_nova_live_order_overlay.py'
       - 'tests/test_royallab_nova_live_order_overlay.py'
+      - 'tests/test_royallab_clinical_binding_integration.py'
       - 'hospital/royallab_nova_binding_loader.py'
       - 'tests/test_royallab_nova_binding_loader.py'
       - 'hospital/royallab_nova_order_detail_gate.py'
