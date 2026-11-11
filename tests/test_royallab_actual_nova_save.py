@@ -38,10 +38,10 @@ def fixture(status="paid"):
  c.executescript("""
  CREATE TABLE hospital_orders(id INTEGER PRIMARY KEY,status TEXT);
  CREATE TABLE hospital_order_items(id INTEGER PRIMARY KEY,order_id INTEGER,result_version INTEGER,result_status TEXT,result_entered_by INTEGER,approved_at TEXT);
- CREATE TABLE hospital_lab_lines(id INTEGER PRIMARY KEY,item_id INTEGER,value TEXT,modified_at TEXT,source TEXT);
+ CREATE TABLE hospital_lab_lines(id INTEGER PRIMARY KEY,item_id INTEGER,value TEXT,modified_at TEXT,source TEXT,code TEXT,name TEXT,unit TEXT);
  CREATE TABLE hospital_lab_revisions(id INTEGER PRIMARY KEY,item_id INTEGER,user_id INTEGER,recorded_at TEXT,before_json TEXT,after_json TEXT,reason TEXT,source TEXT,version INTEGER);
  INSERT INTO hospital_order_items VALUES(22,1,0,'draft',NULL,NULL);
- INSERT INTO hospital_lab_lines VALUES(11,22,'',NULL,'manual');
+ INSERT INTO hospital_lab_lines(id,item_id,value,modified_at,source,code,name,unit) VALUES(11,22,'',NULL,'manual','R1','Royal result','');
  """)
  c.execute("INSERT INTO hospital_orders VALUES(1,?)",(status,))
  c.commit()
