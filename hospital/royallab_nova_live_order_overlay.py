@@ -28,3 +28,32 @@ def overlay_order_detail(conn,detail,role):
         bindings.update(load_reviewed_bindings(conn,selected,batch_id))
     if not bindings:return detail
     return reviewed_order_detail(conn,detail,bindings)
+
+def diagnose_royallab_visibility(conn, detail):
+    """Read-only, patient-safe explanation of why typed Royal Lab fields are absent.
+
+    Does not expose patient values, names, or result text.
+    """
+    if not isinstance(detail, dict) or not isinstance(detail.get("items"), list):
+        return {"status": "invalid_order_detail", "items": []}
+    tables={r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    required={"royal_lab_import_batches","royal_lab_source_tests",
+              "royal_lab_approved_item_bindings"}
+    missing=sorted(required-tables)
+    if missing:
+        return {"status":"source_or_bindings_not_installed",
+                "missing_tables":missing,"items":[]}
+    out=[]
+    for item in detail["items"]:
+        if not isinstance(item,dict) or type(item.get("id")) is not int:
+            continue
+        row=conn.execute("""SELECT reviewed,clinical_approved,batch_id
+            FROM royal_lab_approved_item_bindings WHERE item_id=?
+            ORDER BY clinical_approved DESC,reviewed DESC LIMIT 1""",
+            (item["id"],)).fetchone()
+        if row is None: reason="no_item_binding"
+        elif row[0]!=1: reason="review_pending"
+        elif row[1]!=1: reason="clinical_approval_pending"
+        else: reason="approved_binding_present_check_field_mapping"
+        out.append({"item_id":item["id"],"reason":reason})
+    return {"status":"checked","items":out,"writes":False}
