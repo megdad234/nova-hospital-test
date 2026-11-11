@@ -8,8 +8,12 @@ def activate_reviewed_parameters(conn,test_id,fields,approved=False):
     plan=plan_existing_parameters(conn,test_id,fields)
     if not plan["ready"]:raise ValueError("Missing or conflicting Royal Lab fields")
     if not plan["mapped"]:raise ValueError("No reviewed parameters")
-    # Do not silently add parameters to existing patient orders: existing snapshots
-    # are immutable here; only future snapshot generation may see activated fields.
+    # NOVA ensure_order_lines can lazily snapshot old orders. Refuse activation
+    # while any existing order item for this test lacks its own result snapshot.
+    pending=conn.execute("""SELECT i.id FROM hospital_order_items i
+      WHERE i.test_id=? AND NOT EXISTS
+      (SELECT 1 FROM hospital_lab_lines l WHERE l.item_id=i.id) LIMIT 1""",(test_id,)).fetchone()
+    if pending:raise ValueError("Existing unsnapshotted order items must be reviewed before activation")
     conn.execute("SAVEPOINT royallab_activate")
     try:
         for entry in plan["mapped"]:
