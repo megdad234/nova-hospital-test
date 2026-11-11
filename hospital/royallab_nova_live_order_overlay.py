@@ -3,8 +3,8 @@
 The original response is preserved unless an explicitly reviewed source binding
 exists. This function never creates bindings or writes clinical records.
 """
-from royallab_nova_binding_loader import load_reviewed_bindings
-from royallab_nova_order_detail_gate import reviewed_order_detail
+from hospital.royallab_nova_binding_loader import load_reviewed_bindings
+from hospital.royallab_nova_order_detail_gate import reviewed_order_detail
 
 def overlay_order_detail(conn,detail,role):
     if role not in ('admin','lab'):return detail
