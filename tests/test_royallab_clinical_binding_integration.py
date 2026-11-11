@@ -18,7 +18,7 @@ class ClinicalBindingIntegrationTests(unittest.TestCase):
  INSERT INTO hospital_lab_lines VALUES(11,22,'ROYAL_FMT_20',10);""")
   create_schema(self.c)
   self.detail={'id':5,'items':[{'id':22,'test_id':7,'lines':[{'id':11,'name':'Color','value':'Yellow'}]}]}
-  self.form={'source_test_id':'7','review_flags':[],'fields':[{'source_format_id':'20','kind':'select','label':'Color','options':[{'label':'Yellow','active':True},{'label':'Red','active':True}]}]}
+  self.form={'source_test_id':'7','review_flags':[],'fields':[{'source_format_id':'20','kind':'select','label':'Color','options':[{'label':'Yellow','active':True},{'label':'Red','active':True},{'label':'Turbid','active':'False'}]}]}
  def tearDown(self):self.c.close()
  def test_only_clinically_approved_exact_binding_gets_dropdown(self):
   self.c.execute("""INSERT INTO royal_lab_approved_item_bindings
