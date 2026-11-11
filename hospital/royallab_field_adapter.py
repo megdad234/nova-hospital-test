@@ -31,7 +31,7 @@ def build_fields(library):
             if kind=="select_or_text" and ("DoubleResultFormat" in kinds or "IntegerResultFormat" in kinds):
                 kind="select_or_number"
             fields.append({"source_analyte_id":str(a["analyte_id"]),"source_format_id":str(f.get("id","")),
-                "label":f.get("title") or a.get("name",""),"kind":kind,
+                "label":(str(f.get("title") or "").strip() or str(a.get("name") or "").strip()),"kind":kind,
                 "types":sorted(kinds),"unit":f.get("unit") or "","options":options,
                 "numeric_ranges":a.get("numeric_ranges",[]),"text_ranges":a.get("text_ranges",[]),
                 "required":a.get("required"),"active":a.get("active"),
