@@ -15,6 +15,8 @@ def reviewed_order_form(conn,item_id,source_form):
         raise ValueError("Incomplete order-line mapping")
     output=[]
     for f in fields:
+        if not isinstance(f.get('label'),str) or not f['label'].strip():
+            raise ValueError('Missing original analyte name; clinical review required')
         kind=f.get("kind")
         if kind not in ALLOWED:raise ValueError("Unsupported Royal Lab input kind")
         options=f.get("options") or []
