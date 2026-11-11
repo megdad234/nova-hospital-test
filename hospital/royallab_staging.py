@@ -40,8 +40,8 @@ def stage(conn, library, unlinked, sha256):
     option_ids=[str(o["ColoseEndedResultOptionID"]) for o in unlinked]
     if len(set(test_ids))!=len(test_ids) or len(set(analyte_ids))!=len(analyte_ids) or len(set(option_ids))!=len(option_ids):
         raise ValueError("Duplicate source identifiers")
+    conn.executescript(DDL)
     with conn:
-        conn.executescript(DDL)
         old=conn.execute("SELECT id FROM royal_lab_import_batches WHERE source_sha256=?",(sha256,)).fetchone()
         if old:return old[0]
         cur=conn.execute("INSERT INTO royal_lab_import_batches(source_sha256,source_test_count) VALUES(?,?)",(sha256,len(tests)))
