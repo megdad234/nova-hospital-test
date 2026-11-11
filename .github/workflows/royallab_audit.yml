@@ -35,6 +35,8 @@ on:
       - '.github/ci/royallab_typed_input_patch.py'
       - 'tests/test_royallab_typed_input_patch.py'
       - 'tests/test_royallab_combined_ui_patches.py'
+      - 'hospital/royallab_nova_order_detail_gate.py'
+      - 'tests/test_royallab_nova_order_detail_gate.py'
       - 'hospital/royallab_nova_order_detail_types.py'
       - 'tests/test_royallab_nova_order_detail_types.py'
       - 'hospital/royallab_nova_typed_form_contract.py'
