@@ -26,9 +26,10 @@ class LabPrintPatchTests(unittest.TestCase):
  def test_actual_batch04_generated_print_template(self):
   root=pathlib.Path(__file__).resolve().parents[1]
   batch=(root/'.github/ci/nova_batch04_lab_reception.py').read_text(encoding='utf-8')
-  match=re.search(r'async function printReport\\(id\\)\\{.*?window\\.print\\(\\);.*?\\}\\s*\\}"""\\)',batch,re.S)
-  self.assertIsNotNone(match)
-  template=match.group(0).split('"""')[0].replace('@{','${').replace('~','`')
+  template=batch.split('async function printReport(id){',1)[1].split('"""',1)[0]
+  template='async function printReport(id){'+template
+  self.assertIn('window.print()',template)
+  template=template.replace('@{','${').replace('~','`')
   output=patch_lab_print_js(template)
   self.assertNotIn('تقرير جزئي',output)
   self.assertIn('nova-lab-section',output)
