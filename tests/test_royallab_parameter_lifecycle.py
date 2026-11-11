@@ -9,6 +9,7 @@ class ReviewedLifecycle(unittest.TestCase):
   db=sqlite3.connect(":memory:")
   db.executescript("""CREATE TABLE hospital_lab_tests(id INTEGER PRIMARY KEY,code TEXT,price INTEGER);
  CREATE TABLE hospital_lab_parameters(id INTEGER PRIMARY KEY,test_id INTEGER,code TEXT,name TEXT,unit TEXT,reference_all TEXT,reference_male TEXT,reference_female TEXT,sort_order INTEGER,active INTEGER,UNIQUE(test_id,code));
+ CREATE TABLE hospital_order_items(id INTEGER PRIMARY KEY,test_id INTEGER);
  CREATE TABLE hospital_lab_lines(id INTEGER PRIMARY KEY,item_id INTEGER,code TEXT,value TEXT);
  INSERT INTO hospital_lab_tests VALUES(7,'URINE',3500);
  INSERT INTO hospital_lab_parameters VALUES(1,7,'OLD','Old Field','/HPF','1-2','','',1,1);
