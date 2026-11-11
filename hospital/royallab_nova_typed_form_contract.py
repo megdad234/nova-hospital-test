@@ -22,7 +22,7 @@ def reviewed_order_form(conn,item_id,source_form):
         options=f.get("options") or []
         if kind.startswith("select") and not options:raise ValueError("Dropdown has no source options")
         if kind.startswith("select"):
-            labels=[o.get("label") for o in options if isinstance(o,dict) and o.get("active") is not False]
+            labels=[o.get("label") for o in options if isinstance(o,dict) and o.get("active") not in (False,0,'False','false','0')]
             if not labels or any(not isinstance(v,str) or not v.strip() for v in labels) or len(labels)!=len(set(labels)):
                 raise ValueError("Invalid or ambiguous source dropdown labels")
         else:labels=[]
