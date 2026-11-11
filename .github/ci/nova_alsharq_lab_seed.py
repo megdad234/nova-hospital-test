@@ -147,6 +147,18 @@ catalog=catalog.replace(anchor,"\n# AL_SHARQ_LAB_SEED_V1 — new test definition
 # Use field identities, not fabricated patient results or clinical reference intervals.
 # The source catalogue remains the authority for test codes and pricing.
 STRUCTURED_FIELDS = {
+    # OpenELIS-style multi-component microbiology results: growth, organism,
+    # susceptibility and narrative remain separate; no automatic interpretation.
+    **{_culture: [("GROWTH", "Culture growth"),
+                   ("ORGANISM", "Isolated organism"),
+                   ("SENS", "Antimicrobial susceptibility / antibiogram"),
+                   ("COMMENTS", "Culture comments")]
+       for _culture in ("CULTURE","URINE_CULT","STOOL_CULT","BLOOD_CULT")},
+    **{_culture: [("GROWTH", "Culture growth"),
+                   ("ORGANISM", "Isolated organism"),
+                   ("SENSITIVITY", "Antimicrobial susceptibility / antibiogram"),
+                   ("COMMENTS", "Culture comments")]
+       for _culture in ("URINE_CULTURE","STOOL_CULTURE","BLOOD_CULTURE")},
     "WIDAL": [("O", "Salmonella Typhi O"), ("H", "Salmonella Typhi H")],
     "MAL_RDT": [("RDT", "Malaria Rapid Test")],
     "BGROUP": [("ABO", "ABO group"), ("RH", "Rh(D)")],
