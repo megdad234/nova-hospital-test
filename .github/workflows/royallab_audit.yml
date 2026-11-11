@@ -32,6 +32,8 @@ on:
       - 'tests/test_royallab_nova_parameter_install.py'
       - 'hospital/royallab_nova_parameter_plan.py'
       - 'tests/test_royallab_nova_parameter_plan.py'
+      - 'hospital/royallab_nova_resolved_draft.py'
+      - 'tests/test_royallab_nova_resolved_draft.py'
       - 'hospital/royallab_nova_order_line_resolver.py'
       - 'tests/test_royallab_nova_order_line_resolver.py'
       - 'hospital/royallab_nova_line_mapping.py'
