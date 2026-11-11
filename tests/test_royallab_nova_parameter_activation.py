@@ -21,6 +21,13 @@ class ActivationTests(unittest.TestCase):
   self.assertEqual(self.db.execute("SELECT active FROM hospital_lab_parameters").fetchone()[0],1)
   self.assertEqual(self.db.execute("SELECT value FROM hospital_lab_lines").fetchone()[0],"patient result")
   self.assertEqual(self.db.execute("SELECT price FROM hospital_lab_tests").fetchone()[0],2500)
+ def test_old_order_without_snapshot_blocks_activation(self):
+  install_reviewed_parameters(self.db,7,self.fields,approved=True)
+  self.db.execute('INSERT INTO hospital_order_items VALUES(22,7)')
+  with self.assertRaises(ValueError):activate_reviewed_parameters(self.db,7,self.fields,approved=True)
+  self.assertEqual(self.db.execute('SELECT active FROM hospital_lab_parameters').fetchone()[0],0)
+  self.db.execute("INSERT INTO hospital_lab_lines VALUES(2,22,'OLD','existing snapshot')")
+  self.assertEqual(activate_reviewed_parameters(self.db,7,self.fields,approved=True)['activated'],1)
  def test_missing_field_prevents_partial_activation(self):
   install_reviewed_parameters(self.db,7,self.fields,approved=True)
   extra={"source_format_id":"19","kind":"text","label":"Color","unit":""}
