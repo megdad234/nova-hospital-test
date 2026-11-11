@@ -3,7 +3,7 @@
 Caller must provide reviewed, explicitly associated source forms for each order item.
 No source form or failed review => leave original NOVA result lines untouched.
 """
-from royallab_nova_typed_form_contract import reviewed_order_form
+from hospital.royallab_nova_typed_form_contract import reviewed_order_form
 def attach_reviewed_types(conn,items,reviewed_forms):
     if not isinstance(items,list) or not isinstance(reviewed_forms,dict):
         raise ValueError("NOVA items and reviewed form map required")
