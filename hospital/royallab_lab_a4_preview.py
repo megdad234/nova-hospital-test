@@ -28,7 +28,21 @@ def render_lab_a4_preview(report):
             section.append("<tr>"+''.join("<td>"+_e(line.get(k))+"</td>" for k in ("name","value","unit","reference_range"))+"</tr>")
         section.append("</tbody></table></section>")
         rows.append("".join(section))
-    header='<header><h1>تقرير نتائج المختبر</h1><div class="details"><span>المريض: '+_e(patient.get("name") or report.get("patient_name"))+'</span><span>رقم الطلب: '+_e(order.get("id") or report.get("order_id"))+'</span><span>التاريخ: '+_e(order.get("created_at") or report.get("created_at"))+'</span></div></header>'
+    brand=report.get("brand") or {}
+    if not isinstance(brand,dict):raise ValueError("Invalid laboratory brand")
+    hospital_name=_e(brand.get("hospital_name") or "NOVA Hospital")
+    title=_e(brand.get("lab_title") or "تقرير نتائج المختبر")
+    patient_name=_e(report.get("patient_name") or patient.get("name"))
+    patient_no=_e(report.get("patient_no"))
+    order_no=_e(report.get("order_no") or order.get("id") or report.get("order_id"))
+    print_time=_e(report.get("print_time") or order.get("created_at") or report.get("created_at"))
+    age=_e(report.get("age_years"))
+    gender=_e(report.get("gender"))
+    header=('<header><div class="hospital">'+hospital_name+'</div><h1>'+title+'</h1>'
+            '<div class="details"><span>المريض: '+patient_name+'</span><span>رقم المريض: '+patient_no+
+            '</span><span>رقم الطلب: '+order_no+'</span><span>العمر: '+age+
+            '</span><span>النوع: '+gender+'</span><span>تاريخ الطباعة: '+print_time+'</span></div></header>')
+
     css="""@page{size:A4 portrait;margin:13mm 12mm}*{box-sizing:border-box}
 body{font-family:Arial,Tahoma,sans-serif;direction:rtl;color:#172b3a;margin:0;font-size:11pt}
 header{border-bottom:2px solid #244c6b;padding-bottom:8mm;margin-bottom:7mm}
