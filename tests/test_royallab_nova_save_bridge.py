@@ -19,6 +19,13 @@ class BridgeTests(unittest.TestCase):
   for entered,mapping in cases:
    with self.subTest(entered=entered,mapping=mapping),self.assertRaises(ValueError):
     prepare_nova_save_payload(self.form,entered,mapping,22,0)
+ def test_reject_boolean_ids_and_more_than_120_values(self):
+  with self.assertRaises(ValueError):
+   prepare_nova_save_payload(self.form,{"r1":"Positive"},{"r1":True},22,0)
+  with self.assertRaises(ValueError):
+   prepare_nova_save_payload(self.form,{"r1":"Positive"},{"r1":11},True,0)
+  with self.assertRaises(ValueError):
+   prepare_nova_save_payload(self.form,{str(i):"x" for i in range(121)},{},22,0)
  def test_reject_live_form(self):
   with self.assertRaises(ValueError):
    prepare_nova_save_payload({**self.form,"mode":"live"},{"r1":"Positive"},{"r1":11},22,0)
