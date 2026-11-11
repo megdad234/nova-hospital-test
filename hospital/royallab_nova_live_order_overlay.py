@@ -14,11 +14,11 @@ def overlay_order_detail(conn,detail,role):
     tables={r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     if 'royal_lab_approved_item_bindings' not in tables:return detail
     columns={r[1] for r in conn.execute('PRAGMA table_info(royal_lab_approved_item_bindings)')}
-    if not {'item_id','batch_id','reviewed'}.issubset(columns):return detail
+    if not {'item_id','batch_id','reviewed','clinical_approved'}.issubset(columns):return detail
     ids=[x.get('id') for x in items if isinstance(x,dict)]
     if len(ids)!=len(items) or any(type(i) is not int or i<=0 for i in ids):return detail
     placeholders=','.join('?' for _ in ids)
-    rows=conn.execute('SELECT item_id,batch_id FROM royal_lab_approved_item_bindings WHERE reviewed=1 AND item_id IN ('+placeholders+')',ids).fetchall()
+    rows=conn.execute('SELECT item_id,batch_id FROM royal_lab_approved_item_bindings WHERE reviewed=1 AND clinical_approved=1 AND item_id IN ('+placeholders+')',ids).fetchall()
     by_batch={}
     for item_id,batch_id in rows:
         if type(batch_id) is int and batch_id>0:
