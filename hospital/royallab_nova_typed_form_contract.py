@@ -20,6 +20,9 @@ def reviewed_order_form(conn,item_id,source_form):
         raise ValueError("Incomplete order-line mapping")
     output=[]
     for f in fields:
+        if not isinstance(f,dict):raise ValueError('Invalid source analyte field')
+        if source_bool(f.get('active')) is False:
+            raise ValueError('Inactive source analyte requires clinical review')
         if not isinstance(f.get('label'),str) or not f['label'].strip():
             raise ValueError('Missing original analyte name; clinical review required')
         kind=f.get("kind")
