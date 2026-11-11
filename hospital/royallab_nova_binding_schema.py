@@ -10,13 +10,15 @@ CREATE TABLE IF NOT EXISTS royal_lab_approved_item_bindings(
  nova_test_id INTEGER NOT NULL,
  source_test_id TEXT NOT NULL,
  reviewed INTEGER NOT NULL DEFAULT 0 CHECK(reviewed IN (0,1)),
+ clinical_approved INTEGER NOT NULL DEFAULT 0 CHECK(clinical_approved IN (0,1)),
  reviewed_by INTEGER,
  reviewed_at TEXT,
  PRIMARY KEY(item_id,batch_id),
  FOREIGN KEY(item_id) REFERENCES hospital_order_items(id),
  FOREIGN KEY(batch_id) REFERENCES royal_lab_import_batches(id),
  FOREIGN KEY(nova_test_id) REFERENCES hospital_lab_tests(id),
- CHECK(reviewed=0 OR (reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL))
+ CHECK(reviewed=0 OR (reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL)),
+ CHECK(clinical_approved=0 OR (reviewed=1 AND reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL))
 );
 CREATE INDEX IF NOT EXISTS idx_royal_lab_bindings_batch
  ON royal_lab_approved_item_bindings(batch_id,reviewed);
