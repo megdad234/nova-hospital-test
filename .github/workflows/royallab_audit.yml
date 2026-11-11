@@ -36,6 +36,7 @@ on:
       - 'tests/test_royallab_order_route_patch.py'
       - 'tests/test_royallab_runtime_imports.py'
       - 'tests/test_royallab_gateway_build_smoke.py'
+      - 'tests/test_royallab_windows_pipeline_contract.py'
       - '.github/ci/royallab_windows_packaging_audit.py'
       - '.github/ci/royallab_order_route_audit.py'
       - '.github/ci/royallab_typed_input_patch.py'
