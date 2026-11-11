@@ -23,6 +23,7 @@ on:
       - 'hospital/royallab_nova_save_bridge.py'
       - 'tests/test_royallab_nova_save_bridge.py'
       - '.github/ci/royallab_save_contract_audit.py'
+      - '.github/ci/royallab_save_fixture_audit.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
@@ -40,5 +41,7 @@ jobs:
         run: python .github/ci/royallab_lab_code_excerpts.py
       - name: Verify original NOVA save contract compatibility
         run: python .github/ci/royallab_save_contract_audit.py
+      - name: Inspect original lab save prerequisites for real SQLite integration test
+        run: python .github/ci/royallab_save_fixture_audit.py
       - name: Verify isolated staging invariants
         run: python -m unittest discover -s tests -p 'test_royallab_*.py' -v
