@@ -16,6 +16,13 @@ class LabPrintPatchTests(unittest.TestCase):
   self.assertIn("section_name",after)
   self.assertIn("flatMap((x,idx,visible)",after)
   self.assertEqual(after.count("async function printReport(id)"),1)
+ def test_batch04_grouped_report_removes_only_partial_notice(self):
+  notice='\u0024{d.partial?\'<p class="small">تقرير جزئي — توجد فحوصات أخرى لم تُنشر بعد.</p>\':\'\'}'
+  source='async function printReport(id){const html=`<tr class="nova-lab-section"><th>Macroscopy</th></tr>'+notice+'`;window.print()}'
+  updated=patch_lab_print_js(source)
+  self.assertNotIn('تقرير جزئي',updated)
+  self.assertIn('nova-lab-section',updated)
+  self.assertIn('window.print()',updated)
  def test_fails_closed_on_unexpected_source(self):
   with self.assertRaises(RuntimeError):patch_lab_print_js("other JS")
 if __name__=="__main__":unittest.main()
