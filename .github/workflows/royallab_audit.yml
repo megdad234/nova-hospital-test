@@ -32,6 +32,7 @@ on:
       - 'tests/test_royallab_nova_parameter_install.py'
       - 'hospital/royallab_nova_parameter_plan.py'
       - 'tests/test_royallab_nova_parameter_plan.py'
+      - '.github/ci/royallab_order_route_audit.py'
       - '.github/ci/royallab_typed_input_patch.py'
       - 'tests/test_royallab_typed_input_patch.py'
       - 'tests/test_royallab_combined_ui_patches.py'
@@ -90,6 +91,8 @@ jobs:
         run: python .github/ci/royallab_print_integration_smoke.py
       - name: Audit actual NOVA lab result schema and section names
         run: python .github/ci/royallab_actual_line_schema_audit.py
+      - name: Inspect exact NOVA order detail route for reviewed Royal Lab overlay
+        run: python .github/ci/royallab_order_route_audit.py
       - name: Audit actual lab print A4 styles and existing patches
         run: python .github/ci/royallab_print_css_audit.py
       - name: Verify isolated staging invariants
