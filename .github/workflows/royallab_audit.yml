@@ -17,6 +17,8 @@ on:
       - 'hospital/royallab_form_preview_html.py'
       - 'tests/test_royallab_form_preview_html.py'
       - '.github/ci/royallab_nova_integration_audit.py'
+      - 'hospital/royallab_integration_preflight.py'
+      - 'tests/test_royallab_integration_preflight.py'
       - '.github/workflows/royallab_audit.yml'
   workflow_dispatch:
 permissions:
