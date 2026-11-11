@@ -22,3 +22,11 @@
 - It does NOT prove actual NOVA UI integration, correct clinical ranges, complete lab reporting, cashier/reception integration, printing, or Windows installer readiness.
 - Do not publish catalog for clinical use until field-format anomalies, missing references, and clinical validation are resolved.
 - Keep the production database and original NOVA main untouched.
+
+## Field manifest generation — verified success
+- Run: https://github.com/megdad234/Royallab-Recovery/actions/runs/43034900843
+- 367 tests, 1,463 linked result fields, 9,765 linked dropdown options, 343 options belonging to detached analytes (total 10,108).
+- 87 tests flagged for review; 64 detached analytes retained for review.
+- Generated audit manifest size: 2,830,788 bytes. It was generated inside CI only; no artifact upload because GitHub artifact quota is full.
+- All tests disabled for clinical use pending explicit validation.
+- No production NOVA import or UI integration has been completed.
