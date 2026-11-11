@@ -17,6 +17,22 @@ class TypedContractTests(unittest.TestCase):
   self.assertEqual(result["fields"][0]["line_id"],11)
   self.assertEqual(result["fields"][0]["options"],["Yellow","Red"])
   self.assertFalse(result["can_save_patient_results"])
+ def test_source_string_boolean_flags(self):
+  field=self.form["fields"][0]
+  field["required"]="True"
+  field["active"]="True"
+  field["options"][2]["active"]="False"
+  result=reviewed_order_form(self.db,22,self.form)
+  self.assertTrue(result["fields"][0]["required"])
+  self.assertEqual(result["fields"][0]["options"],["Yellow","Red"])
+  field["required"]="False"
+  self.assertFalse(reviewed_order_form(self.db,22,self.form)["fields"][0]["required"])
+ def test_inactive_analyte_fails_closed(self):
+  for value in (False,0,"False","false","0"):
+   with self.subTest(value=value):
+    self.form["fields"][0]["active"]=value
+    with self.assertRaisesRegex(ValueError,"Inactive source analyte"):
+     reviewed_order_form(self.db,22,self.form)
  def test_review_flags_and_ambiguous_dropdown_block(self):
   self.form["review_flags"]=["mixed_format_requires_combobox"]
   with self.assertRaises(ValueError):reviewed_order_form(self.db,22,self.form)
