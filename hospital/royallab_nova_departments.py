@@ -47,6 +47,15 @@ ORIGINAL_LAB_GROUPS = {
 }
 
 # Display taxonomy deliberately does not repeat the misleading raw group names.
+# Verified against the extracted original NOVA seed categories via GitHub
+# Actions read-only probe on 2026-11-12. Original exact distinct labels:
+# Blood bank, Chemistry, Coagulation, Hematology, Hormones, Immunology,
+# Microbiology, Parasitology, Serology, Tumor markers, Urinalysis.
+NOVA_LEGACY_ENGLISH_CATEGORIES = frozenset((
+    "Blood bank", "Chemistry", "Coagulation", "Hematology", "Hormones",
+    "Immunology", "Microbiology", "Parasitology", "Serology",
+    "Tumor markers", "Urinalysis",
+))
 # Match the ORIGINAL NOVA seed categories (hospital/lab_catalog.py TESTS
 # positional tuple category), NOT newly translated Arabic department labels.
 DISPLAY_DEPARTMENTS = {
