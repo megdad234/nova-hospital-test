@@ -247,7 +247,10 @@
         remove.addEventListener('click', function () { box.remove(); });
         function toggle() { options.hidden = kind.value !== 'select'; }
         kind.addEventListener('change', toggle);
-        box.dataset.localKey = safeText(f.key || ('field' + (++seq)));
+        // Count existing editable fields too, otherwise an added field
+        // can reuse field1 after reopening a previously approved form.
+        const fieldOrdinal = ++seq;
+        box.dataset.localKey = safeText(f.key || ('field' + fieldOrdinal));
         box.append(legend,label,kind,unit,options,reference,source,requiredLabel,remove);
         toggle();
         fieldsArea.appendChild(box);
