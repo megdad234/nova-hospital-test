@@ -108,6 +108,25 @@ def effective_source_form(raw):
     active = [f for f in all_fields if isinstance(f, dict) and f.get("active") not in inactive]
     if not active:
         return raw  # Never make an empty or fully inactive test writable.
+    # Exact source evidence shows some archived analytes have no name AND no
+    # ResultFormat row. A field with neither an identity nor any way to store
+    # a source result is a layout placeholder, never a clinical observation.
+    # Keep it in the immutable source form, but do not require staff to enter
+    # a nonexistent result name or fabricate a format.
+    source_unnamed_untyped_placeholders = 0
+    retained = []
+    for f in active:
+        analyte_id = str(f.get("source_analyte_id") or "")
+        missing_format = str(f.get("source_format_id")) == "ANALYTE-" + analyte_id
+        if (analyte_id and missing_format and not str(f.get("label") or "").strip()
+                and not f.get("types") and not f.get("options")):
+            source_unnamed_untyped_placeholders += 1
+        else:
+            retained.append(f)
+    if retained:
+        active = retained
+    else:
+        return raw  # An entirely empty source never becomes a reportable test.
     excluded = len(all_fields) - len(active)
     # The original database contains blank dropdown values at order 0, 1, 11
     # and 100. A choice with NO visible label cannot be safely selected or
@@ -255,6 +274,7 @@ def effective_source_form(raw):
             "manual_untyped_draft_fields": manual_fallback_count,
             "excluded_redundant_empty_closed_formats": redundant_incomplete_choices,
             "excluded_empty_source_separators": excluded_empty_source_separators,
+            "excluded_unnamed_untyped_placeholders": source_unnamed_untyped_placeholders,
             "manual_missing_closed_options_draft_fields": missing_closed_choice_draft_count}
 
 def clinical_test_form(conn, catalog_id, source_test_id):
