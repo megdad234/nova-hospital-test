@@ -31,6 +31,8 @@
     saveButton.type = 'button';
     saveButton.textContent = 'حفظ مسودة النتيجة';
     saveButton.disabled = true;
+    let formReady = false;
+    let saving = false;
     root.append(orderItem, saveButton);
     async function send(path, payload) {
       const response = await fetch(base + path, {
@@ -42,6 +44,7 @@
       return response.json();
     }
     async function saveSelectedDraft() {
+      if (!formReady || saving) throw new Error('الفحص غير جاهز لحفظ النتائج');
       const selectedTest = picker.value;
       const selectedSerial = requestSerial;
       const itemId = Number(orderItem.value);
@@ -63,10 +66,15 @@
       if (selectedSerial === requestSerial) status.textContent = 'تم حفظ مسودة النتائج، ولم يتم اعتمادها أو نشرها';
     }
     saveButton.addEventListener('click', function () {
+      if (!formReady || saving) return;
+      saving = true;
       saveButton.disabled = true;
       saveSelectedDraft().catch(function (error) {
         status.textContent = safeText(error.message);
-      }).finally(function () { saveButton.disabled = !picker.value || !detail.querySelector('[data-source-format-id]'); });
+      }).finally(function () {
+        saving = false;
+        saveButton.disabled = !formReady;
+      });
     });
     let tests = [];
     let requestSerial = 0;
@@ -87,6 +95,7 @@
         picker.appendChild(option);
       }
       detail.replaceChildren();
+      formReady = false;
       saveButton.disabled = true;
     }
     async function load() {
@@ -108,6 +117,7 @@
       const id = picker.value;
       const serial = ++requestSerial;
       detail.replaceChildren();
+      formReady = false;
       saveButton.disabled = true;
       if (!id) return;
       status.textContent = 'جاري تحميل حقول الفحص...';
@@ -195,7 +205,8 @@
           detail.appendChild(line);
         }
         status.textContent = 'تم عرض حقول الفحص';
-        saveButton.disabled = !detail.querySelector('[data-source-format-id]');
+        formReady = Boolean(detail.querySelector('[data-source-format-id]'));
+        saveButton.disabled = !formReady || saving;
       } catch (error) {
         if (serial === requestSerial) status.textContent = safeText(error.message);
       }
