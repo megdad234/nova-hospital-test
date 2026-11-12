@@ -1,0 +1,46 @@
+"""Install Royal Lab into the ORIGINAL NOVA laboratory catalogue after seed init.
+
+No UI replacement, no print changes. The wrapper runs only after NOVA's own
+lab.init finishes and preserves its existing return value.
+"""
+from pathlib import Path
+
+MARKER="# ROYALLAB_EXISTING_CATALOG_REPLACEMENT"
+WRAPPER='''
+# ROYALLAB_EXISTING_CATALOG_REPLACEMENT
+_original_nova_lab_init = init
+def init(c, *args, **kwargs):
+    result = _original_nova_lab_init(c, *args, **kwargs)
+    from pathlib import Path as _RoyalPath
+    import json as _royal_json
+    import sys as _royal_sys
+    from hospital.royallab_existing_catalog_replacement import replace_catalog as _replace
+    _roots = (
+        _RoyalPath(__file__).resolve().parent / "royallab_source",
+        _RoyalPath(getattr(_royal_sys, "_MEIPASS", "")) / "hospital" / "royallab_source",
+        _RoyalPath(_royal_sys.executable).resolve().parent / "hospital" / "royallab_source",
+    )
+    _source = next((root / "nova_lab_library.json" for root in _roots
+                    if (root / "nova_lab_library.json").is_file()), None)
+    if _source is None:
+        raise RuntimeError("Royal Lab source missing; refusing old NOVA catalogue")
+    _library = _royal_json.loads(_source.read_text(encoding="utf-8-sig"))
+    _replace(c, _library, approved=True)
+    return result
+'''
+
+def patch(source):
+    if MARKER in source:
+        raise ValueError("Royal Lab replacement already installed")
+    if "def init(c):" not in source:
+        raise ValueError("Original NOVA lab init signature changed")
+    if "hospital_lab_tests" not in source or "hospital_lab_parameters" not in source:
+        raise ValueError("Original NOVA catalogue tables not found")
+    return source.rstrip() + "\n" + WRAPPER
+
+def apply(root):
+    path=Path(root)/"hospital/lab.py"
+    path.write_text(patch(path.read_text(encoding="utf-8")),encoding="utf-8")
+
+if __name__=="__main__":
+    apply(Path(__file__).resolve().parents[2])
