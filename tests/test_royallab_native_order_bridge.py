@@ -41,7 +41,7 @@ class OrderBridgeTests(unittest.TestCase):
            ('{"source_test_id":"T1","review_flags":["no_source_analytes"],'
             '"fields":[{"source_format_id":"1","label":"Synthetic result",'
             '"kind":"select","options":[{"id":"A","active":true}]}]}',))
-        with self.assertRaisesRegex(ValueError, "requires review"):
+        with self.assertRaisesRegex(ValueError, "requires clinical review"):
             attach_native_test(self.db, ADMIN, 22, "T1")
         self.db.execute("""CREATE TABLE IF NOT EXISTS royal_lab_native_order_items
            (nova_item_id INTEGER PRIMARY KEY, source_test_id TEXT, catalog_id INTEGER)""")
