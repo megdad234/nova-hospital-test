@@ -6,7 +6,7 @@ clinical results, and does not modify patient, pharmacy or finance tables.
 import json
 import sqlite3
 from hospital.royallab_native_catalog_api import current_catalog_id
-from hospital.royallab_native_catalog_store import test_form
+from hospital.royallab_native_catalog_store import clinical_test_form
 from hospital.royallab_native_result_form import validate_result_values
 
 SCHEMA = """
@@ -59,7 +59,7 @@ def save_draft(conn, order_key, source_test_id, values):
     order_key = _key(order_key)
     source_test_id = str(source_test_id)
     catalog_id = current_catalog_id(conn)
-    form = test_form(conn, catalog_id, source_test_id)
+    form = clinical_test_form(conn, catalog_id, source_test_id)
     validate_source_form(form)
     validated = validate_result_values(form, values)
     with conn:
