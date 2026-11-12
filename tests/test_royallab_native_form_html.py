@@ -19,6 +19,18 @@ class NativeFormHtmlTests(unittest.TestCase):
         self.assertNotIn('<script>', html)
         self.assertIn('&lt;img&gt;', html)
 
+    def test_integer_and_decimal_fields_have_source_appropriate_steps(self):
+        html=render_form({"source_test_id":"21","name":"Numeric",
+            "fields":[{"source_format_id":"A","label":"Count","kind":"number",
+                       "types":["OpenEndedResultFormat","IntegerResultFormat"]},
+                      {"source_format_id":"B","label":"Concentration","kind":"number",
+                       "types":["OpenEndedResultFormat","DoubleResultFormat"]},
+                      {"source_format_id":"C","label":"Alternative","kind":"select_or_number",
+                       "types":["IntegerResultFormat"],
+                       "options":[{"id":"X","label":"Not counted","active":True}]}]})
+        self.assertEqual(html.count('step="1"'), 2)
+        self.assertEqual(html.count('step="any"'), 1)
+
     def test_source_codes_are_not_visible_but_ids_remain_bound(self):
         html=render_form({"source_test_id":"ROYAL-001", "name":"ROYAL-001 CBC",
             "fields":[{"source_format_id":"F4", "label":"ROYAL-002 WBC", "kind":"select",
