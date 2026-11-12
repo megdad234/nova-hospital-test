@@ -52,3 +52,50 @@ def test_form(conn,catalog_id,source_test_id):
                      (catalog_id,str(source_test_id))).fetchone()
     if not row:raise KeyError("Unknown Royal Lab test")
     return json.loads(row[0])
+
+def clinical_test_form(conn, catalog_id, source_test_id):
+    """Build the safe entry form from unchanged original source metadata.
+
+    Source-deactivated analytes remain stored for audit and historic results,
+    but cannot appear as editable values. Other source review problems remain
+    blocking. Existing original catalogue and patient records are not changed.
+    """
+    raw = test_form(conn, catalog_id, source_test_id)
+    all_fields = raw.get("fields", [])
+    if not isinstance(all_fields, list):
+        return raw
+    inactive = (False, 0, "False", "false", "0")
+    active = [f for f in all_fields if isinstance(f, dict) and f.get("active") not in inactive]
+    if not active:
+        return raw  # Never make an empty or fully inactive test writable.
+    excluded = len(all_fields) - len(active)
+    flags = list(raw.get("review_flags") or [])
+    if excluded:
+        flags = [f for f in flags if f != "inactive_source_field"]
+    if all(f.get("kind") in ("text", "number", "select", "select_or_text", "select_or_number")
+           for f in active):
+        flags = [f for f in flags if f != "mixed_format_requires_combobox"]
+    if all(str(f.get("label") or "").strip() for f in active):
+        flags = [f for f in flags if f != "missing_source_field_label"]
+    def valid_source_format(f):
+        types = f.get("types") or []
+        return (bool(types) and not str(f.get("source_format_id") or "").startswith("ANALYTE-")
+                and not ("ColoseEndedResultFormat" in types and not f.get("options")))
+    if all(valid_source_format(f) for f in active):
+        flags = [f for f in flags if f != "source_format_missing_or_incomplete_free_text_fallback"]
+    # Re-evaluate dropdown metadata against active source choices only.
+    def valid_choices(f):
+        if not str(f.get("kind") or "").startswith("select"):
+            return True
+        options = [o for o in f.get("options", []) if isinstance(o, dict) and o.get("active") not in inactive]
+        ids = [str(o.get("id") or "").strip() for o in options]
+        return bool(ids) and all(ids) and len(ids) == len(set(ids))
+    if all(valid_choices(f) for f in active):
+        flags = [f for f in flags if f != "missing_or_duplicate_source_option_ids"]
+    if all(not str(f.get("kind") or "").startswith("select") or
+           all(str(o.get("label") or "").strip()
+               for o in f.get("options", []) if isinstance(o, dict) and o.get("active") not in inactive)
+           for f in active):
+        flags = [f for f in flags if f != "missing_source_option_label"]
+    return {**raw, "fields": active, "review_flags": flags,
+            "excluded_inactive_source_fields": excluded}
