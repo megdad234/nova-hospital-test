@@ -119,5 +119,11 @@ jobs:
         run: python .github/ci/royallab_print_css_audit.py
       - name: Audit bundled original laboratory forms and review flags
         run: python -m hospital.royallab_catalog_audit > /tmp/nova_lab_catalog_audit.json && python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print({k:v for k,v in r.items() if k not in ('flagged_tests','priority_test_forms')})"
+      - name: Upload exact source catalog audit for remediation
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-laboratory-catalog-audit
+          path: /tmp/nova_lab_catalog_audit.json
+          retention-days: 14
       - name: Verify isolated staging invariants
         run: python -m unittest discover -s tests -p 'test_royallab_*.py' -v
