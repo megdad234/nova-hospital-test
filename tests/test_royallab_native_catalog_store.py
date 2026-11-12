@@ -45,6 +45,37 @@ class NativeCatalogStoreTests(unittest.TestCase):
   self.assertEqual(clinical_test_form(self.conn,cid,"0")["review_flags"],["inactive_source_field"])
   with self.assertRaises(ValueError):
    save_draft(self.conn,"PATIENT-LAB-1","0",{"1":"7"})
+ def test_blank_order_zero_option_is_only_a_source_placeholder(self):
+  cid=install(self.conn,self.library,'f'*64)
+  form=test_form(self.conn,cid,"0")
+  field=form["fields"][0]
+  field.update({"kind":"select","types":["ColoseEndedResultFormat"],
+    "options":[{"id":"EMPTY","label":" ","order":0,"active":True},
+               {"id":"P","label":"Positive","order":1,"active":True}]})
+  form["review_flags"]=["missing_source_option_label"]
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  effective=clinical_test_form(self.conn,cid,"0")
+  self.assertEqual(effective["review_flags"],[])
+  self.assertEqual(effective["excluded_blank_placeholder_options"],1)
+  self.assertEqual([o["id"] for o in effective["fields"][0]["options"]],["P"])
+  self.assertEqual(len(test_form(self.conn,cid,"0")["fields"][0]["options"]),2)
+  self.assertEqual(save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"P"})["status"],"draft")
+
+ def test_unlabeled_nonplaceholder_source_option_stays_blocked(self):
+  cid=install(self.conn,self.library,'1'*64)
+  form=test_form(self.conn,cid,"0")
+  field=form["fields"][0]
+  field.update({"kind":"select","types":["ColoseEndedResultFormat"],
+    "options":[{"id":"UNKNOWN","label":" ","order":2,"active":True},
+               {"id":"P","label":"Positive","order":1,"active":True}]})
+  form["review_flags"]=["missing_source_option_label"]
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  self.assertIn("missing_source_option_label",clinical_test_form(self.conn,cid,"0")["review_flags"])
+  with self.assertRaises(ValueError):
+   save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"P"})
+
  def test_duplicate_id_rejected(self):
   self.library['tests'][1]['TestID']=0
   with self.assertRaisesRegex(ValueError,'duplicate'):install(self.conn,self.library,'b'*64)
