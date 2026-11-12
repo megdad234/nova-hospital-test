@@ -458,6 +458,23 @@
             candidate.option_labels.map(safeText).join('\n') : '';
           choices.hidden = candidate.kind !== 'select';
         }
+        // Display evidence as an optional review aid, never as an approved result.
+        const evidenceHint = result.external_guidance;
+        if (evidenceHint && evidenceHint.can_activate_without_review === false) {
+          const paragraph = document.createElement('p');
+          paragraph.textContent = 'سؤال التحقق من الفحص: ' +
+            safeText(evidenceHint.method_question);
+          reviewHistoryContainer.prepend(paragraph);
+          if (evidenceHint.external_reference_url &&
+              /^https:\/\//.test(evidenceHint.external_reference_url)) {
+            const link = document.createElement('a');
+            link.textContent = 'مرجع إرشادي خارجي (ليس اعتماداً تلقائياً)';
+            link.href = evidenceHint.external_reference_url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            reviewHistoryContainer.prepend(link);
+          }
+        }
         const warnings = Array.isArray(result.warnings) ? result.warnings : [];
         reviewStatus.textContent = result.fields.length +
           ' حقل مقترح للمراجعة؛ تحقق من طريقة التحليل والقوائم، ولا تعتمدها دون مستند.' +
