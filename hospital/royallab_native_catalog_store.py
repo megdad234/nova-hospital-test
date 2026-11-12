@@ -5,6 +5,9 @@ Never deletes patient data, overrides pharmacy, or silently authorizes results.
 """
 import hashlib,json,pathlib,sqlite3
 from hospital.royallab_native_result_form import native_catalog
+
+# v2 restores verified Double/Integer source subtypes; prior draft values stay intact.
+FORM_GENERATOR_VERSION = 2
 DDL="""
 CREATE TABLE IF NOT EXISTS royal_lab_native_catalogs(
  id INTEGER PRIMARY KEY, source_sha256 TEXT NOT NULL UNIQUE,
@@ -17,6 +20,16 @@ CREATE TABLE IF NOT EXISTS royal_lab_native_tests(
  FOREIGN KEY(catalog_id) REFERENCES royal_lab_native_catalogs(id)
 );
 CREATE INDEX IF NOT EXISTS idx_royal_lab_native_tests_name ON royal_lab_native_tests(name);
+CREATE TABLE IF NOT EXISTS royal_lab_native_catalog_generators(
+ catalog_id INTEGER PRIMARY KEY, generator_version INTEGER NOT NULL,
+ FOREIGN KEY(catalog_id) REFERENCES royal_lab_native_catalogs(id)
+);
+CREATE TABLE IF NOT EXISTS royal_lab_native_catalog_form_backups(
+ catalog_id INTEGER NOT NULL, source_test_id TEXT NOT NULL,
+ generator_version INTEGER NOT NULL, form_json TEXT NOT NULL,
+ archived_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ PRIMARY KEY(catalog_id,source_test_id,generator_version)
+);
 """
 def install(conn,library,source_sha256):
     if not isinstance(conn,sqlite3.Connection):raise ValueError("SQLite connection required")
@@ -32,11 +45,39 @@ def install(conn,library,source_sha256):
         if old:
             count=conn.execute("SELECT COUNT(*) FROM royal_lab_native_tests WHERE catalog_id=?",(old[0],)).fetchone()[0]
             if count!=367:raise ValueError("Existing Royal Lab catalog is incomplete")
-            return old[0]
+            cid=old[0]
+            stored_ids={str(row[0]) for row in conn.execute(
+                "SELECT source_test_id FROM royal_lab_native_tests WHERE catalog_id=?",(cid,))}
+            if stored_ids!=set(ids):
+                raise ValueError("Existing source test IDs differ; refusing unsafe overwrite")
+            version_row=conn.execute(
+                "SELECT generator_version FROM royal_lab_native_catalog_generators WHERE catalog_id=?",
+                (cid,)).fetchone()
+            old_version=version_row[0] if version_row else 1
+            if old_version>FORM_GENERATOR_VERSION:
+                raise ValueError("Installed clinical form generator is newer; downgrade blocked")
+            if old_version<FORM_GENERATOR_VERSION:
+                # Make a recoverable, durable snapshot of EVERY prior form before
+                # regenerating source metadata. Orders, results and catalog IDs
+                # are not touched; source format IDs remain stable.
+                conn.execute("""INSERT OR IGNORE INTO royal_lab_native_catalog_form_backups
+                    (catalog_id,source_test_id,generator_version,form_json)
+                    SELECT catalog_id,source_test_id,?,form_json
+                    FROM royal_lab_native_tests WHERE catalog_id=?""",(old_version,cid))
+                conn.executemany("""UPDATE royal_lab_native_tests SET name=?,form_json=?
+                    WHERE catalog_id=? AND source_test_id=?""",
+                    ((t["name"],json.dumps(t,ensure_ascii=False),cid,t["source_test_id"])
+                     for t in tests))
+            conn.execute("""INSERT INTO royal_lab_native_catalog_generators(catalog_id,generator_version)
+                VALUES (?,?) ON CONFLICT(catalog_id) DO UPDATE SET
+                generator_version=excluded.generator_version""",(cid,FORM_GENERATOR_VERSION))
+            return cid
         cur=conn.execute("INSERT INTO royal_lab_native_catalogs(source_sha256,test_count) VALUES(?,?)",(source_sha256,367))
         cid=cur.lastrowid
         conn.executemany("INSERT INTO royal_lab_native_tests(catalog_id,source_test_id,name,form_json) VALUES(?,?,?,?)",
                          ((cid,t["source_test_id"],t["name"],json.dumps(t,ensure_ascii=False)) for t in tests))
+        conn.execute("INSERT INTO royal_lab_native_catalog_generators VALUES(?,?)",
+                     (cid,FORM_GENERATOR_VERSION))
         return cid
 
 def install_file(conn,path):
