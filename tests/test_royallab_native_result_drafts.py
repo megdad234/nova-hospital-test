@@ -34,7 +34,7 @@ class DraftTests(unittest.TestCase):
 
     def test_numeric_source_format_id_is_accepted(self):
         self.db.execute("""INSERT INTO royal_lab_native_tests VALUES
-          (1, 'TEST-2', 'Numeric ID', '{"source_test_id":"TEST-2","fields":[{"source_format_id":12,"label":"Color","kind":"select","options":[{"id":9,"active":true}]}]}')""")
+          (1, 'TEST-2', 'Numeric ID', '{"source_test_id":"TEST-2","fields":[{"source_format_id":12,"label":"Color","kind":"select","options":[{"id":9,"label":"Choice 9","active":true}]}]}')""")
         result=save_draft(self.db,"ORDER-1","TEST-2",{"12":"9"})
         self.assertEqual(result["values"],{"12":"9"})
         self.assertEqual(load_draft(self.db,"ORDER-1","TEST-2")["values"],{"12":"9"})
