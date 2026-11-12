@@ -12,6 +12,10 @@ from hospital.royallab_nova_parameter_plan import source_code
 TESTS = "hospital_lab_tests"
 PARAMETERS = "hospital_lab_parameters"
 
+def _field_active(field):
+    """Honor explicit inactive flags from the source; preserve unknown as before."""
+    return 0 if field.get("active") in (False, 0, "False", "false", "0") else 1
+
 def _columns(conn, table):
     return {r[1]: r for r in conn.execute("PRAGMA table_info(" + table + ")")}
 
@@ -121,12 +125,13 @@ def replace_catalog(conn, library, *, approved=False):
                 param_code = source_code(sid)
                 row = conn.execute("SELECT id FROM hospital_lab_parameters WHERE test_id=? AND code=?",
                                    (test_id,param_code)).fetchone()
+                active = _field_active(field)
                 if row:
-                    conn.execute("UPDATE hospital_lab_parameters SET name=?,unit=?,active=1 WHERE id=?",
-                                 (field["label"],field["unit"],row[0]))
+                    conn.execute("UPDATE hospital_lab_parameters SET name=?,unit=?,active=? WHERE id=?",
+                                 (field["label"],field["unit"],active,row[0]))
                 else:
-                    conn.execute("INSERT INTO hospital_lab_parameters(test_id,code,name,unit,active) VALUES(?,?,?,?,1)",
-                                 (test_id,param_code,field["label"],field["unit"]))
+                    conn.execute("INSERT INTO hospital_lab_parameters(test_id,code,name,unit,active) VALUES(?,?,?,?,?)",
+                                 (test_id,param_code,field["label"],field["unit"],active))
         # Source options/ranges remain attached to original NOVA parameter IDs.
         for test in plan["tests"]:
             code = "ROYAL-" + test["source_test_id"]
