@@ -271,9 +271,13 @@ def review_suggestion(conn,catalog_id,source_test_id):
     inactive=(False,0,"False","false","0")
     if source_fields:
         for field in source_fields:
-            if field.get("active") in inactive:
-                warnings.append("Source contains an inactive field; original status must be reviewed")
-                continue
+            source_inactive = field.get("active") in inactive
+            if source_inactive:
+                # An inactive field MAY be proposed for independent review,
+                # but its original inactive status must never be overwritten
+                # or treated as permission to enter patient results.
+                warnings.append("Original source field inactive; confirm current assay before approval: " +
+                                str(field.get("label") or "Unnamed source field"))
             kind = field.get("kind")
             label = str(field.get("label") or "").strip()
             if not label:
@@ -295,7 +299,10 @@ def review_suggestion(conn,catalog_id,source_test_id):
                              "label":label, "kind":kind,
                              "unit":str(field.get("unit") or ""), "option_labels":choices,
                              "evidence_source_format_id":field.get("source_format_id"),
-                             "source_proven":True})
+                             "source_was_inactive":source_inactive,
+                             "source_proven":bool(field.get("types")) and
+                                not field.get("manual_untyped_draft_only") and
+                                not field.get("manual_missing_closed_options_draft_only")})
     else:
         for label,kind in CANDIDATE_FIELDS.get(source_id, []):
             proposal.append({"key":"f"+str(len(proposal)+1),
