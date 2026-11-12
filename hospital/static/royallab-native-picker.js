@@ -100,6 +100,209 @@
       formReady = false;
       saveButton.disabled = true;
     }
+    // In-app repair of source-incomplete forms. This panel is separate from
+    // ordinary result entry, and never stores a patient result or approves one.
+    // The gateway authenticates lab staff and requires a different admin for
+    // second-person activation. Every clinical choice starts empty.
+    const reviewPanel = document.createElement('details');
+    reviewPanel.className = 'royal-lab-clinical-review';
+    reviewPanel.dir = 'rtl';
+    const reviewHeading = document.createElement('summary');
+    reviewHeading.textContent = 'إصلاح نماذج الفحوصات الناقصة (يتطلب مراجعة مستقلة)';
+    const reviewBody = document.createElement('section');
+    const reviewStatus = document.createElement('p');
+    reviewStatus.setAttribute('role', 'status');
+    const reviewSelect = document.createElement('select');
+    reviewSelect.setAttribute('aria-label', 'الفحص الذي يحتاج نموذج نتائج');
+    const proposalFields = document.createElement('div');
+    const addFieldButton = document.createElement('button');
+    addFieldButton.type = 'button';
+    addFieldButton.textContent = 'إضافة حقل نتيجة';
+    const methodInput = document.createElement('textarea');
+    methodInput.placeholder = 'طريقة التحليل الفعلية بالمختبر (مطلوب)';
+    methodInput.setAttribute('aria-label', 'طريقة التحليل المعتمدة بالمختبر');
+    const evidenceInput = document.createElement('textarea');
+    evidenceInput.placeholder = 'مرجع الشركة المصنعة أو بروتوكول المختبر ورقمه (مطلوب)';
+    evidenceInput.setAttribute('aria-label', 'مرجع نموذج الفحص');
+    const rationaleInput = document.createElement('textarea');
+    rationaleInput.placeholder = 'سبب اختيار هذا النموذج والحقول (مطلوب)';
+    rationaleInput.setAttribute('aria-label', 'مبررات الحقول');
+    const proposeButton = document.createElement('button');
+    proposeButton.type = 'button';
+    proposeButton.textContent = 'إرسال النموذج للمراجعة';
+    const reviewHistoryContainer = document.createElement('section');
+    const help = document.createElement('p');
+    help.textContent = 'لا تُفعّل النماذج أو القوائم إلا بعد مراجعة مختلفة واعتماد إداري. أدخل فقط ما تؤكده طريقة التحليل، بدون افتراض المدى المرجعي.';
+    reviewBody.append(help, reviewSelect, proposalFields, addFieldButton,
+      methodInput, evidenceInput, rationaleInput, proposeButton,
+      reviewHistoryContainer, reviewStatus);
+    reviewPanel.append(reviewHeading, reviewBody);
+    root.appendChild(reviewPanel);
+    let fieldSequence = 0;
+    function makeReviewField() {
+      const line = document.createElement('fieldset');
+      line.className = 'royal-lab-review-field';
+      const legend = document.createElement('legend');
+      legend.textContent = 'حقل نتيجة ' + (++fieldSequence);
+      const label = document.createElement('input');
+      label.placeholder = 'اسم الحقل';
+      label.dataset.reviewLabel = '1';
+      const kind = document.createElement('select');
+      kind.dataset.reviewKind = '1';
+      for (const choice of [['text','نص'], ['number','رقم'], ['select','قائمة منسدلة']]) {
+        const option = document.createElement('option');
+        option.value = choice[0];
+        option.textContent = choice[1];
+        kind.appendChild(option);
+      }
+      const unit = document.createElement('input');
+      unit.placeholder = 'الوحدة من مرجع الفحص، إن وجدت';
+      unit.dataset.reviewUnit = '1';
+      const choices = document.createElement('textarea');
+      choices.placeholder = 'خيارات القائمة: خيار واحد في كل سطر';
+      choices.dataset.reviewChoices = '1';
+      choices.hidden = true;
+      kind.addEventListener('change', function () {
+        choices.hidden = kind.value !== 'select';
+        if (kind.value !== 'select') choices.value = '';
+      });
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.textContent = 'حذف الحقل';
+      remove.addEventListener('click', function () { line.remove(); });
+      line.append(legend,label,kind,unit,choices,remove);
+      proposalFields.appendChild(line);
+      return line;
+    }
+    addFieldButton.addEventListener('click', makeReviewField);
+    function refreshReviewOptions() {
+      const previously = reviewSelect.value;
+      reviewSelect.replaceChildren();
+      const initial = document.createElement('option');
+      initial.value = '';
+      initial.textContent = '— اختر فحصاً يحتاج إصلاحاً —';
+      reviewSelect.appendChild(initial);
+      for (const t of tests.filter(function (x) {
+        return x.entry_status === 'requires_review';
+      })) {
+        const o = document.createElement('option');
+        o.value = safeText(t.source_test_id);
+        o.textContent = displayText(t.name);
+        reviewSelect.appendChild(o);
+      }
+      if (Array.from(reviewSelect.options).some(function (o) { return o.value === previously; }))
+        reviewSelect.value = previously;
+    }
+    async function fetchReviewHistory() {
+      const sourceId = reviewSelect.value;
+      reviewHistoryContainer.replaceChildren();
+      if (!sourceId) return;
+      const response = await fetch(base + '/review/history/' + encodeURIComponent(sourceId),
+        { credentials: 'same-origin' });
+      if (!response.ok) throw new Error('عرض المراجعة يتطلب صلاحية موظف معمل');
+      const entries = await response.json();
+      if (sourceId !== reviewSelect.value) return;
+      if (!Array.isArray(entries)) throw new Error('بيانات مراجعة النموذج غير صحيحة');
+      if (!entries.length) {
+        reviewStatus.textContent = 'لا توجد نسخة مراجعة مرسلة لهذا الفحص';
+        return;
+      }
+      const latest = entries[entries.length - 1];
+      if (!latest || latest.state !== 'pending') {
+        reviewStatus.textContent = 'آخر نسخة من النموذج معتمدة؛ حدّث قائمة الفحوصات';
+        return;
+      }
+      const detailResponse = await fetch(base + '/review/details/' +
+        encodeURIComponent(sourceId) + '/' + encodeURIComponent(latest.revision),
+        { credentials: 'same-origin' });
+      if (!detailResponse.ok) throw new Error('تعذر تحميل حقول النموذج للمراجعة');
+      const data = await detailResponse.json();
+      if (sourceId !== reviewSelect.value) return;
+      if (data.form_hash !== latest.form_hash || !data.form || !Array.isArray(data.form.fields))
+        throw new Error('تغيّرت نسخة المراجعة؛ لا يمكن اعتمادها');
+      const header = document.createElement('h4');
+      header.textContent = 'مراجعة مستقلة للنسخة ' + safeText(data.revision);
+      reviewHistoryContainer.appendChild(header);
+      for (const f of data.form.fields) {
+        const row = document.createElement('p');
+        row.textContent = safeText(f.label) + ' — ' + safeText(f.kind) +
+          (f.unit ? ' (' + safeText(f.unit) + ')' : '') +
+          (f.options && f.options.length ? ' — ' +
+            f.options.map(function (o) { return safeText(o.label); }).join('، ') : '');
+        reviewHistoryContainer.appendChild(row);
+      }
+      for (const line of ['طريقة الفحص: ' + data.method, 'المرجع: ' + data.evidence,
+                         'مبررات التعديل: ' + data.rationale]) {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = safeText(line);
+        reviewHistoryContainer.appendChild(paragraph);
+      }
+      const attestation = document.createElement('textarea');
+      attestation.placeholder = 'إقرار مستقل بمراجعة طريقة التحليل والحقول والقوائم';
+      attestation.setAttribute('aria-label', 'إقرار مراجعة واعتماد نموذج الفحص');
+      const approval = document.createElement('button');
+      approval.type = 'button';
+      approval.textContent = 'اعتماد النموذج بعد المراجعة (إدارة المعمل)';
+      approval.addEventListener('click', async function () {
+        approval.disabled = true;
+        try {
+          if (sourceId !== reviewSelect.value) throw new Error('تغير الفحص المحدد');
+          await send('/review/approve', {
+            source_test_id: sourceId, revision: data.revision,
+            form_hash: data.form_hash, attestation: attestation.value.trim()
+          });
+          reviewStatus.textContent = 'تم اعتماد النموذج بواسطة مراجع مستقل. حدّث قائمة الفحوصات.';
+          await load();
+          await fetchReviewHistory();
+        } catch (error) {
+          reviewStatus.textContent = safeText(error.message);
+        } finally {
+          approval.disabled = false;
+        }
+      });
+      reviewHistoryContainer.append(attestation, approval);
+      reviewStatus.textContent = 'النموذج بانتظار اعتماد شخص مخوّل مختلف عن مُعدّه';
+    }
+    reviewSelect.addEventListener('change', function () {
+      proposalFields.replaceChildren();
+      fieldSequence = 0;
+      reviewStatus.textContent = '';
+      fetchReviewHistory().catch(function (error) {
+        reviewStatus.textContent = safeText(error.message);
+      });
+    });
+    proposeButton.addEventListener('click', async function () {
+      if (!reviewSelect.value) {
+        reviewStatus.textContent = 'اختر الفحص الناقص أولاً';
+        return;
+      }
+      proposeButton.disabled = true;
+      try {
+        const rows = Array.from(proposalFields.querySelectorAll('fieldset'));
+        const fields = rows.map(function (row, index) {
+          const kind = row.querySelector('[data-review-kind]').value;
+          const choicesText = row.querySelector('[data-review-choices]').value;
+          const options = kind === 'select' ? choicesText.split(/\\r?\\n/)
+            .map(function (x) { return x.trim(); }).filter(Boolean)
+            .map(function (label, i) { return { key: 'o' + (i + 1), label: label }; }) : [];
+          return { key: 'f' + (index + 1), label: row.querySelector('[data-review-label]').value.trim(),
+            kind: kind, unit: row.querySelector('[data-review-unit]').value.trim(),
+            options: options };
+        });
+        if (!fields.length) throw new Error('أضف حقلاً واحداً على الأقل');
+        await send('/review/propose', {
+          source_test_id: reviewSelect.value, fields: fields,
+          method: methodInput.value.trim(), evidence: evidenceInput.value.trim(),
+          rationale: rationaleInput.value.trim()
+        });
+        reviewStatus.textContent = 'تم إرسال النموذج للمراجعة المستقلة؛ لم يُفعّل بعد';
+        await fetchReviewHistory();
+      } catch (error) {
+        reviewStatus.textContent = safeText(error.message);
+      } finally {
+        proposeButton.disabled = false;
+      }
+    });
     async function load() {
       status.textContent = 'جاري تحميل فحوصات المعمل...';
       const serial = ++loadSerial;
@@ -113,6 +316,7 @@
         throw new Error('كتالوج الفحوصات غير مكتمل أو يحتوي على تكرار');
       tests = data.tests;
       filter();
+      refreshReviewOptions();
       const readyCount = Number.isSafeInteger(data.ready_for_result_entry) ? data.ready_for_result_entry : null;
       const serviceCount = Number.isSafeInteger(data.non_lab_services) ? data.non_lab_services : 0;
       const clinicalBlocked = Number.isSafeInteger(data.clinical_needing_review) ?
