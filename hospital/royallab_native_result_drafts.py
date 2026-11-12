@@ -35,8 +35,8 @@ def save_draft(conn, order_key, source_test_id, values):
     catalog_id = current_catalog_id(conn)
     form = test_form(conn, catalog_id, source_test_id)
     validated = validate_result_values(form, values)
-    conn.execute(SCHEMA)
     with conn:
+        conn.execute(SCHEMA)
         conn.execute(
             """INSERT INTO royal_lab_native_result_drafts
                (order_key, source_test_id, catalog_id, values_json)
