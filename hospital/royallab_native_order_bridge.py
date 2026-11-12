@@ -51,7 +51,19 @@ def attach_native_test(conn, actor, nova_item_id, source_test_id):
                        (nova_item_id,)).fetchone()
     if row and row[0] != source_test_id:
         raise ValueError("NOVA order item already linked to another Royal Lab test")
-    test_form(conn, catalog_id, source_test_id)
+    form = test_form(conn, catalog_id, source_test_id)
+    # Do not attach a clinically blocked source test to a real patient order.
+    if form.get("review_flags"):
+        raise ValueError("Source test requires review before attaching to NOVA order")
+    fields = form.get("fields")
+    if not isinstance(fields, list) or not fields:
+        raise ValueError("Source test has no usable result fields")
+    if any(not isinstance(field, dict)
+           or not str(field.get("label") or "").strip()
+           or field.get("active") in (False, 0, "False", "false", "0")
+           or field.get("kind") not in ("text", "number", "select", "select_or_text", "select_or_number")
+           for field in fields):
+        raise ValueError("Source test has invalid or inactive result fields")
     with conn:
         conn.execute("""INSERT OR IGNORE INTO royal_lab_native_order_items
                         (nova_item_id, source_test_id, catalog_id) VALUES (?,?,?)""",
