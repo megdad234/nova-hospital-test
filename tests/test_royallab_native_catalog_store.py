@@ -80,7 +80,7 @@ class NativeCatalogStoreTests(unittest.TestCase):
   with self.assertRaises(ValueError):
    save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"UNKNOWN"})
 
- def test_empty_only_source_dropdown_is_blocked(self):
+ def test_empty_only_source_dropdown_uses_labeled_manual_draft_only(self):
   cid=install(self.conn,self.library,'2'*64)
   form=test_form(self.conn,cid,"0")
   field=form["fields"][0]
@@ -89,9 +89,25 @@ class NativeCatalogStoreTests(unittest.TestCase):
   form["review_flags"]=["missing_source_option_label"]
   self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
                     (json.dumps(form),cid))
-  self.assertEqual(clinical_test_form(self.conn,cid,"0")["fields"][0]["options"],[])
-  with self.assertRaisesRegex(ValueError,"options are missing"):
-   save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"BLANK"})
+  effective=clinical_test_form(self.conn,cid,"0")
+  self.assertEqual(effective["fields"][0]["options"],[])
+  self.assertEqual(effective["fields"][0]["kind"],"text")
+  self.assertTrue(effective["fields"][0]["manual_missing_closed_options_draft_only"])
+  self.assertEqual(save_draft(self.conn,"LAB-ORDER-1","0",
+                   {field["source_format_id"]:"Clinically reviewed observation"})["status"],"draft")
+  self.assertEqual(test_form(self.conn,cid,"0")["fields"][0]["kind"],"select")
+
+ def test_blank_only_source_dropdown_without_analyte_name_stays_blocked(self):
+  cid=install(self.conn,self.library,'9'*64)
+  form=test_form(self.conn,cid,"0")
+  field=form["fields"][0]
+  field.update({"kind":"select","types":["ColoseEndedResultFormat"],"label":"",
+                "options":[{"id":"BLANK","label":" ","order":100,"active":True}]})
+  form["review_flags"]=["missing_source_option_label","missing_source_field_label"]
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  with self.assertRaises(ValueError):
+   save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"Not a verified name"})
 
  def test_original_department_only_marks_empty_service_as_non_lab(self):
   from hospital.royallab_native_catalog_store import is_non_lab_service
