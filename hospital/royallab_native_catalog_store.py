@@ -53,14 +53,13 @@ def test_form(conn,catalog_id,source_test_id):
     if not row:raise KeyError("Unknown Royal Lab test")
     return json.loads(row[0])
 
-def clinical_test_form(conn, catalog_id, source_test_id):
+def effective_source_form(raw):
     """Build the safe entry form from unchanged original source metadata.
 
     Source-deactivated analytes remain stored for audit and historic results,
     but cannot appear as editable values. Other source review problems remain
     blocking. Existing original catalogue and patient records are not changed.
     """
-    raw = test_form(conn, catalog_id, source_test_id)
     all_fields = raw.get("fields", [])
     if not isinstance(all_fields, list):
         return raw
@@ -99,3 +98,7 @@ def clinical_test_form(conn, catalog_id, source_test_id):
         flags = [f for f in flags if f != "missing_source_option_label"]
     return {**raw, "fields": active, "review_flags": flags,
             "excluded_inactive_source_fields": excluded}
+
+def clinical_test_form(conn, catalog_id, source_test_id):
+    """Return the safely editable subset without changing stored source data."""
+    return effective_source_form(test_form(conn, catalog_id, source_test_id))
