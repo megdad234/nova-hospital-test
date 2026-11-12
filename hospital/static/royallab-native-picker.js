@@ -141,6 +141,254 @@
       reviewHistoryContainer, reviewStatus);
     reviewPanel.append(reviewHeading, reviewBody);
     root.appendChild(reviewPanel);
+    // Independent NOVA local test management. Preserves immutable Royal Lab source.
+    // Newly approved tests enter existing NOVA hospital_lab_tests, so reception,
+    // cashier and original NOVA laboratory results continue using their own flows.
+    function mountNOVALocalTestDesigner() {
+      const panel = document.createElement('details');
+      panel.className = 'nova-lab-local-designer';
+      panel.dir = 'rtl';
+      const summary = document.createElement('summary');
+      summary.textContent = 'إضافة فحص جديد أو تعديل فحص محلي';
+      const area = document.createElement('section');
+      const note = document.createElement('p');
+      note.textContent = 'تقدر تنشئ فحص جديد وتحدد حقوله ووحداته وقوائمه. النشر يحتاج اعتماد شخص آخر من الإدارة. الفحص الذي لديه طلبات سابقة لا تتغير حقوله؛ أنشئ نسخة جديدة.';
+      const selector = document.createElement('select');
+      selector.setAttribute('aria-label', 'اختر فحصاً محلياً للتعديل');
+      const name = document.createElement('input');
+      name.placeholder = 'اسم الفحص الجديد';
+      name.setAttribute('aria-label','اسم الفحص');
+      const section = document.createElement('input');
+      section.placeholder = 'قسم المعمل مثل الكيمياء الحيوية';
+      section.setAttribute('aria-label', 'قسم الفحص');
+      const price = document.createElement('input');
+      price.type = 'number';
+      price.min = '0.01';
+      price.step = '0.01';
+      price.placeholder = 'سعر الفحص بالجنيه';
+      price.setAttribute('aria-label','سعر الفحص');
+      const fieldsArea = document.createElement('section');
+      const add = document.createElement('button');
+      add.type = 'button';
+      add.textContent = 'إضافة حقل نتيجة جديد';
+      const method = document.createElement('textarea');
+      method.placeholder = 'طريقة التحليل أو الجهاز المستخدم';
+      const evidence = document.createElement('textarea');
+      evidence.placeholder = 'مرجع الشركة المصنعة أو بروتوكول المعمل';
+      const rationale = document.createElement('textarea');
+      rationale.placeholder = 'مبررات إنشاء أو تعديل الفحص';
+      const propose = document.createElement('button');
+      propose.type = 'button';
+      propose.textContent = 'إرسال الفحص للمراجعة والاعتماد';
+      const refresh = document.createElement('button');
+      refresh.type = 'button';
+      refresh.textContent = 'تحديث طلبات المراجعة';
+      const status = document.createElement('p');
+      status.setAttribute('role','status');
+      const approvals = document.createElement('section');
+      area.append(note,selector,name,section,price,fieldsArea,add,
+        method,evidence,rationale,propose,refresh,status,approvals);
+      panel.append(summary,area);
+      root.appendChild(panel);
+      let localTests = [];
+      let seq = 0;
+      let loadToken = 0;
+      async function fetchJson(url) {
+        const response = await fetch(base + url, {credentials:'same-origin'});
+        if (!response.ok) throw new Error('تعذر تحميل بيانات إدارة الفحوص؛ تحقق من الصلاحيات');
+        return response.json();
+      }
+      function newOption(value,text) {
+        const el = document.createElement('option');
+        el.value = safeText(value);
+        el.textContent = safeText(text);
+        return el;
+      }
+      function makeField(data) {
+        const f = data || {};
+        const box = document.createElement('fieldset');
+        const legend = document.createElement('legend');
+        legend.textContent = 'حقل النتيجة';
+        const label = document.createElement('input');
+        label.dataset.localLabel = '1';
+        label.placeholder = 'اسم الحقل مثل WBC';
+        label.value = safeText(f.label);
+        const kind = document.createElement('select');
+        kind.dataset.localKind = '1';
+        kind.append(newOption('text','نص'),newOption('number','رقم'),
+                    newOption('select','قائمة منسدلة'));
+        kind.value = f.kind || 'text';
+        const unit = document.createElement('input');
+        unit.dataset.localUnit = '1';
+        unit.placeholder = 'الوحدة (اختياري)';
+        unit.value = safeText(f.unit);
+        const options = document.createElement('textarea');
+        options.dataset.localOptions = '1';
+        options.placeholder = 'خيارات القائمة: كل خيار في سطر';
+        options.value = Array.isArray(f.options) ? f.options.join('\n') : '';
+        const reference = document.createElement('input');
+        reference.dataset.localReference = '1';
+        reference.placeholder = 'المدى المرجعي حسب طريقة المعمل (اختياري)';
+        reference.value = safeText(f.reference);
+        const source = document.createElement('input');
+        source.dataset.localReferenceSource = '1';
+        source.placeholder = 'مرجع المدى الطبيعي عند كتابته';
+        source.value = safeText(f.reference_source);
+        const required = document.createElement('input');
+        required.type = 'checkbox';
+        required.dataset.localRequired = '1';
+        required.checked = f.required === true;
+        const requiredLabel = document.createElement('label');
+        requiredLabel.textContent = 'نتيجة مطلوبة';
+        requiredLabel.appendChild(required);
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = 'حذف الحقل من المقترح';
+        remove.addEventListener('click', function () { box.remove(); });
+        function toggle() { options.hidden = kind.value !== 'select'; }
+        kind.addEventListener('change', toggle);
+        box.dataset.localKey = safeText(f.key || ('field' + (++seq)));
+        box.append(legend,label,kind,unit,options,reference,source,requiredLabel,remove);
+        toggle();
+        fieldsArea.appendChild(box);
+        return box;
+      }
+      add.addEventListener('click', function () { makeField(); });
+      function clearForm() {
+        fieldsArea.replaceChildren();
+        seq = 0;
+        name.value = '';
+        section.value = '';
+        price.value = '';
+        method.value = '';
+        evidence.value = '';
+        rationale.value = '';
+        status.textContent = '';
+        makeField();
+      }
+      async function loadLocalTests() {
+        const id = ++loadToken;
+        const response = await fetchJson('/local/tests');
+        if (id !== loadToken) return;
+        if (!Array.isArray(response)) throw new Error('قائمة الفحوص المحلية غير صحيحة');
+        localTests = response;
+        const previous = selector.value;
+        selector.replaceChildren(newOption('','— فحص جديد —'));
+        for (const t of response) selector.appendChild(
+            newOption(t.local_id,t.name + (t.has_orders ? ' — مستخدم، لا يُعدل' : '')));
+        if (Array.from(selector.options).some(o => o.value === previous))
+          selector.value = previous;
+      }
+      selector.addEventListener('change', async function () {
+        const id = selector.value;
+        clearForm();
+        if (!id) return;
+        const token = ++loadToken;
+        try {
+          const form = await fetchJson('/local/form/' + encodeURIComponent(id));
+          if (token !== loadToken || id !== selector.value) return;
+          name.value = safeText(form.name);
+          price.value = safeText(form.price);
+          fieldsArea.replaceChildren();
+          for (const f of form.fields || []) makeField(f);
+          const record = localTests.find(x => safeText(x.local_id) === id);
+          if (form.has_orders || (record && record.has_orders)) {
+            propose.disabled = true;
+            status.textContent = 'الفحص مستخدم في طلبات سابقة؛ لا يمكن تغيير نموذج نتائجه. أضف فحصاً جديداً بدلاً منه.';
+          } else propose.disabled = false;
+        } catch (e) { status.textContent = safeText(e.message); }
+      });
+      function readFields() {
+        return Array.from(fieldsArea.querySelectorAll('fieldset')).map(function (box) {
+          const kind = box.querySelector('[data-local-kind]').value;
+          const choices = box.querySelector('[data-local-options]').value;
+          return {key:box.dataset.localKey,
+            label:box.querySelector('[data-local-label]').value.trim(),
+            kind:kind,unit:box.querySelector('[data-local-unit]').value.trim(),
+            options:kind === 'select' ? choices.split(/\r?\n/).map(s=>s.trim()).filter(Boolean) : [],
+            reference:box.querySelector('[data-local-reference]').value.trim(),
+            reference_source:box.querySelector('[data-local-reference-source]').value.trim(),
+            required:box.querySelector('[data-local-required]').checked};
+        });
+      }
+      propose.addEventListener('click',async function () {
+        propose.disabled = true;
+        try {
+          const localId = selector.value ? Number(selector.value) : null;
+          const record = localTests.find(x => x.local_id === localId);
+          if (record && record.has_orders) throw new Error('الفحص مرتبط بطلبات قديمة؛ أنشئ نسخة جديدة');
+          const response = await send('/local/propose',{
+            local_id:localId,name:name.value.trim(),section:section.value.trim(),
+            price:price.value,fields:readFields(),method:method.value.trim(),
+            evidence:evidence.value.trim(),rationale:rationale.value.trim()
+          });
+          if (!response.proposal_id || response.state !== 'pending')
+            throw new Error('لم يتم حفظ طلب المراجعة');
+          status.textContent = 'تم حفظ المقترح رقم ' + response.proposal_id +
+            '، وسيظهر الفحص بعد موافقة مراجع إداري آخر.';
+          await loadProposals();
+        } catch (e) { status.textContent = safeText(e.message); }
+        finally { propose.disabled = false; }
+      });
+      async function loadProposals() {
+        const pending = await fetchJson('/local/proposals');
+        if (!Array.isArray(pending)) throw new Error('سجل المراجعة غير صحيح');
+        approvals.replaceChildren();
+        const title = document.createElement('h4');
+        title.textContent = 'مقترحات الفحوص بانتظار الاعتماد';
+        approvals.appendChild(title);
+        for (const item of pending.filter(x => x.state === 'pending')) {
+          const group = document.createElement('section');
+          const caption = document.createElement('strong');
+          caption.textContent = item.name + ' — ' + item.section + ' — ' + item.price;
+          group.appendChild(caption);
+          for (const f of item.fields || []) {
+            const paragraph = document.createElement('p');
+            paragraph.textContent = safeText(f.label) + ' — ' + safeText(f.kind) +
+              (f.unit ? ' — ' + safeText(f.unit) : '') +
+              ((f.options||[]).length ? ' — ' + f.options.join('، ') : '') +
+              (f.reference ? ' — المدى: ' + safeText(f.reference) : '');
+            group.appendChild(paragraph);
+          }
+          for (const line of ['الطريقة: ' + item.method, 'المرجع: ' + item.evidence,
+                    'التبرير: ' + item.rationale]) {
+            const paragraph = document.createElement('p');
+            paragraph.textContent = safeText(line);
+            group.appendChild(paragraph);
+          }
+          const attestation = document.createElement('textarea');
+          attestation.placeholder = 'إقرار المراجع المستقل بمطابقة النموذج لطريقة المعمل';
+          const approveButton = document.createElement('button');
+          approveButton.type = 'button';
+          approveButton.textContent = 'اعتماد الفحص بعد المراجعة';
+          approveButton.addEventListener('click',async function () {
+            approveButton.disabled = true;
+            try {
+              const done = await send('/local/approve',{
+                proposal_id:item.proposal_id,form_hash:item.form_hash,
+                attestation:attestation.value.trim()
+              });
+              if (done.state !== 'approved') throw new Error('لم يعتمد النموذج');
+              status.textContent = 'تم اعتماد الفحص داخل كتالوج NOVA المحلي، ولم تُعتمد نتائج مرضى.';
+              await loadLocalTests();
+              await loadProposals();
+            } catch(e) { status.textContent = safeText(e.message); }
+            finally { approveButton.disabled = false; }
+          });
+          group.append(attestation,approveButton);
+          approvals.appendChild(group);
+        }
+      }
+      refresh.addEventListener('click',function () {
+        loadLocalTests().then(loadProposals).catch(e => {status.textContent=safeText(e.message);});
+      });
+      clearForm();
+      panel.addEventListener('toggle',function () {
+        if (!panel.open) return;
+        loadLocalTests().then(loadProposals).catch(e => {status.textContent=safeText(e.message);});
+      });
+    }
+    mountNOVALocalTestDesigner();
     let fieldSequence = 0;
     function makeReviewField() {
       const line = document.createElement('fieldset');
