@@ -9,6 +9,7 @@ def native_catalog(library):
     mapped=build_fields(library)
     return {"source":"RoyalLabDB.bak","test_count":len(mapped["tests"]),
             "tests":[{"source_test_id":t["source_id"],"name":t["name"],
+                      "source_department_id":str(t["source"].get("LaboratoryID") or ""),
                       "review_flags":list(t["review_flags"]),
                       "fields":[{"source_analyte_id":f["source_analyte_id"],
                                  "source_format_id":f["source_format_id"],
