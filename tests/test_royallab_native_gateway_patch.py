@@ -10,6 +10,12 @@ class GatewayPatchTests(unittest.TestCase):
   self.assertIn("core.require_role(role,'admin','lab')",out)
   self.assertIn(m.ANCHOR,out)
   self.assertIn('royallab_native_catalog_api',out)
+  self.assertIn('royallab_native_order_bridge',out)
+  get,post=out.split("                    if path=='/api/hospital/patients':",1)
+  self.assertIn("/royallab-native/order/draft/",get)
+  self.assertNotIn("/royallab-native/order/attach",get)
+  self.assertIn("/royallab-native/order/attach",post)
+  self.assertIn("royallab_native_order_bridge.save_order_item_draft",post)
   with self.assertRaises(ValueError):m.patch(out)
  def test_unknown_source_rejected(self):
   with self.assertRaises(ValueError):m.patch("something else")
