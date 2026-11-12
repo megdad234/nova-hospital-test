@@ -5,9 +5,12 @@ exists. This function never creates bindings or writes clinical records.
 """
 from hospital.royallab_nova_binding_loader import load_reviewed_bindings
 from hospital.royallab_nova_order_detail_gate import reviewed_order_detail
+from hospital.royallab_existing_line_overlay import overlay_existing_order_lines
 
 def overlay_order_detail(conn,detail,role):
     if role not in ('admin','lab'):return detail
+    # Original NOVA result screen, direct imported Royal Lab parameter IDs.
+    detail=overlay_existing_order_lines(conn,detail)
     if not isinstance(detail,dict) or not isinstance(detail.get('items'),list):return detail
     items=detail['items']
     if not items:return detail
