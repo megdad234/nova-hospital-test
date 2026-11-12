@@ -6,7 +6,7 @@ from hospital.royallab_existing_catalog_replacement import replacement_plan,repl
 
 def synthetic_catalog():
     return {"tests":[{"source_test_id":str(i),"name":"Royal Test "+str(i),
-             "review_flags":[],"fields":[{"source_format_id":"F"+str(i),
+             "review_flags":[],"fields":[{"source_format_id":str(i+1),
              "label":"Result","kind":"select","unit":"",
              "options":[{"id":"P","label":"Positive","active":True}],
              "numeric_ranges":[],"text_ranges":[]}]} for i in range(367)]}
