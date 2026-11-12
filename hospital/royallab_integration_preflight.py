@@ -15,6 +15,11 @@ def integration_preflight(conn,batch_id):
         for field in test["fields"]:
             total+=1
             kind=field.get("kind")
+            # A synthetic text fallback is structurally valid but not a clinically
+            # verified source result format; retain the preflight review block.
+            if str(field.get("source_format_id", "")).startswith("ANALYTE-"):
+                blocked+=1
+                flags["unsupported:unknown"]+=1
             if kind not in SUPPORTED:
                 blocked+=1
                 flags["unsupported:"+str(kind)]+=1
