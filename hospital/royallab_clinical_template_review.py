@@ -229,3 +229,26 @@ def review_history(conn,catalog_id,source_test_id):
     keys = ("revision","state","form_hash","method","evidence","rationale",
             "proposed_by","approved_by","proposed_at","approved_at")
     return [dict(zip(keys,row)) for row in rows]
+
+
+def review_details(conn,catalog_id,source_test_id,revision):
+    """Read the COMPLETE proposed clinical form before any second-person signoff."""
+    if type(revision) is not int or revision <= 0:
+        raise ValueError("Invalid review revision")
+    if not conn.execute("""SELECT 1 FROM sqlite_master WHERE type='table'
+            AND name='royal_lab_template_reviews'""").fetchone():
+        raise KeyError("Clinical review proposal is not found")
+    row=conn.execute("""SELECT state,form_json,form_hash,method,evidence,rationale,
+          proposed_by,approved_by FROM royal_lab_template_reviews
+          WHERE catalog_id=? AND source_test_id=? AND revision=?""",
+          (catalog_id,str(source_test_id),revision)).fetchone()
+    if not row:
+        raise KeyError("Clinical review proposal is not found")
+    canonical=json.dumps(json.loads(row[1]),ensure_ascii=False,sort_keys=True,separators=(",",":"))
+    if hashlib.sha256(canonical.encode("utf-8")).hexdigest()!=row[2]:
+        raise ValueError("Proposed clinical form was modified outside review")
+    return {"source_test_id":str(source_test_id),"revision":revision,
+            "state":row[0],"form":json.loads(row[1]),"form_hash":row[2],
+            "method":row[3],"evidence":row[4],"rationale":row[5],
+            "proposed_by":row[6],"approved_by":row[7],
+            "can_publish_patient_results":False}
