@@ -27,7 +27,20 @@ def schema_from_source(source):
 def audit(root):
     root=pathlib.Path(root)
     schema=schema_from_source((root/"hospital/lab.py").read_text(encoding="utf-8"))
-    core_schema=schema_from_source((root/"hospital/core.py").read_text(encoding="utf-8"))
+    core_source=(root/"hospital/core.py").read_text(encoding="utf-8")
+    core_module=ast.parse(core_source)
+    core_schemas=[]
+    for node in core_module.body:
+        if isinstance(node,(ast.Assign,ast.AnnAssign)):
+            try:
+                value=ast.literal_eval(node.value)
+            except (ValueError,TypeError,SyntaxError):
+                continue
+            if isinstance(value,str) and "CREATE TABLE IF NOT EXISTS hospital_lab_tests" in value:
+                core_schemas.append(value)
+    if len(core_schemas)!=1:
+        raise RuntimeError("Cannot uniquely identify real NOVA core schema containing hospital_lab_tests: "+str(len(core_schemas)))
+    core_schema=core_schemas[0]
     library=json.loads((root/"hospital/royallab_source/nova_lab_library.json").read_text(encoding="utf-8-sig"))
     with sqlite3.connect(":memory:") as db:
         db.executescript(core_schema)
