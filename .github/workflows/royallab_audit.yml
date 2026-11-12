@@ -15,6 +15,7 @@ on:
       - 'tests/test_royallab_clinical_template_review.py'
       - 'tests/test_royallab_clinical_review_ui.py'
       - 'tests/test_royallab_seminal_culture_source_placeholders.py'
+      - 'tests/test_royallab_whole_blood_source_placeholders.py'
       - 'tests/test_royallab_missing_test_review_templates.py'
       - 'tests/test_royallab_historical_schema_audit.py'
       - 'tests/test_royallab_catalog_audit.py'
@@ -133,7 +134,7 @@ jobs:
       - name: Audit actual lab print A4 styles and existing patches
         run: python .github/ci/royallab_print_css_audit.py
       - name: Audit bundled original laboratory forms and review flags
-        run: python -m hospital.royallab_catalog_audit > /tmp/nova_lab_catalog_audit.json && python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print({k:v for k,v in r.items() if k in ('test_count','source_analyte_count','source_result_field_count','detached_analyte_count','tests_requiring_review','runtime_ready_test_count','runtime_blocked_test_count','inactive_fields_excluded_from_entry','blank_source_placeholders_excluded_from_entry','excluded_empty_source_separators','review_flags','active_review_flags')})"
+        run: python -m hospital.royallab_catalog_audit > /tmp/nova_lab_catalog_audit.json && python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print({k:v for k,v in r.items() if k in ('test_count','source_analyte_count','source_result_field_count','detached_analyte_count','tests_requiring_review','runtime_ready_test_count','runtime_blocked_test_count','inactive_fields_excluded_from_entry','blank_source_placeholders_excluded_from_entry','excluded_empty_source_separators','excluded_unnamed_untyped_placeholders','review_flags','active_review_flags')})"
       - name: Show exact outstanding laboratory test reasons
         run: python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print(json.dumps(r['runtime_blocked_tests'],ensure_ascii=False))"
       - name: Diagnose unresolved active dropdown option labels
