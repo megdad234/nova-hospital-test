@@ -26,7 +26,7 @@ class NOVALocalTests(unittest.TestCase):
         self.db=sqlite3.connect(":memory:")
         self.db.executescript("""
         CREATE TABLE hospital_lab_tests(
-          id INTEGER PRIMARY KEY,code TEXT UNIQUE,name TEXT,price REAL,active INTEGER DEFAULT 1);
+          id INTEGER PRIMARY KEY,code TEXT UNIQUE,name TEXT,category TEXT NOT NULL DEFAULT 'Other',price REAL,active INTEGER DEFAULT 1);
         CREATE TABLE hospital_lab_parameters(
           id INTEGER PRIMARY KEY,test_id INTEGER,code TEXT,name TEXT,unit TEXT,active INTEGER DEFAULT 1);
         CREATE TABLE hospital_orders(id INTEGER PRIMARY KEY,status TEXT);
@@ -59,9 +59,9 @@ class NOVALocalTests(unittest.TestCase):
         self.assertEqual(len(one["fields"]),3)
         self.assertEqual(one["fields"][1]["options"],["Nonreactive","Reactive"])
         self.assertEqual(one["section"],"Biochemistry")
-        rows=self.db.execute("""SELECT code,name,price,active FROM hospital_lab_tests
+        rows=self.db.execute("""SELECT code,name,price,active,category FROM hospital_lab_tests
                     WHERE id=?""",(data["nova_test_id"],)).fetchone()
-        self.assertEqual(rows,(data["code"],"Test for NOVA",1500,1))
+        self.assertEqual(rows,(data["code"],"Test for NOVA",1500,1,"Biochemistry"))
         self.assertEqual(self.db.execute("""SELECT COUNT(*) FROM hospital_lab_parameters
                        WHERE test_id=? AND active=1""",(data["nova_test_id"],)).fetchone()[0],3)
         self.assertEqual(len(local.list_local(self.db)),1)
@@ -101,6 +101,8 @@ class NOVALocalTests(unittest.TestCase):
         updated=self.approve(p)
         self.assertEqual(updated["nova_test_id"],item["nova_test_id"])
         self.assertEqual(updated["revision"],2)
+        self.assertEqual(self.db.execute("SELECT category FROM hospital_lab_tests WHERE id=?",
+                          (item["nova_test_id"],)).fetchone()[0],"Biochemistry")
         self.assertEqual(self.db.execute("""SELECT COUNT(*) FROM hospital_lab_parameters
                      WHERE test_id=? AND active=1""",(item["nova_test_id"],)).fetchone()[0],2)
         self.assertEqual(local.local_form(self.db,item["local_id"])["fields"][0]["unit"],"mmol/L")
