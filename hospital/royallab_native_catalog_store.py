@@ -128,6 +128,37 @@ def effective_source_form(raw):
             choices.append(option)
         cleaned_active.append({**field, "options": choices})
     active = cleaned_active
+    # Original historical result tables sometimes carried two closed formats
+    # for the SAME source analyte. One can have no option rows while the
+    # other contains actual named choices used in reported orders. Suppress
+    # only the incomplete redundant field from the editable form; keep both
+    # original definitions in the archived source. No cross-analyte matching.
+    redundant_incomplete_choices = 0
+    def complete_sibling(f, candidates):
+        analyte_id = str(f.get("source_analyte_id") or "").strip()
+        if not analyte_id or not ("ColoseEndedResultFormat" in (f.get("types") or [])):
+            return False
+        if f.get("options"):
+            return False
+        for other in candidates:
+            if other is f or str(other.get("source_analyte_id") or "") != analyte_id:
+                continue
+            if not str(other.get("kind") or "").startswith("select"):
+                continue
+            options = [o for o in other.get("options", []) if isinstance(o, dict)
+                       and o.get("active") not in inactive]
+            if options and all(str(o.get("label") or "").strip() and
+                               str(o.get("id") or "").strip() for o in options):
+                return True
+        return False
+    nonredundant = []
+    for f in active:
+        if complete_sibling(f, active):
+            redundant_incomplete_choices += 1
+        else:
+            nonredundant.append(f)
+    if nonredundant:
+        active = nonredundant
     flags = list(raw.get("review_flags") or [])
     if excluded:
         flags = [f for f in flags if f != "inactive_source_field"]
@@ -179,7 +210,8 @@ def effective_source_form(raw):
     return {**raw, "fields": active, "review_flags": flags,
             "excluded_inactive_source_fields": excluded,
             "excluded_blank_placeholder_options": blank_placeholders,
-            "manual_untyped_draft_fields": manual_fallback_count}
+            "manual_untyped_draft_fields": manual_fallback_count,
+            "excluded_redundant_empty_closed_formats": redundant_incomplete_choices}
 
 def clinical_test_form(conn, catalog_id, source_test_id):
     """Return the safely editable subset without changing stored source data."""
