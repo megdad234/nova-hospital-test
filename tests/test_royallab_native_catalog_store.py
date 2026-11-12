@@ -166,6 +166,45 @@ class NativeCatalogStoreTests(unittest.TestCase):
   with self.assertRaises(ValueError):
    save_draft(self.conn,"LAB-ORDER-1","0",{"ANALYTE-0":"guess"})
 
+ def test_same_analyte_populated_dropdown_replaces_only_empty_legacy_format(self):
+  cid=install(self.conn,self.library,'5'*64)
+  form=test_form(self.conn,cid,"0")
+  field=form["fields"][0]
+  field.update({"kind":"select","types":["ColoseEndedResultFormat"],
+                "options":[{"id":"P","label":"Positive","active":True}]})
+  source_analyte=field["source_analyte_id"]
+  form["fields"].append({"source_analyte_id":source_analyte,
+      "source_format_id":"INCOMPLETE-2","kind":"text",
+      "types":["ColoseEndedResultFormat"],"label":"Result",
+      "active":True,"options":[]})
+  form["review_flags"]=["source_format_missing_or_incomplete_free_text_fallback"]
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  resolved=clinical_test_form(self.conn,cid,"0")
+  self.assertEqual(resolved["review_flags"],[])
+  self.assertEqual(resolved["excluded_redundant_empty_closed_formats"],1)
+  self.assertEqual(len(resolved["fields"]),len(form["fields"])-1)
+  self.assertEqual(len(test_form(self.conn,cid,"0")["fields"]),len(form["fields"]))
+  self.assertEqual(save_draft(self.conn,"LAB-ORDER-1","0",
+                   {field["source_format_id"]:"P"})["status"],"draft")
+
+ def test_different_analyte_cannot_supply_missing_dropdown_choices(self):
+  cid=install(self.conn,self.library,'6'*64)
+  form=test_form(self.conn,cid,"0")
+  form["fields"][0].update({"kind":"select","types":["ColoseEndedResultFormat"],
+       "options":[{"id":"P","label":"Positive","active":True}]})
+  form["fields"].append({"source_analyte_id":"DIFFERENT",
+      "source_format_id":"INCOMPLETE-3","kind":"text",
+      "types":["ColoseEndedResultFormat"],"label":"Result",
+      "active":True,"options":[]})
+  form["review_flags"]=["source_format_missing_or_incomplete_free_text_fallback"]
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  resolved=clinical_test_form(self.conn,cid,"0")
+  self.assertIn("source_format_missing_or_incomplete_free_text_fallback",resolved["review_flags"])
+  with self.assertRaises(ValueError):
+   save_draft(self.conn,"LAB-ORDER-1","0",{"1":"P"})
+
  def test_duplicate_id_rejected(self):
   self.library['tests'][1]['TestID']=0
   with self.assertRaisesRegex(ValueError,'duplicate'):install(self.conn,self.library,'b'*64)
