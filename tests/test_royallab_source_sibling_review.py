@@ -65,6 +65,7 @@ class SourceSiblingEvidenceTests(unittest.TestCase):
         refs=sibling_review_options(self.db,self.cid,"336")
         self.assertEqual(refs[0]["related_source_test_id"],"337")
         self.assertIn("genotyping",refs[0]["method_warning"])
+        self.assertEqual(refs[0]["relation"],"same_name_distinct_assays")
         self.assertFalse(refs[0]["ready_for_patient_results"])
 
     def test_unmapped_unknown_and_unproven_fields_do_not_infer(self):
