@@ -5,7 +5,7 @@ replaces print logic, creates clinical approval, or touches pharmacy records.
 """
 import sqlite3
 from hospital.royallab_native_catalog_api import current_catalog_id
-from hospital.royallab_native_catalog_store import test_form
+from hospital.royallab_native_catalog_store import clinical_test_form
 from hospital.royallab_native_result_drafts import save_draft, load_draft, validate_source_form
 
 SCHEMA = """
@@ -51,7 +51,7 @@ def attach_native_test(conn, actor, nova_item_id, source_test_id):
                        (nova_item_id,)).fetchone()
     if row and row[0] != source_test_id:
         raise ValueError("NOVA order item already linked to another Royal Lab test")
-    form = test_form(conn, catalog_id, source_test_id)
+    form = clinical_test_form(conn, catalog_id, source_test_id)
     validate_source_form(form)
     with conn:
         conn.execute("""INSERT OR IGNORE INTO royal_lab_native_order_items
