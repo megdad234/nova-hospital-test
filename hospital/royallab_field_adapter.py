@@ -27,18 +27,18 @@ def build_fields(library):
                 kind="text"
             elif "RelatedResultFormat" in kinds:
                 kind="related"
-            else:kind="unknown"
+            else:kind="text"  # Source lacks a usable result format; retain as editable free text, never infer clinical ranges/options.
             if kind=="select_or_text" and ("DoubleResultFormat" in kinds or "IntegerResultFormat" in kinds):
                 kind="select_or_number"
-            fields.append({"source_analyte_id":str(a["analyte_id"]),"source_format_id":str(f.get("id","")),
+            fields.append({"source_analyte_id":str(a["analyte_id"]),"source_format_id":str(f.get("id") or ("ANALYTE-" + str(a["analyte_id"]) + "-FORMAT-" + str(len(fields)))),
                 "label":(str(f.get("title") or "").strip() or str(a.get("name") or "").strip()),"kind":kind,
                 "types":sorted(kinds),"unit":f.get("unit") or "","options":options,
                 "numeric_ranges":a.get("numeric_ranges",[]),"text_ranges":a.get("text_ranges",[]),
                 "required":a.get("required"),"active":a.get("active"),
                 "source_analyte":a})
         if not fields:
-            fields=[{"source_analyte_id":str(a["analyte_id"]),"source_format_id":None,
-                "label":a.get("name",""),"kind":"unknown","options":[],
+            fields=[{"source_analyte_id":str(a["analyte_id"]),"source_format_id":"ANALYTE-" + str(a["analyte_id"]),
+                "label":a.get("name",""),"kind":"text","options":[],
                 "unit":"","numeric_ranges":a.get("numeric_ranges",[]),"text_ranges":a.get("text_ranges",[]),
                 "source_analyte":a}]
         if tid in by_test:by_test[tid]["fields"].extend(fields)
