@@ -27,8 +27,10 @@ def schema_from_source(source):
 def audit(root):
     root=pathlib.Path(root)
     schema=schema_from_source((root/"hospital/lab.py").read_text(encoding="utf-8"))
+    core_schema=schema_from_source((root/"hospital/core.py").read_text(encoding="utf-8"))
     library=json.loads((root/"hospital/royallab_source/nova_lab_library.json").read_text(encoding="utf-8-sig"))
     with sqlite3.connect(":memory:") as db:
+        db.executescript(core_schema)
         db.executescript(schema)
         for p in (root/'hospital').glob('*.py'):
             body=p.read_text(encoding='utf-8-sig')
