@@ -6,7 +6,31 @@ Original test identifiers are used; no legacy test-name matching.
 from pathlib import Path
 ANCHOR="return self.reply(royallab_nova_live_order_overlay.overlay_order_detail(c,core.order_detail(c,oid,role),role))"
 IMPORT="from hospital import core, lab, finance, admin, royallab_nova_live_order_overlay"
-POST_ROUTES="""                    if path=='/api/hospital/royallab-native/order/attach':
+POST_ROUTES="""                    if path=='/api/hospital/royallab-native/local/tests':
+                        core.require_role(role,'admin','lab','reception')
+                        return self.reply(nova_lab_local_tests.list_local(c))
+                    if path=='/api/hospital/royallab-native/local/proposals':
+                        core.require_role(role,'admin','lab')
+                        return self.reply(nova_lab_local_tests.proposals(c))
+                    if path.startswith('/api/hospital/royallab-native/local/form/'):
+                        core.require_role(role,'admin','lab')
+                        return self.reply(nova_lab_local_tests.local_form(
+                            c,core.integer(path.rsplit('/',1)[-1],'الفحص المحلي',1)))
+                    if path=='/api/hospital/royallab-native/local/propose':
+                        core.require_role(role,'admin','lab')
+                        return self.reply(nova_lab_local_tests.propose(
+                            c,user,local_id=(core.integer(data.get('local_id'),'الفحص المحلي',1)
+                              if data.get('local_id') is not None else None),
+                            name=data.get('name'),section=data.get('section'),
+                            price=data.get('price'),fields=data.get('fields'),
+                            method=data.get('method'),evidence=data.get('evidence'),
+                            rationale=data.get('rationale')))
+                    if path=='/api/hospital/royallab-native/local/approve':
+                        core.require_role(role,'admin')
+                        return self.reply(nova_lab_local_tests.approve(
+                            c,user,core.integer(data.get('proposal_id'),'طلب اعتماد الفحص',1),
+                            data.get('form_hash'),attestation=data.get('attestation')))
+                    if path=='/api/hospital/royallab-native/order/attach':
                         core.require_role(role,'admin','lab')
                         return self.reply(royallab_native_order_bridge.attach_native_test(
                             c,user,core.integer(data.get('nova_item_id'),'رقم فحص الطلب',1),
@@ -66,7 +90,7 @@ def patch(source):
  if source.count(ANCHOR)!=1:raise ValueError("Royal Lab gateway anchor changed")
  if source.count(IMPORT)!=1:raise ValueError("Royal Lab gateway import anchor changed")
  if 'royallab-native/tests' in source:raise ValueError("Native routes already installed")
- source=source.replace(IMPORT,IMPORT+", royallab_native_catalog_api, royallab_native_order_bridge, royallab_clinical_template_review",1)
+ source=source.replace(IMPORT,IMPORT+", royallab_native_catalog_api, royallab_native_order_bridge, royallab_clinical_template_review, nova_lab_local_tests",1)
  # Routes inherit existing authentication and database connection context.
  marker="                    if path=='/api/hospital/patients':"
  if source.count(marker)!=2:raise ValueError("Expected GET and POST patient routes")
