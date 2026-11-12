@@ -71,6 +71,21 @@
           const label = document.createElement('span');
           label.textContent = safeText(field.label) + (field.unit ? ' (' + safeText(field.unit) + ')' : '');
           line.appendChild(label);
+          const ranges = [];
+          for (const range of field.numeric_ranges || []) ranges.push(range);
+          for (const range of field.text_ranges || []) ranges.push(range);
+          if (ranges.length) {
+            const reference = document.createElement('small');
+            reference.className = 'royal-lab-reference';
+            reference.textContent = 'المدى المرجعي: ' + ranges.map(function (r) {
+              if (typeof r === 'string' || typeof r === 'number') return String(r);
+              if (r && typeof r === 'object') return Object.entries(r).filter(function (pair) {
+                return pair[1] !== null && pair[1] !== '';
+              }).map(function (pair) { return pair[0] + ': ' + String(pair[1]); }).join('، ');
+              return '';
+            }).filter(Boolean).join(' | ');
+            line.appendChild(reference);
+          }
           let control;
           if (field.kind === 'select' || field.kind === 'select_or_text' || field.kind === 'select_or_number') {
             control = document.createElement('select');
