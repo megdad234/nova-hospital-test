@@ -468,15 +468,20 @@ jobs:
       - name: Include Royal Lab catalogue JSON inside frozen Windows executable
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          $library='hospital/royallab_source/nova_lab_library.json'
-          if (!(Test-Path $library)) { throw 'Royal Lab JSON missing before PyInstaller packaging' }
-          $script='windows/build-windows.ps1'
-          $source=Get-Content -LiteralPath $script -Raw
-          # PyInstaller's CLI accepts --add-data SOURCE;DEST. Preserve existing
-          # packaging logic, and add only the clinical catalogue as bundled data.
-          $extra='--add-data "hospital/royallab_source/nova_lab_library.json;hospital/royallab_source"'
-          $pattern='(?im)^(.*(?:python\s+-m\s+pyinstaller|pyinstaller(?:\.exe)?)(?:\s|\x60).*)
+          $ErrorActionPreference = 'Stop'
+          $library = 'hospital/royallab_source/nova_lab_library.json'
+          if (!(Test-Path $library)) { throw 'Royal Lab catalogue missing before packaging' }
+          $script = 'windows/build-windows.ps1'
+          $source = Get-Content -LiteralPath $script -Raw
+          $extra = '--add-data "hospital/royallab_source/nova_lab_library.json;hospital/royallab_source"'
+          $pattern = '(?i)(python\s+-m\s+pyinstaller|pyinstaller(?:\.exe)?)'
+          $hits = [regex]::Matches($source, $pattern)
+          if ($hits.Count -ne 1) { throw "Expected one PyInstaller invocation, found $($hits.Count)" }
+          $hit = $hits[0]
+          $source = $source.Substring(0, $hit.Index) + $hit.Value + ' ' + $extra + $source.Substring($hit.Index + $hit.Length)
+          Set-Content -LiteralPath $script -Value $source -Encoding utf8
+          Write-Host 'ROYALLAB_PYINSTALLER_DATA_INCLUDED'
+      - name: Build Windows installer freshly from fully patched source (no cached executable)
         shell: pwsh
         run: |
           if (Test-Path -LiteralPath windows/output/NOVA-Hospital-Setup-DEV.exe) { Remove-Item -LiteralPath windows/output/NOVA-Hospital-Setup-DEV.exe -Force }
