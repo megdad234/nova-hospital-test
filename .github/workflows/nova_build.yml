@@ -133,6 +133,8 @@ on:
       - 'tests/test_royallab_existing_schema_audit.py'
       - 'tests/test_royallab_existing_catalog_replacement.py'
       - 'tests/test_royallab_existing_line_overlay.py'
+      - '.github/ci/royallab_existing_catalog_patch.py'
+      - 'tests/test_royallab_existing_catalog_patch.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -377,6 +379,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native automatic catalogue initialization failed' }
           python -m unittest discover -s tests -p 'test_royallab_native_autoseed_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native autoseed patch tests failed' }
+          python .github/ci/royallab_existing_catalog_patch.py
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab existing NOVA catalogue patch failed' }
+          python -m unittest discover -s tests -p 'test_royallab_existing_catalog_patch.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab direct catalogue patch regression failed' }
           python .github/ci/royallab_native_gateway_patch.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native gateway patch failed' }
           python -m unittest discover -s tests -p 'test_royallab_native_gateway_patch.py' -v
