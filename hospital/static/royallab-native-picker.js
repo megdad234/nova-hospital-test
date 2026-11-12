@@ -136,7 +136,19 @@
     const reviewHistoryContainer = document.createElement('section');
     const help = document.createElement('p');
     help.textContent = 'لا تُفعّل النماذج أو القوائم إلا بعد مراجعة مختلفة واعتماد إداري. أدخل فقط ما تؤكده طريقة التحليل، بدون افتراض المدى المرجعي.';
-    reviewBody.append(help, reviewSelect, suggestButton, proposalFields, addFieldButton,
+    // Original Royal Lab sibling assays are references, not merged results.
+    const siblingPanel = document.createElement('section');
+    siblingPanel.className = 'royal-lab-sibling-evidence';
+    const clearProposalButton = document.createElement('button');
+    clearProposalButton.type = 'button';
+    clearProposalButton.textContent = 'مسح حقول المسودة المقترحة';
+    clearProposalButton.addEventListener('click', function () {
+      proposalFields.replaceChildren();
+      fieldSequence = 0;
+      reviewStatus.textContent = 'تم مسح حقول المسودة فقط؛ لم تتغير نتائج مرضى أو نماذج معتمدة.';
+    });
+    reviewBody.append(help, reviewSelect, suggestButton, siblingPanel,
+      proposalFields, addFieldButton, clearProposalButton,
       methodInput, evidenceInput, rationaleInput, proposeButton,
       reviewHistoryContainer, reviewStatus);
     reviewPanel.append(reviewHeading, reviewBody);
@@ -430,6 +442,71 @@
       return line;
     }
     addFieldButton.addEventListener('click', makeReviewField);
+    function applyReviewCandidate(candidate) {
+      if (!candidate || !candidate.label ||
+          !['text','number','select'].includes(candidate.kind)) return false;
+      const row = makeReviewField();
+      row.querySelector('[data-review-label]').value = safeText(candidate.label);
+      row.querySelector('[data-review-kind]').value = candidate.kind;
+      row.querySelector('[data-review-unit]').value = safeText(candidate.unit);
+      const choices = row.querySelector('[data-review-choices]');
+      choices.value = Array.isArray(candidate.option_labels) ?
+        candidate.option_labels.map(safeText).join('\n') : '';
+      choices.hidden = candidate.kind !== 'select';
+      return true;
+    }
+    function renderSiblingEvidence(data, selected) {
+      siblingPanel.replaceChildren();
+      const related = Array.isArray(data.related_source_forms) ? data.related_source_forms : [];
+      if (!related.length) return;
+      const heading = document.createElement('h4');
+      heading.textContent = 'نماذج من قاعدة Royal Lab الأصلية للمقارنة فقط';
+      const explanation = document.createElement('p');
+      explanation.textContent =
+        'النماذج دي بأرقام مختلفة. لا تُنقل نتائجها أو تُعتمد تلقائياً؛ راجع الجهاز والكيت مع مسؤول المعمل.';
+      siblingPanel.append(heading, explanation);
+      for (const sibling of related) {
+        const details = document.createElement('details');
+        const title = document.createElement('summary');
+        title.textContent = safeText(sibling.related_original_name) +
+          ' — ' + safeText(sibling.candidate_field_count) + ' حقول مرجعية';
+        const caution = document.createElement('p');
+        caution.textContent = safeText(sibling.method_warning);
+        details.append(title,caution);
+        const fields = Array.isArray(sibling.fields) ? sibling.fields : [];
+        for (const field of fields) {
+          const line = document.createElement('p');
+          line.textContent = safeText(field.label) + ' — ' +
+            safeText(field.kind) + (field.unit ? ' ('+safeText(field.unit)+')' : '') +
+            ((field.option_labels || []).length ?
+              ' — ' + field.option_labels.map(safeText).join('، ') : '');
+          details.appendChild(line);
+        }
+        // Copying is only possible on explicit action into an UNAPPROVED draft.
+        // Potential parent components, timed panels and distinct assay methods
+        // are deliberately read-only reference material.
+        const eligible = ['same_original_name','five_part_cbc',
+          'vitamin_b12_equivalent_name'].includes(sibling.relation);
+        if (eligible && fields.length && !((sibling.review_flags||[]).length)) {
+          const importButton = document.createElement('button');
+          importButton.type = 'button';
+          importButton.textContent = 'استخدام الحقول كمقترح للمراجعة فقط';
+          importButton.addEventListener('click', function () {
+            if (selected !== reviewSelect.value) return;
+            if (proposalFields.querySelector('fieldset')) {
+              reviewStatus.textContent = 'امسح حقول المسودة أولاً إذا أردت استبدالها؛ لن نحذف أي حقل مكتوب تلقائياً.';
+              return;
+            }
+            let added = 0;
+            for (const field of fields) if (applyReviewCandidate(field)) added += 1;
+            reviewStatus.textContent = 'تم نقل ' + added +
+              ' حقول للمسودة من نموذج مشابه، ولم تُفعّل. تأكد من طريقة الفحص والقوائم قبل الاعتماد المستقل.';
+          });
+          details.appendChild(importButton);
+        }
+        siblingPanel.appendChild(details);
+      }
+    }
     suggestButton.addEventListener('click', async function () {
       const selected = reviewSelect.value;
       if (!selected) {
@@ -450,18 +527,8 @@
         if (!result || result.source_test_id !== selected || !Array.isArray(result.fields) ||
             result.ready_for_patient_results !== false || result.requires_independent_approval !== true)
           throw new Error('مقترح المراجعة غير صالح');
-        for (const candidate of result.fields) {
-          if (!candidate || !candidate.label || !['text','number','select'].includes(candidate.kind))
-            continue;
-          const row = makeReviewField();
-          row.querySelector('[data-review-label]').value = safeText(candidate.label);
-          row.querySelector('[data-review-kind]').value = candidate.kind;
-          row.querySelector('[data-review-unit]').value = safeText(candidate.unit);
-          const choices = row.querySelector('[data-review-choices]');
-          choices.value = Array.isArray(candidate.option_labels) ?
-            candidate.option_labels.map(safeText).join('\n') : '';
-          choices.hidden = candidate.kind !== 'select';
-        }
+        for (const candidate of result.fields) applyReviewCandidate(candidate);
+        renderSiblingEvidence(result,selected);
         // Display evidence as an optional review aid, never as an approved result.
         const evidenceHint = result.external_guidance;
         if (evidenceHint && evidenceHint.can_activate_without_review === false) {
@@ -579,6 +646,7 @@
       reviewStatus.textContent = 'النموذج بانتظار اعتماد شخص مخوّل مختلف عن مُعدّه';
     }
     reviewSelect.addEventListener('change', function () {
+      siblingPanel.replaceChildren();
       proposalFields.replaceChildren();
       fieldSequence = 0;
       reviewStatus.textContent = '';
