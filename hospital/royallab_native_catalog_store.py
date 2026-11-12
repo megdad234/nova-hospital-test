@@ -188,16 +188,23 @@ def effective_source_form(raw):
         # list or claim the original format was a free-text result.
         is_missing_closed = (
             "ColoseEndedResultFormat" in types and not f.get("options")
-            and f.get("kind") == "text"
+            and f.get("kind") in ("text", "select")
             and str(f.get("source_format_id") or "").strip()
             and str(f.get("source_analyte_id") or "").strip()
             and str(f.get("label") or "").strip() not in ("", "-", "*")
         )
+        # A select field with only blank historical choices cannot supply
+        # any verified dropdown answer. Permit a *manual textual draft*,
+        # explicitly preserving this caveat, rather than saving an invented
+        # positive/negative option or claiming clinical approval.
+        manual_text_for_missing_dropdown = is_missing_closed and f.get("kind") == "select"
         if is_manual:
             manual_fallback_count += 1
         if is_missing_closed:
             missing_closed_choice_draft_count += 1
-        manual_fields.append({**f, "manual_untyped_draft_only": bool(is_manual),
+        manual_fields.append({**f,
+                              "kind": "text" if manual_text_for_missing_dropdown else f["kind"],
+                              "manual_untyped_draft_only": bool(is_manual),
                               "manual_missing_closed_options_draft_only": bool(is_missing_closed)})
     active = manual_fields
     def valid_source_format(f):
