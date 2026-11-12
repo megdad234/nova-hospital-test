@@ -22,10 +22,14 @@ class NativeAPI(unittest.TestCase):
  def test_no_catalog(self):
   with self.assertRaises(LookupError):catalog_response(self.conn)
  def test_search_forms_and_options(self):
+  self.lib['tests'][0]['LaboratoryID']=15
   cid=install(self.conn,self.lib,'c'*64)
   self.assertEqual(current_catalog_id(self.conn),cid)
   self.assertEqual(catalog_response(self.conn)['total'],367)
   self.assertEqual(catalog_response(self.conn)['ready_for_result_entry'],1)
+  self.assertEqual(catalog_response(self.conn)['non_lab_services'],1)
+  self.assertEqual(catalog_response(self.conn)['clinical_needing_review'],365)
+  self.assertEqual(catalog_response(self.conn,'Test 0')['tests'][0]['entry_status'],'non_lab_service')
   self.assertFalse(catalog_response(self.conn,'Test 0')['tests'][0]['result_entry_ready'])
   self.assertTrue(catalog_response(self.conn,'cbc')['tests'][0]['result_entry_ready'])
   self.assertEqual(catalog_response(self.conn,'cbc')['tests'][0]['source_test_id'],'1')
