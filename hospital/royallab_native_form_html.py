@@ -35,7 +35,7 @@ def render_form(test):
                 options.append('<option value="'+_e(opt.get("id"))+'">'+_visible(opt.get("label"))+'</option>')
             select = '<select'+common+'>'+''.join(options)+'</select>'
             if kind == "select_or_number":
-                select += '<input type="number" step="any" data-alternative-for="'+name+'" placeholder="أو قيمة رقمية">'
+                select += '<input type="number" step="'+numeric_step+'" data-alternative-for="'+name+'" placeholder="أو قيمة رقمية">'
             if kind == "select_or_text":
                 select += '<input type="text" data-alternative-for="'+name+'" placeholder="أو نص">'
             control = select
