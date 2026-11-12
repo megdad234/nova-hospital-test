@@ -10,6 +10,8 @@ on:
       - 'hospital/royallab_source_numeric_format_map.py'
       - 'hospital/royallab_catalog_audit.py'
       - 'hospital/royallab_historical_schema_audit.py'
+      - 'hospital/royallab_missing_test_review_templates.py'
+      - 'tests/test_royallab_missing_test_review_templates.py'
       - 'tests/test_royallab_historical_schema_audit.py'
       - 'tests/test_royallab_catalog_audit.py'
       - 'hospital/royallab_native_result_form.py'
