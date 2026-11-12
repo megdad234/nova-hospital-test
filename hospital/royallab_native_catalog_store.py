@@ -136,8 +136,28 @@ def effective_source_form(raw):
         flags = [f for f in flags if f != "mixed_format_requires_combobox"]
     if all(str(f.get("label") or "").strip() for f in active):
         flags = [f for f in flags if f != "missing_source_field_label"]
+    # A source analyte with no result-format row may still have a clear name.
+    # Support a *manual draft-only text field* for this precise case. This is
+    # not a reconstructed numeric type, a normal range or clinical approval.
+    # Preserve its synthetic identity so the real analyte can be audited.
+    manual_fallback_count = 0
+    manual_fields = []
+    for f in active:
+        types = f.get("types") or []
+        fallback_id = "ANALYTE-" + str(f.get("source_analyte_id") or "")
+        is_manual = (not types and f.get("kind") == "text"
+                     and str(f.get("source_format_id")) == fallback_id
+                     and str(f.get("source_analyte_id") or "").strip()
+                     and str(f.get("label") or "").strip()
+                     and not f.get("options"))
+        if is_manual:
+            manual_fallback_count += 1
+        manual_fields.append({**f, "manual_untyped_draft_only": bool(is_manual)})
+    active = manual_fields
     def valid_source_format(f):
         types = f.get("types") or []
+        if f.get("manual_untyped_draft_only"):
+            return True
         return (bool(types) and not str(f.get("source_format_id") or "").startswith("ANALYTE-")
                 and not ("ColoseEndedResultFormat" in types and not f.get("options")))
     if all(valid_source_format(f) for f in active):
@@ -158,7 +178,8 @@ def effective_source_form(raw):
         flags = [f for f in flags if f != "missing_source_option_label"]
     return {**raw, "fields": active, "review_flags": flags,
             "excluded_inactive_source_fields": excluded,
-            "excluded_blank_placeholder_options": blank_placeholders}
+            "excluded_blank_placeholder_options": blank_placeholders,
+            "manual_untyped_draft_fields": manual_fallback_count}
 
 def clinical_test_form(conn, catalog_id, source_test_id):
     """Return the safely editable subset without changing stored source data."""
