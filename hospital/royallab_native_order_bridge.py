@@ -22,7 +22,7 @@ def _existing_order(conn, item_id):
     if type(item_id) is not int or item_id <= 0:
         raise ValueError("NOVA order item ID required")
     row = conn.execute(
-        """SELECT i.id, i.result_status, o.status
+        """SELECT i.id, i.result_status, o.status, i.test_id
            FROM hospital_order_items i
            JOIN hospital_orders o ON o.id=i.order_id
            WHERE i.id=?""", (item_id,)).fetchone()
@@ -46,6 +46,14 @@ def attach_native_test(conn, actor, nova_item_id, source_test_id):
         raise PermissionError("Approved NOVA item cannot be rebound")
     catalog_id = current_catalog_id(conn)
     source_test_id = str(source_test_id)
+    # The order item must have been placed for this exact source test.
+    # An unrelated paid lab item must never become a vehicle to record
+    # another test's results, even when staff selects a valid source form.
+    order_test = conn.execute(
+        "SELECT code FROM hospital_lab_tests WHERE id=?", (item[3],)
+    ).fetchone()
+    if not order_test or str(order_test[0]) != "ROYAL-" + source_test_id:
+        raise ValueError("NOVA order test ID does not match original source test")
     conn.execute(SCHEMA)
     row = conn.execute("SELECT source_test_id FROM royal_lab_native_order_items WHERE nova_item_id=?",
                        (nova_item_id,)).fetchone()
