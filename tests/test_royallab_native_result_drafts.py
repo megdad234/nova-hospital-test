@@ -13,7 +13,7 @@ class DraftTests(unittest.TestCase):
             catalog_id INTEGER, source_test_id TEXT, name TEXT, form_json TEXT,
             PRIMARY KEY(catalog_id, source_test_id))""")
         self.db.execute("""INSERT INTO royal_lab_native_tests VALUES
-          (1, 'TEST-1', 'Synthetic Test', '{"source_test_id":"TEST-1","fields":[{"source_format_id":"F1","kind":"select","options":[{"id":"A","active":true},{"id":"B","active":true}]}]}')""")
+          (1, 'TEST-1', 'Synthetic Test', '{"source_test_id":"TEST-1","fields":[{"source_format_id":"F1","label":"Color","kind":"select","options":[{"id":"A","active":true},{"id":"B","active":true}]}]}')""")
 
     def tearDown(self):
         self.db.close()
@@ -34,7 +34,7 @@ class DraftTests(unittest.TestCase):
 
     def test_numeric_source_format_id_is_accepted(self):
         self.db.execute("""INSERT INTO royal_lab_native_tests VALUES
-          (1, 'TEST-2', 'Numeric ID', '{"source_test_id":"TEST-2","fields":[{"source_format_id":12,"kind":"select","options":[{"id":9,"active":true}]}]}')""")
+          (1, 'TEST-2', 'Numeric ID', '{"source_test_id":"TEST-2","fields":[{"source_format_id":12,"label":"Color","kind":"select","options":[{"id":9,"active":true}]}]}')""")
         result=save_draft(self.db,"ORDER-1","TEST-2",{"12":"9"})
         self.assertEqual(result["values"],{"12":"9"})
         self.assertEqual(load_draft(self.db,"ORDER-1","TEST-2")["values"],{"12":"9"})
@@ -55,6 +55,22 @@ class DraftTests(unittest.TestCase):
         form["fields"][0]["active"] = False
         self.db.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE source_test_id=?", (json.dumps(form), "TEST-1"))
         with self.assertRaisesRegex(ValueError, "inactive"):
+            save_draft(self.db, "ORDER-1", "TEST-1", {"F1": "A"})
+
+    def test_duplicate_option_ids_blocked_on_server(self):
+        row = self.db.execute("SELECT form_json FROM royal_lab_native_tests WHERE source_test_id=?", ("TEST-1",)).fetchone()
+        form = json.loads(row[0])
+        form["fields"][0]["options"].append({"id": "A", "active": True})
+        self.db.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE source_test_id=?", (json.dumps(form), "TEST-1"))
+        with self.assertRaisesRegex(ValueError, "duplicated"):
+            save_draft(self.db, "ORDER-1", "TEST-1", {"F1": "A"})
+
+    def test_missing_label_blocked_on_server(self):
+        row = self.db.execute("SELECT form_json FROM royal_lab_native_tests WHERE source_test_id=?", ("TEST-1",)).fetchone()
+        form = json.loads(row[0])
+        form["fields"][0].pop("label")
+        self.db.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE source_test_id=?", (json.dumps(form), "TEST-1"))
+        with self.assertRaisesRegex(ValueError, "Unnamed"):
             save_draft(self.db, "ORDER-1", "TEST-1", {"F1": "A"})
 
     def test_separate_orders_and_missing_draft(self):
