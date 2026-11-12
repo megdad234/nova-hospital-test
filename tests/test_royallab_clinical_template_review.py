@@ -9,7 +9,7 @@ import unittest
 from hospital.royallab_catalog_audit import SOURCE, audit
 from hospital.royallab_native_catalog_store import install_file,clinical_test_form,test_form
 from hospital.royallab_clinical_template_review import (
-    propose,approve,review_history)
+    propose,approve,review_history,review_details)
 from hospital.royallab_native_result_drafts import save_draft,validate_source_form
 from hospital.royallab_native_catalog_api import catalog_response,form_response
 
@@ -39,6 +39,10 @@ class TwoPersonClinicalReviewTests(unittest.TestCase):
                               if t["source_test_id"]==source_id)["result_entry_ready"])
         pending=propose(self.db,LAB,self.cid,source_id,NUMBER,**DETAILS)
         self.assertEqual(pending["state"],"pending")
+        detail=review_details(self.db,self.cid,source_id,pending["revision"])
+        self.assertEqual(detail["form"]["fields"][0]["label"],"25-OH Vitamin D")
+        self.assertEqual(detail["form_hash"],pending["form_hash"])
+        self.assertFalse(detail["can_publish_patient_results"])
         with self.assertRaises(ValueError):
             validate_source_form(clinical_test_form(self.db,self.cid,source_id))
         with self.assertRaises(PermissionError):
