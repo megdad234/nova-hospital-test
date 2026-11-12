@@ -19,6 +19,7 @@ def audit(path=SOURCE):
     ready = []
     blocked = []
     services = []
+    unresolved_field_evidence = []
     excluded_inactive_count = 0
     excluded_blank_placeholder_count = 0
     live_flags = Counter()
@@ -38,6 +39,28 @@ def audit(path=SOURCE):
         try:
             validate_source_form(active_form)
         except ValueError as exc:
+            evidence = []
+            for field in active_form.get("fields", []):
+                if not isinstance(field, dict):
+                    continue
+                options = field.get("options") or []
+                invalid_options = [{"id": str(o.get("id") or ""),
+                                    "order": o.get("order"), "active": o.get("active")}
+                                   for o in options if isinstance(o, dict) and
+                                   not str(o.get("label") or "").strip()]
+                kinds = field.get("types") or []
+                fallback = (not kinds or str(field.get("source_format_id") or "").startswith("ANALYTE-")
+                            or ("ColoseEndedResultFormat" in kinds and not options))
+                if invalid_options or fallback or not str(field.get("label") or "").strip():
+                    evidence.append({"source_format_id": str(field.get("source_format_id")),
+                                     "source_analyte_id": str(field.get("source_analyte_id")),
+                                     "field_name": str(field.get("label") or ""),
+                                     "kind": field.get("kind"), "source_types": kinds,
+                                     "missing_format": bool(fallback),
+                                     "blank_options": invalid_options})
+            if evidence:
+                unresolved_field_evidence.append({
+                    "source_test_id": test["source_id"], "name": test["name"], "fields": evidence})
             blocked.append({"source_test_id": test["source_id"], "name": test["name"],
                             "reason": str(exc), "review_flags": active_form.get("review_flags", []),
                             "active_field_count": len(active_form.get("fields", []))})
@@ -86,6 +109,7 @@ def audit(path=SOURCE):
         "repair_queue_by_cause": dict(sorted(review_by_cause.items())),
         "non_lab_service_count": len(services),
         "non_lab_services": services,
+        "unresolved_field_evidence": unresolved_field_evidence,
         "clinical_test_count": len(ready) + len(blocked),
         "runtime_ready_test_count": len(ready),
         "runtime_blocked_test_count": len(blocked),
