@@ -68,6 +68,25 @@ def effective_source_form(raw):
     if not active:
         return raw  # Never make an empty or fully inactive test writable.
     excluded = len(all_fields) - len(active)
+    # The source table explicitly uses empty, order-zero dropdown rows as
+    # "no selection" placeholders. The NOVA UI already inserts its own blank
+    # placeholder: do not offer an empty clinical option as a result.
+    # Preserve each original row in the stored catalogue for provenance.
+    blank_placeholders = 0
+    cleaned_active = []
+    for field in active:
+        if not str(field.get("kind") or "").startswith("select"):
+            cleaned_active.append(field)
+            continue
+        choices = []
+        for option in field.get("options", []):
+            if (isinstance(option, dict) and not str(option.get("label") or "").strip()
+                    and option.get("order") in (0, "0")):
+                blank_placeholders += 1
+                continue
+            choices.append(option)
+        cleaned_active.append({**field, "options": choices})
+    active = cleaned_active
     flags = list(raw.get("review_flags") or [])
     if excluded:
         flags = [f for f in flags if f != "inactive_source_field"]
@@ -97,7 +116,8 @@ def effective_source_form(raw):
            for f in active):
         flags = [f for f in flags if f != "missing_source_option_label"]
     return {**raw, "fields": active, "review_flags": flags,
-            "excluded_inactive_source_fields": excluded}
+            "excluded_inactive_source_fields": excluded,
+            "excluded_blank_placeholder_options": blank_placeholders}
 
 def clinical_test_form(conn, catalog_id, source_test_id):
     """Return the safely editable subset without changing stored source data."""
