@@ -22,7 +22,7 @@ class ClinicalReviewUIContractTests(unittest.TestCase):
         self.assertIn("form_hash: data.form_hash", js)
         self.assertIn("form_hash !== latest.form_hash", js)
         self.assertIn("أضف حقلاً واحداً على الأقل", js)
-        self.assertIn("المراجعة المستقلة", js)
+        self.assertIn("مراجعة مستقلة", js)
 
     def test_safe_dom_and_original_result_guard_remain(self):
         js = SCRIPT.read_text(encoding="utf-8")
