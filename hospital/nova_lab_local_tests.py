@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS nova_lab_local_tests (
  id INTEGER PRIMARY KEY,
  nova_test_id INTEGER UNIQUE,
  code TEXT NOT NULL UNIQUE,
+ section TEXT NOT NULL DEFAULT '',
  approved_revision INTEGER NOT NULL DEFAULT 0,
  approved_form_json TEXT,
  approved_form_hash TEXT,
@@ -91,9 +92,9 @@ def _money(value):
         raise ValueError("Valid test price required") from None
     if not number.is_finite() or not Decimal("0") < number <= Decimal("1000000000000"):
         raise ValueError("Test must have an explicit positive price")
-    if number.as_tuple().exponent < -2:
-        raise ValueError("Price supports at most two decimal places")
-    return str(number)
+    if number != number.to_integral_value():
+        raise ValueError("NOVA lab prices must be whole Sudanese pounds")
+    return str(int(number))
 
 
 def _fields(raw):
@@ -201,7 +202,7 @@ def _sync_approved(conn, local_id, nova_test_id, code, name, price, form, revisi
         raise RuntimeError("NOVA lab parameter schema incompatible")
     if nova_test_id is None:
         cur = conn.execute("""INSERT INTO hospital_lab_tests(code,name,price,active)
-                              VALUES (?,?,?,1)""", (code,name,float(price)))
+                              VALUES (?,?,?,1)""", (code,name,int(price)))
         nova_test_id = cur.lastrowid
     else:
         existing = conn.execute("SELECT code FROM hospital_lab_tests WHERE id=?",
@@ -209,21 +210,30 @@ def _sync_approved(conn, local_id, nova_test_id, code, name, price, form, revisi
         if not existing or existing[0] != code:
             raise RuntimeError("Local test identity changed")
         conn.execute("""UPDATE hospital_lab_tests SET name=?,price=?,active=1
-                        WHERE id=?""", (name,float(price),nova_test_id))
+                        WHERE id=?""", (name,int(price),nova_test_id))
     keys = set()
-    for field in form["fields"]:
+    for order,field in enumerate(form["fields"]):
         param_code = PARAM_PREFIX + str(local_id) + "_" + field["key"]
         keys.add(param_code)
         row = conn.execute("""SELECT id FROM hospital_lab_parameters
             WHERE test_id=? AND code=?""", (nova_test_id,param_code)).fetchone()
+        # Populate original NOVA result reference and order columns when present.
+        # Never infer a reference range: this is signed local evidence only.
+        extras = {}
+        if "reference_all" in params:
+            extras["reference_all"] = field["reference"]
+        if "sort_order" in params:
+            extras["sort_order"] = order
         if row:
             parameter_id = row[0]
-            conn.execute("""UPDATE hospital_lab_parameters SET name=?,unit=?,active=1
-                  WHERE id=?""", (field["label"],field["unit"],parameter_id))
+            assignment = ["name=?","unit=?","active=1"] + [k+"=?" for k in extras]
+            conn.execute("UPDATE hospital_lab_parameters SET "+",".join(assignment)+" WHERE id=?",
+                         (field["label"],field["unit"],*extras.values(),parameter_id))
         else:
-            cur = conn.execute("""INSERT INTO hospital_lab_parameters
-                     (test_id,code,name,unit,active) VALUES (?,?,?,?,1)""",
-                     (nova_test_id,param_code,field["label"],field["unit"]))
+            cols = ["test_id","code","name","unit","active"] + list(extras)
+            vals = [nova_test_id,param_code,field["label"],field["unit"],1] + list(extras.values())
+            cur = conn.execute("INSERT INTO hospital_lab_parameters (" +
+                       ",".join(cols)+") VALUES ("+",".join("?" for _ in vals)+")",vals)
             parameter_id = cur.lastrowid
         conn.execute("""INSERT INTO nova_lab_local_fields(
             nova_parameter_id,local_id,key,kind,options_json,reference_json,approved_revision)
@@ -284,9 +294,9 @@ def approve(conn, actor, proposal_id, form_hash, *, attestation):
         version = last_revision+1
         nova_test_id = _sync_approved(conn,local_id,nova_test_id,code,name,price,form,version)
         conn.execute("""UPDATE nova_lab_local_tests SET nova_test_id=?,approved_revision=?,
-                    approved_form_json=?,approved_form_hash=?,approved_by=?,
+                    section=?,approved_form_json=?,approved_form_hash=?,approved_by=?,
                     updated_at=CURRENT_TIMESTAMP WHERE id=?""",
-                    (nova_test_id,version,payload,stored_hash,reviewer,local_id))
+                    (nova_test_id,version,section,payload,stored_hash,reviewer,local_id))
         conn.execute("""UPDATE nova_lab_local_proposals SET state='approved',
                     approved_by=?,reviewed_at=CURRENT_TIMESTAMP,attestation=?
                     WHERE id=? AND state='pending'""",(reviewer,attestation,proposal_id))
@@ -302,12 +312,12 @@ def approve(conn, actor, proposal_id, form_hash, *, attestation):
 def list_local(conn):
     init(conn)
     entries = conn.execute("""SELECT l.id,l.nova_test_id,l.code,l.approved_revision,
-               t.name,t.price,t.active,l.approved_form_hash
+               t.name,t.price,t.active,l.approved_form_hash,l.section
                FROM nova_lab_local_tests l JOIN hospital_lab_tests t ON t.id=l.nova_test_id
                ORDER BY t.name""").fetchall()
     return [{"local_id":r[0],"nova_test_id":r[1],"code":r[2],
              "revision":r[3],"name":r[4],"price":r[5],"active":bool(r[6]),
-             "form_hash":r[7],"has_orders":_has_orders(conn,r[1])} for r in entries]
+             "form_hash":r[7],"section":r[8],"has_orders":_has_orders(conn,r[1])} for r in entries]
 
 
 def local_form(conn, local_id):
@@ -315,7 +325,7 @@ def local_form(conn, local_id):
     if type(local_id) is not int or local_id <= 0:
         raise ValueError("Invalid NOVA local test")
     row = conn.execute("""SELECT l.id,l.nova_test_id,l.approved_revision,
-        l.approved_form_json,l.approved_form_hash,t.name,t.price
+        l.approved_form_json,l.approved_form_hash,t.name,t.price,l.section
         FROM nova_lab_local_tests l JOIN hospital_lab_tests t ON l.nova_test_id=t.id
         WHERE l.id=?""", (local_id,)).fetchone()
     if not row:
@@ -324,7 +334,7 @@ def local_form(conn, local_id):
     if _hash(form) != row[4]:
         raise ValueError("Approved local form was modified")
     return {"local_id":row[0],"nova_test_id":row[1],"revision":row[2],
-            "name":row[5],"price":row[6], "fields":form["fields"],
+            "name":row[5],"price":row[6],"section":row[7], "fields":form["fields"],
             "has_orders":_has_orders(conn,row[1])}
 
 
