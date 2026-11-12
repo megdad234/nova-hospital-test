@@ -9,9 +9,11 @@ class OrderBridgeTests(unittest.TestCase):
     def setUp(self):
         self.db = sqlite3.connect(":memory:")
         self.db.execute("CREATE TABLE hospital_orders(id INTEGER PRIMARY KEY,status TEXT)")
-        self.db.execute("CREATE TABLE hospital_order_items(id INTEGER PRIMARY KEY,order_id INTEGER,result_status TEXT)")
+        self.db.execute("CREATE TABLE hospital_order_items(id INTEGER PRIMARY KEY,order_id INTEGER,result_status TEXT,test_id INTEGER)")
         self.db.execute("INSERT INTO hospital_orders VALUES(1,'pending'),(2,'paid')")
-        self.db.execute("INSERT INTO hospital_order_items VALUES(11,1,'draft'),(22,2,'draft'),(23,2,'approved')")
+        self.db.execute("INSERT INTO hospital_order_items VALUES(11,1,'draft',10),(22,2,'draft',10),(23,2,'approved',10)")
+        self.db.execute("CREATE TABLE hospital_lab_tests(id INTEGER PRIMARY KEY,code TEXT UNIQUE)")
+        self.db.execute("INSERT INTO hospital_lab_tests VALUES(10,'ROYAL-T1'),(11,'ROYAL-T2')")
         self.db.execute("CREATE TABLE royal_lab_native_catalogs(id INTEGER PRIMARY KEY)")
         self.db.execute("INSERT INTO royal_lab_native_catalogs VALUES(1)")
         self.db.execute("""CREATE TABLE royal_lab_native_tests(
@@ -47,6 +49,17 @@ class OrderBridgeTests(unittest.TestCase):
            (nova_item_id INTEGER PRIMARY KEY, source_test_id TEXT, catalog_id INTEGER)""")
         self.assertIsNone(self.db.execute(
             "SELECT source_test_id FROM royal_lab_native_order_items WHERE nova_item_id=22").fetchone())
+
+    def test_cannot_attach_different_clinical_test_to_paid_item(self):
+        self.db.execute("UPDATE hospital_order_items SET test_id=11 WHERE id=22")
+        with self.assertRaisesRegex(ValueError,"does not match"):
+            attach_native_test(self.db,ADMIN,22,"T1")
+        self.db.execute("UPDATE hospital_order_items SET test_id=10 WHERE id=22")
+        self.db.execute("UPDATE hospital_lab_tests SET code='OTHER' WHERE id=10")
+        with self.assertRaisesRegex(ValueError,"does not match"):
+            attach_native_test(self.db,ADMIN,22,"T1")
+        self.db.execute("UPDATE hospital_lab_tests SET code='ROYAL-T1' WHERE id=10")
+        self.assertTrue(attach_native_test(self.db,ADMIN,22,"T1")["linked"])
 
     def test_rebinding_and_unauthorized_access_blocked(self):
         attach_native_test(self.db,ADMIN,22,"T1")
