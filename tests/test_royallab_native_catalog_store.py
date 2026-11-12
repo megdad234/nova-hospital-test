@@ -1,6 +1,7 @@
 import hashlib,json,pathlib,sqlite3,sys,tempfile,unittest
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]))
-from hospital.royallab_native_catalog_store import install,install_file,list_tests,test_form
+from hospital.royallab_native_catalog_store import install,install_file,list_tests,test_form,clinical_test_form
+from hospital.royallab_native_result_drafts import save_draft
 class NativeCatalogStoreTests(unittest.TestCase):
  def setUp(self):
   self.conn=sqlite3.connect(':memory:')
@@ -20,6 +21,30 @@ class NativeCatalogStoreTests(unittest.TestCase):
    p.write_text(json.dumps(self.library),encoding='utf-8')
    cid=install_file(self.conn,p)
    self.assertEqual(len(list_tests(self.conn,cid)),367)
+ def test_active_fields_can_be_saved_without_deleted_source_fields(self):
+  cid=install(self.conn,self.library,'d'*64)
+  form=test_form(self.conn,cid,"0")
+  form["review_flags"]=["inactive_source_field"]
+  form["fields"][1]["active"]=False
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  active=clinical_test_form(self.conn,cid,"0")
+  self.assertEqual(len(active["fields"]),len(form["fields"])-1)
+  self.assertEqual(active["review_flags"],[])
+  self.assertEqual(len(test_form(self.conn,cid,"0")["fields"]),len(form["fields"]))
+  field=active["fields"][0]["source_format_id"]
+  self.assertEqual(save_draft(self.conn,"PATIENT-LAB-1","0",{field:"7"})["values"],{field:"7"})
+
+ def test_all_inactive_fields_stay_blocked(self):
+  cid=install(self.conn,self.library,'e'*64)
+  form=test_form(self.conn,cid,"0")
+  form["review_flags"]=["inactive_source_field"]
+  for field in form["fields"]:field["active"]=False
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  self.assertEqual(clinical_test_form(self.conn,cid,"0")["review_flags"],["inactive_source_field"])
+  with self.assertRaises(ValueError):
+   save_draft(self.conn,"PATIENT-LAB-1","0",{"1":"7"})
  def test_duplicate_id_rejected(self):
   self.library['tests'][1]['TestID']=0
   with self.assertRaisesRegex(ValueError,'duplicate'):install(self.conn,self.library,'b'*64)
