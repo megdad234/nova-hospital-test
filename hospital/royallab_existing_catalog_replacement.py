@@ -107,8 +107,12 @@ def replace_catalog(conn, library, *, approved=False):
                 conn.execute("UPDATE hospital_lab_tests SET name=?,active=1 WHERE id=?",
                              (test["name"],test_id))
             else:
-                cur = conn.execute("INSERT INTO hospital_lab_tests(code,name,price,active) VALUES(?,?,0,1)",
-                                   (code,test["name"]))
+                if "price" in tests_schema:
+                    cur = conn.execute("INSERT INTO hospital_lab_tests(code,name,price,active) VALUES(?,?,0,1)",
+                                       (code,test["name"]))
+                else:
+                    cur = conn.execute("INSERT INTO hospital_lab_tests(code,name,active) VALUES(?,?,1)",
+                                       (code,test["name"]))
                 test_id = cur.lastrowid
             for index, field in enumerate(test["fields"]):
                 sid = field["source_format_id"]
