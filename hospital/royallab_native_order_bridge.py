@@ -46,13 +46,13 @@ def attach_native_test(conn, actor, nova_item_id, source_test_id):
         raise PermissionError("Approved NOVA item cannot be rebound")
     catalog_id = current_catalog_id(conn)
     source_test_id = str(source_test_id)
+    conn.execute(SCHEMA)
+    row = conn.execute("SELECT source_test_id FROM royal_lab_native_order_items WHERE nova_item_id=?",
+                       (nova_item_id,)).fetchone()
+    if row and row[0] != source_test_id:
+        raise ValueError("NOVA order item already linked to another Royal Lab test")
     test_form(conn, catalog_id, source_test_id)
     with conn:
-        conn.execute(SCHEMA)
-        row = conn.execute("SELECT source_test_id FROM royal_lab_native_order_items WHERE nova_item_id=?",
-                           (nova_item_id,)).fetchone()
-        if row and row[0] != source_test_id:
-            raise ValueError("NOVA order item already linked to another Royal Lab test")
         conn.execute("""INSERT OR IGNORE INTO royal_lab_native_order_items
                         (nova_item_id, source_test_id, catalog_id) VALUES (?,?,?)""",
                      (nova_item_id, source_test_id, catalog_id))
