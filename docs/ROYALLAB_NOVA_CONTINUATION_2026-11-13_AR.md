@@ -57,3 +57,12 @@ This subsection supersedes the earlier *source-only* priority wording above wher
 - التفاصيل الطبية والفنية دون أسماء مرضى في `docs/ROYALLAB_ORIGINAL_SCREENS_NOVA_RECONCILIATION_2026-11-13_AR.md`.
 - **المتبقي سريرياً:** كما في التدقيق الأصلي 303/330 فحوص قابلة للإدخال و27 تحتاج مراجعة، منها 20 بلا analytes أصلية و7 مشكلات أخرى. وجود مرجع قريب داخل Royal Lab لا يزيل الحاجة لتحديد الكيت أو طريقة القياس أو اعتماد شخص آخر، ولا يفتح الفحص تلقائياً.
 - البناء Windows من أحدث تعديلات الكود قيد التحقق في Run `43325867517` عند كتابة هذه الإضافة؛ لا توصف الحزمة إنتاجية أو معتمدة قبل نجاح اختبارات التثبيت والترقية والتراجع وتجربة بيئة المعمل الحقيقية.
+
+## تصحيح نهائي لأقسام معمل NOVA — 13 نوفمبر 2026
+- المستخدم نبّه إلى أن تصنيف الفحوص في NOVA القديم كان **بالإنجليزية**. كانت أسماء الأقسام العربية في بعض تحديثات 12 نوفمبر خطأً في التخصيص، وليس مقصوداً تغيير الواجهة الأصلية.
+- تم فحص الملف الأصلي داخل `NOVA_Hospital_GitHub_Ready_Source.zip` (الـ `hospital/lab_catalog.py` بعد الاستخراج) باستخدام Windows CI read-only. القيم الإحدى عشرة الأصلية حرفياً هي: `Blood bank`, `Chemistry`, `Coagulation`, `Hematology`, `Hormones`, `Immunology`, `Microbiology`, `Parasitology`, `Serology`, `Tumor markers`, `Urinalysis`.
+- `hospital/royallab_nova_departments.py` الآن يستخدم هذه **الأسماء نفسها** مع ربط TestID/ dbo.LaboratoryID، ولا يبتكر تسميات عربية جديدة. ويضع بعض الفحوص المختلفة في مصدر Royal Lab داخل تصنيف NOVA الصحيح (CBC في Hematology، Urine Analysis في Urinalysis، Malaria في Parasitology، Widal في Serology، PT/INR في Coagulation). `Microscopy` و`Macroscopy` تبقى مجموعات داخل نموذج البول وليست أسماء أقسام الفحوص الرئيسية.
+- `hospital/royallab_existing_catalog_replacement.py` يحدث فئات `Other` أو الفارغة؛ ويصحح أسماء الأقسام العربية التي أضافها **المستورد القديم فقط عندما تؤكد metadata أنها منه**، ولا يطمس أسماء الأقسام التي عدّلها المسؤول يدوياً. لا يمس أسماء أو أسعار أو أكواد فحوص Royal Lab الأصلية ولا الصيدلية أو الطباعة.
+- آلية Windows CI `.github/ci/nova_legacy_lab_category_audit.py` تقارن الفئات الموجودة في NOVA القديم حرفياً بالمسموح في أداة الربط، وتوقف البناء إذا ظهرت فئة غير موجودة، بدلاً من اختراع قسم تلقائياً.
+- الخدمات غير المعملية توضع في تصنيف إداري مستقل `Non-laboratory services` ولا تُحذف من كتالوج المصدر. هذا لا يمنحها نماذج نتائج سريرية.
+- تم فصل القسم الأعلى (filter category) عن مجموعة حقول داخل الفحص (section_name / microscopy)، ويجب عدم دمجهما.
