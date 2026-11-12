@@ -132,6 +132,8 @@ jobs:
         run: python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print(json.dumps([{'source_test_id':x['source_test_id'],'fields':[f for f in x['fields'] if f['blank_options']]} for x in r['unresolved_field_evidence'] if any(f['blank_options'] for f in x['fields'])],ensure_ascii=False))"
       - name: Inspect original CBC field type evidence
         run: python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); a=next(x for x in r['priority_test_forms'] if 'complete blood count' in x['name'].casefold()); print(json.dumps(a,ensure_ascii=False))"
+      - name: Inspect source format gaps in historical RBS FBS culture and malaria templates
+        run: python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); ids={'273','274','284','14','60','29','263'}; print(json.dumps([x for x in r['unresolved_field_evidence'] if x['source_test_id'] in ids],ensure_ascii=False))"
       - name: Upload exact source catalog audit for remediation
         uses: actions/upload-artifact@v4
         with:
