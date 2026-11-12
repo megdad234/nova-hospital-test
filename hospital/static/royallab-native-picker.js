@@ -117,6 +117,21 @@
         const data = await response.json();
         if (serial !== requestSerial) return;
         if (!data.test || safeText(data.test.source_test_id) !== id) throw new Error('هوية الفحص غير متطابقة');
+        const reviewFlags = Array.isArray(data.test.review_flags) ? data.test.review_flags : [];
+        if (reviewFlags.length) {
+          status.textContent = 'الفحص يحتاج مراجعة الحقول قبل حفظ النتائج';
+          saveButton.disabled = true;
+          return;
+        }
+        const fields = Array.isArray(data.test.fields) ? data.test.fields : [];
+        const fieldIds = fields.map(function (f) { return safeText(f && f.source_format_id); });
+        if (!fields.length || fieldIds.some(function (v) { return !v || v === 'null'; }) ||
+            new Set(fieldIds).size !== fieldIds.length ||
+            fields.some(function (f) { return [false, 0, 'False', 'false', '0'].includes(f.active); })) {
+          status.textContent = 'بيانات حقول الفحص غير مكتملة وتحتاج مراجعة';
+          saveButton.disabled = true;
+          return;
+        }
         const title = document.createElement('h3');
         title.textContent = displayText(data.test.name);
         detail.appendChild(title);
