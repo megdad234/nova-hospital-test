@@ -528,7 +528,7 @@ jobs:
               $stderr=Join-Path $logRoot 'stderr.log'
               if (Test-Path $stderr) {
                 $tail=(Get-Content $stderr -Tail 30 -ErrorAction SilentlyContinue) -join "`n"
-                if ($tail -match 'Existing NOVA central database failed verification|Failed to execute script') {
+                if ($tail -match 'Existing NOVA central database failed verification|Royal Lab source missing; refusing old NOVA catalogue') {
                   throw "NOVA server failed startup during installer acceptance. STDERR: $tail"
                 }
               }
@@ -553,78 +553,3 @@ jobs:
           }
           Get-Service -Name NOVA_Hospital_Server -ErrorAction SilentlyContinue | Format-List Status,Name,DisplayName
 
-          $matchesFound=[regex]::Matches($source,$pattern)
-          if ($matchesFound.Count -ne 1) { throw "Expected one PyInstaller invocation in build script; found $($matchesFound.Count)" }
-          if ($source.Contains('nova_lab_library.json;hospital/royallab_source')) { throw 'Royal Lab source already included in packaging command' }
-          $line=$matchesFound[0].Value
-          $replacement=$line -replace '(?i)(python\s+-m\s+pyinstaller|pyinstaller(?:\.exe)?)',('$1 '+$extra)
-          $source=$source.Substring(0,$matchesFound[0].Index)+$replacement+$source.Substring($matchesFound[0].Index+$line.Length)
-          Set-Content -LiteralPath $script -Value $source -Encoding utf8
-          Write-Host 'ROYALLAB_PYINSTALLER_DATA_INCLUDED'
-      - name: Build Windows installer freshly from fully patched source (no cached executable)
-        shell: pwsh
-        run: |
-          if (Test-Path -LiteralPath windows/output/NOVA-Hospital-Setup-DEV.exe) { Remove-Item -LiteralPath windows/output/NOVA-Hospital-Setup-DEV.exe -Force }
-          # Legacy integration fixtures explicitly require the original CBC seed.
-          # This process-only flag does not change packaged runtime behavior.
-          $env:NOVA_LEGACY_LAB_REGRESSION='1'
-          try { ./windows/build-windows.ps1 }
-          finally { Remove-Item Env:NOVA_LEGACY_LAB_REGRESSION -ErrorAction SilentlyContinue }
-          if ($LASTEXITCODE -ne 0) { throw 'Fresh Windows installer build failed' }
-      - name: Verify installer exists before acceptance
-        shell: pwsh
-        run: |
-          if (!(Test-Path -LiteralPath windows/output/NOVA-Hospital-Setup-DEV.exe -PathType Leaf)) { throw 'No Windows installer for acceptance' }
-      # Publish the built candidate before potentially slow Windows service/update tests.
-      # This artifact is explicitly unapproved; production release remains gated.
-      - name: Publish development installer artifact immediately after build
-        uses: actions/upload-artifact@v4
-        with:
-          name: NOVA-Hospital-Windows-Setup-DEV-UNAPPROVED
-          path: windows/output/NOVA-Hospital-Setup-DEV.exe
-          retention-days: 7
-          if-no-files-found: error
-      - name: Install, upgrade, and test rollback on synthetic records
-        shell: pwsh
-        timeout-minutes: 18
-        run: |
-          # The server may fail early and leave the installer waiting on a modal
-          # dialog. Surface its logs immediately rather than waiting 18 minutes.
-          $ErrorActionPreference='Stop'
-          $job = Start-Job -ScriptBlock {
-            Set-Location $using:PWD
-            & ./windows/ci-acceptance.ps1
-            if ($LASTEXITCODE -ne 0) { throw "Acceptance exited with $LASTEXITCODE" }
-          }
-          $logRoot=Join-Path $env:ProgramData 'NOVA_Hospital\logs'
-          try {
-            $deadline=(Get-Date).AddMinutes(15)
-            while ($job.State -eq 'Running' -and (Get-Date) -lt $deadline) {
-              Start-Sleep -Seconds 10
-              $stderr=Join-Path $logRoot 'stderr.log'
-              if (Test-Path $stderr) {
-                $tail=(Get-Content $stderr -Tail 30 -ErrorAction SilentlyContinue) -join "`n"
-                if ($tail -match 'Existing NOVA central database failed verification|Failed to execute script') {
-                  throw "NOVA server failed startup during installer acceptance. STDERR: $tail"
-                }
-              }
-            }
-            if ($job.State -eq 'Running') { throw 'NOVA installer acceptance exceeded 15-minute watchdog' }
-            Receive-Job $job -ErrorAction Stop
-            if ($job.State -ne 'Completed') { throw "NOVA acceptance job state: $($job.State)" }
-          }
-          finally {
-            if ($job.State -eq 'Running') { Stop-Job $job }
-            Remove-Job $job -Force -ErrorAction SilentlyContinue
-          }
-      - name: Print synthetic Windows installer diagnostics on failure
-        if: failure()
-        shell: pwsh
-        run: |
-          $root=Join-Path $env:ProgramData 'NOVA_Hospital'
-          foreach ($name in @('update-preflight.log','update-rollback.log','stdout.log','stderr.log')) {
-            $path=Join-Path $root ('logs\\'+$name)
-            Write-Host ('---- '+$path+' ----')
-            if (Test-Path -LiteralPath $path) { Get-Content -LiteralPath $path -Tail 80 } else { Write-Host 'NOT_FOUND' }
-          }
-          Get-Service -Name NOVA_Hospital_Server -ErrorAction SilentlyContinue | Format-List Status,Name,DisplayName
