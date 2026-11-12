@@ -45,6 +45,7 @@ def build_fields(library):
         else:detached.append({"source_test_id":tid,"analyte":a,"fields":fields})
     for test in by_test.values():
         if not test["fields"]:test["review_flags"].append("no_source_analytes")
+        if any(str(f["source_format_id"]).startswith("ANALYTE-") or not f["types"] or ("ColoseEndedResultFormat" in f["types"] and not f["options"]) for f in test["fields"]):test["review_flags"].append("source_format_missing_or_incomplete_free_text_fallback")
         if any(f["kind"]=="unknown" for f in test["fields"]):test["review_flags"].append("unknown_result_format")
         if any(f["kind"]=="related" for f in test["fields"]):test["review_flags"].append("related_result_format_requires_ui_support")
         if any(f["kind"].startswith("select_or_") for f in test["fields"]):test["review_flags"].append("mixed_format_requires_combobox")
