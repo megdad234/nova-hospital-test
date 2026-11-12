@@ -50,6 +50,15 @@ for match in re.finditer(r"""['"]category['"]\s*:\s*['"]([^'"\r\n]{1,100})['"]""
     categories.add(match.group(1))
 print("NOVA_ORIGINAL_CATEGORIES="+json.dumps(sorted(categories),ensure_ascii=False))
 print("NOVA_ORIGINAL_CATEGORY_SAMPLES="+json.dumps(dict_samples,ensure_ascii=False))
-print("NOVA_LAB_SOURCE_HEAD="+json.dumps(source[:8000].splitlines()[:115],ensure_ascii=False))
 if not categories:
     raise SystemExit("Cannot identify any original NOVA category labels; do not overwrite them")
+from hospital.royallab_nova_departments import (
+    NOVA_LEGACY_ENGLISH_CATEGORIES, DISPLAY_DEPARTMENTS,
+    SOURCE_TEST_DEPARTMENT_OVERRIDES)
+if categories != NOVA_LEGACY_ENGLISH_CATEGORIES:
+    raise SystemExit("Configured categories differ from original NOVA English names: "+
+                     repr(sorted(categories ^ NOVA_LEGACY_ENGLISH_CATEGORIES)))
+if not (set(DISPLAY_DEPARTMENTS.values()) |
+        set(SOURCE_TEST_DEPARTMENT_OVERRIDES.values())).issubset(categories):
+    raise SystemExit("Royal Lab mapper invented labels missing from ORIGINAL NOVA")
+print("NOVA_LEGACY_ENGLISH_DEPARTMENTS_VERIFIED")
