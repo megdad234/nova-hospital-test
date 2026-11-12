@@ -413,6 +413,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab original catalog unavailable or source integrity failed' }
           python .github/ci/royallab_native_bundle_smoke.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab real source native SQLite import failed' }
+      - name: Verify Royal Lab native result draft persistence
+        shell: pwsh
+        run: |
+          python -m unittest -v tests.test_royallab_native_result_drafts
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native draft persistence regression failed' }
       - name: Block misleading Royal Lab installer until live migration is proven
         shell: pwsh
         run: |
