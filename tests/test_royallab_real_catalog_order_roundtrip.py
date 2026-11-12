@@ -42,7 +42,8 @@ class RealCatalogOrderRoundtrip(unittest.TestCase):
             db.executescript("""
                 CREATE TABLE hospital_orders (id INTEGER PRIMARY KEY,status TEXT);
                 CREATE TABLE hospital_order_items (
-                  id INTEGER PRIMARY KEY,order_id INTEGER,result_status TEXT);
+                  id INTEGER PRIMARY KEY,order_id INTEGER,result_status TEXT,test_id INTEGER);
+                CREATE TABLE hospital_lab_tests(id INTEGER PRIMARY KEY,code TEXT UNIQUE);
                 INSERT INTO hospital_orders VALUES (1,'paid');
             """)
             ready = blocked = services = 0
@@ -63,8 +64,10 @@ class RealCatalogOrderRoundtrip(unittest.TestCase):
                 for field in form["fields"]:
                     kinds.add(field["kind"])
                     values[str(field["source_format_id"])] = synthetic_value(field)
-                db.execute("INSERT INTO hospital_order_items VALUES (?,?,?)",
-                           (item_id, 1, "draft"))
+                db.execute("INSERT INTO hospital_lab_tests VALUES (?,?)",
+                           (item_id, "ROYAL-" + str(source["source_test_id"])))
+                db.execute("INSERT INTO hospital_order_items VALUES (?,?,?,?)",
+                           (item_id, 1, "draft", item_id))
                 attach_native_test(db, STAFF, item_id, source["source_test_id"])
                 saved = save_order_item_draft(db, STAFF, item_id, values)
                 reopened = load_order_item_draft(db, STAFF, item_id)
