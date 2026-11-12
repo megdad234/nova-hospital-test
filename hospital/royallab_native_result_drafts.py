@@ -41,6 +41,19 @@ def save_draft(conn, order_key, source_test_id, values):
         raise ValueError('Source test has no valid result fields')
     if any(not isinstance(field, dict) or field.get('active') in (False, 0, 'False', 'false', '0') for field in fields):
         raise ValueError('Source test contains inactive or invalid result fields')
+    for field in fields:
+        kind = field.get('kind')
+        if kind not in ('text', 'number', 'select', 'select_or_text', 'select_or_number'):
+            raise ValueError('Unsupported source result field requires clinical review')
+        if not str(field.get('label') or '').strip():
+            raise ValueError('Unnamed source result field requires clinical review')
+        if kind.startswith('select'):
+            options = field.get('options')
+            if not isinstance(options, list) or not options:
+                raise ValueError('Source dropdown options are missing')
+            option_ids = [str(o.get('id')) for o in options if isinstance(o, dict)]
+            if len(option_ids) != len(options) or any(x in ('', 'None') for x in option_ids) or len(set(option_ids)) != len(option_ids):
+                raise ValueError('Source dropdown option IDs are missing or duplicated')
     validated = validate_result_values(form, values)
     with conn:
         conn.execute(SCHEMA)
