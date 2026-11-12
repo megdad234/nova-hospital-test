@@ -373,14 +373,23 @@ def restore_active(conn):
     if "nova_lab_local_tests" not in {r[0] for r in conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table'")}:
         return 0
-    rows = conn.execute("""SELECT l.nova_test_id,l.code FROM nova_lab_local_tests l
+    rows = conn.execute("""SELECT l.nova_test_id,l.code,l.section FROM nova_lab_local_tests l
         WHERE l.approved_revision>0 AND l.nova_test_id IS NOT NULL""").fetchall()
+    supports_category = "category" in _columns(conn,"hospital_lab_tests")
     count = 0
-    for test_id,code in rows:
+    for test_id,code,section in rows:
         actual = conn.execute("SELECT code FROM hospital_lab_tests WHERE id=?",(test_id,)).fetchone()
         if not actual or actual[0]!=code or not code.startswith(CODE_PREFIX):
             raise RuntimeError("Local test identity drift; refusing unexpected activation")
-        conn.execute("UPDATE hospital_lab_tests SET active=1 WHERE id=?",(test_id,))
+        # Backfill ONLY legacy Other/blank local-test categories. Preserve
+        # administrator edits and never classify or alter the Royal catalogue.
+        if supports_category and section:
+            conn.execute("""UPDATE hospital_lab_tests SET active=1,
+                    category=CASE
+                      WHEN LOWER(TRIM(COALESCE(category,''))) IN ('','other')
+                      THEN ? ELSE category END WHERE id=?""",(section,test_id))
+        else:
+            conn.execute("UPDATE hospital_lab_tests SET active=1 WHERE id=?",(test_id,))
         count+=1
     return count
 
