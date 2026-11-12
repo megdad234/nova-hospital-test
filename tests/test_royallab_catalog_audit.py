@@ -8,6 +8,8 @@ class CatalogAuditTests(unittest.TestCase):
         self.assertEqual(report["test_count"], 367)
         self.assertEqual(report["source_analyte_count"], 1245)
         self.assertFalse(report["clinical_approval"])
+        self.assertEqual(report["detached_analyte_count"], sum(x["analyte_count"] for x in report["detached_source_test_groups"]))
+        self.assertEqual(len(report["tests_without_analytes"]), report["review_flags"].get("no_source_analytes", 0))
         self.assertEqual(
             report["tests_requiring_review"],
             len(report["flagged_tests"])
