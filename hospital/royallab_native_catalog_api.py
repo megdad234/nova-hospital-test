@@ -4,7 +4,7 @@ No matching to obsolete NOVA test names; source TestID is the only identity.
 The API exposes the original reference ranges and option IDs verbatim.
 """
 import json,sqlite3,re
-from hospital.royallab_native_catalog_store import list_tests,clinical_test_form
+from hospital.royallab_native_catalog_store import list_tests,clinical_test_form,is_non_lab_service
 from hospital.royallab_native_result_form import validate_result_values
 from hospital.royallab_native_form_html import render_form
 
@@ -39,17 +39,23 @@ def catalog_response(conn,search="",limit=500):
  items=[]
  for source in list_tests(conn,cid):
   form=clinical_test_form(conn,cid,source["source_test_id"])
+  service=is_non_lab_service(form)
   try:
    validate_source_form(form)
    is_ready=True
   except ValueError:
    is_ready=False
-  items.append({**source,"name":_visible_name(source["name"]),"result_entry_ready":is_ready})
+  items.append({**source,"name":_visible_name(source["name"]),
+                "result_entry_ready":is_ready,
+                "entry_status":"ready" if is_ready else
+                     ("non_lab_service" if service else "requires_review")})
  if search.strip():
   q=search.strip().casefold()
   items=[t for t in items if q in t["name"].casefold()]
  return {"catalog_id":cid,"source":"RoyalLabDB.bak","total":len(items),
          "ready_for_result_entry":sum(bool(x["result_entry_ready"]) for x in items),
+         "non_lab_services":sum(x["entry_status"]=="non_lab_service" for x in items),
+         "clinical_needing_review":sum(x["entry_status"]=="requires_review" for x in items),
          "tests":items[:limit]}
 
 def form_response(conn,source_test_id):
@@ -59,6 +65,6 @@ def form_response(conn,source_test_id):
 
 def validate_response(conn,source_test_id,values):
  form=form_response(conn,source_test_id)["test"]
- if form.get("review_flags") or not form.get("fields"):
-  raise ValueError("Source laboratory test requires review before validating results")
+ from hospital.royallab_native_result_drafts import validate_source_form
+ validate_source_form(form)
  return {"source_test_id":form["source_test_id"],"validated_values":validate_result_values(form,values)}
