@@ -108,6 +108,7 @@ def effective_source_form(raw):
     active = [f for f in all_fields if isinstance(f, dict) and f.get("active") not in inactive]
     if not active:
         return raw  # Never make an empty or fully inactive test writable.
+    excluded_inactive_only = len(all_fields) - len(active)
     # Exact source evidence shows some archived analytes have no name AND no
     # ResultFormat row. A field with neither an identity nor any way to store
     # a source result is a layout placeholder, never a clinical observation.
@@ -269,7 +270,7 @@ def effective_source_form(raw):
            for f in active):
         flags = [f for f in flags if f != "missing_source_option_label"]
     return {**raw, "fields": active, "review_flags": flags,
-            "excluded_inactive_source_fields": excluded,
+            "excluded_inactive_source_fields": excluded_inactive_only,
             "excluded_blank_placeholder_options": blank_placeholders,
             "manual_untyped_draft_fields": manual_fallback_count,
             "excluded_redundant_empty_closed_formats": redundant_incomplete_choices,
