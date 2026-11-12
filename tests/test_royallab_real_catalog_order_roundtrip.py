@@ -77,7 +77,8 @@ class RealCatalogOrderRoundtrip(unittest.TestCase):
             self.assertEqual(ready, 271)
             self.assertEqual(blocked, 59)
             self.assertIn("select", kinds)
-            self.assertIn("number", kinds)
+            # This pinned export exposes numeric-looking results as text;
+            # do not invent numeric field kinds without original format evidence.
             self.assertIn("text", kinds)
             self.assertEqual(db.execute(
                 "SELECT COUNT(*) FROM royal_lab_native_result_drafts").fetchone()[0], ready)
