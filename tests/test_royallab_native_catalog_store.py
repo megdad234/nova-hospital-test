@@ -205,6 +205,38 @@ class NativeCatalogStoreTests(unittest.TestCase):
   with self.assertRaises(ValueError):
    save_draft(self.conn,"LAB-ORDER-1","0",{"1":"P"})
 
+ def test_optionless_named_closed_source_can_only_be_manually_drafted(self):
+  cid=install(self.conn,self.library,'9'*64)
+  form=test_form(self.conn,cid,"0")
+  field=form["fields"][0]
+  field.update({"kind":"text","types":["ColoseEndedResultFormat"],
+    "label":"Pleural fluid observation","options":[]})
+  form["review_flags"]=["source_format_missing_or_incomplete_free_text_fallback"]
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  reviewed=clinical_test_form(self.conn,cid,"0")
+  self.assertEqual(reviewed["review_flags"],[])
+  self.assertEqual(reviewed["manual_missing_closed_options_draft_fields"],1)
+  self.assertTrue(reviewed["fields"][0]["manual_missing_closed_options_draft_only"])
+  self.assertEqual(save_draft(self.conn,"LAB-ORDER-1","0",
+      {field["source_format_id"]:"manual observation"})["status"],"draft")
+  self.assertEqual(test_form(self.conn,cid,"0")["review_flags"],
+                   ["source_format_missing_or_incomplete_free_text_fallback"])
+
+ def test_empty_closed_source_label_cannot_be_auto_reconstructed(self):
+  cid=install(self.conn,self.library,'a'*64)
+  form=test_form(self.conn,cid,"0")
+  field=form["fields"][0]
+  field.update({"kind":"text","types":["ColoseEndedResultFormat"],
+    "label":"-","options":[]})
+  form["review_flags"]=["source_format_missing_or_incomplete_free_text_fallback"]
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  self.assertIn("source_format_missing_or_incomplete_free_text_fallback",
+                clinical_test_form(self.conn,cid,"0")["review_flags"])
+  with self.assertRaises(ValueError):
+   save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"invented"})
+
  def test_duplicate_id_rejected(self):
   self.library['tests'][1]['TestID']=0
   with self.assertRaisesRegex(ValueError,'duplicate'):install(self.conn,self.library,'b'*64)
