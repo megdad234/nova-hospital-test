@@ -9,7 +9,8 @@ import sqlite3
 from hospital.royallab_native_result_form import native_catalog
 from hospital.royallab_nova_parameter_plan import source_code
 from hospital.royallab_nova_departments import (
-    DEPARTMENT_SCHEMA, for_source_test, verify_original_departments)
+    DEPARTMENT_SCHEMA, PREVIOUS_AUTO_ARABIC_CATEGORIES,
+    for_source_test, verify_original_departments)
 
 TESTS = "hospital_lab_tests"
 PARAMETERS = "hospital_lab_parameters"
@@ -120,15 +121,28 @@ def replace_catalog(conn, library, *, approved=False):
             row = conn.execute("SELECT id FROM hospital_lab_tests WHERE code=?", (code,)).fetchone()
             if row:
                 test_id = row[0]
-                # Preserve user-edited categories; only repair the unclassified
-                # original NOVA default 'Other' (or an empty category).
+                # Retain administrator categories. Repair original default
+                # Other/empty or our OWN previous Arabic importer value only
+                # when the source-provenance metadata confirms its origin.
                 if "category" in tests_schema:
+                    old_category = conn.execute(
+                        "SELECT category FROM hospital_lab_tests WHERE id=?",
+                        (test_id,)).fetchone()[0]
+                    old_record = conn.execute("""SELECT nova_display_department
+                        FROM royal_lab_nova_department_metadata
+                        WHERE nova_test_id=?""",(test_id,)).fetchone()
+                    importer_owned_arabic = (
+                        old_category in PREVIOUS_AUTO_ARABIC_CATEGORIES
+                        and old_record is not None
+                        and old_record[0] == old_category)
+                    new_category = (category if (
+                        not str(old_category or "").strip()
+                        or str(old_category).strip().casefold() == "other"
+                        or importer_owned_arabic)
+                        else old_category)
                     conn.execute("""UPDATE hospital_lab_tests
-                         SET name=?, active=1,
-                         category=CASE
-                           WHEN LOWER(TRIM(COALESCE(category,''))) IN ('','other')
-                           THEN ? ELSE category END
-                         WHERE id=?""", (test["name"], category, test_id))
+                         SET name=?,active=1,category=? WHERE id=?""",
+                         (test["name"],new_category,test_id))
                 else:
                     conn.execute("UPDATE hospital_lab_tests SET name=?,active=1 WHERE id=?",
                                  (test["name"],test_id))
