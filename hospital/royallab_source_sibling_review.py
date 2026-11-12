@@ -44,8 +44,11 @@ def _safe_fields(source):
         kind = field.get("kind")
         label = str(field.get("label") or "").strip()
         format_id = str(field.get("source_format_id") or "").strip()
-        if not label or not format_id or format_id.startswith("ANALYTE-") or not field.get("types"):
-            continue
+        if (not label or not format_id or format_id.startswith("ANALYTE-")
+                or not field.get("types")
+                or field.get("manual_untyped_draft_only")
+                or field.get("manual_missing_closed_options_draft_only")):
+            continue  # Draft-only source gaps are never copied as proven assay fields.
         if kind not in SUGGESTABLE:
             continue  # Mixed/related formats need manual method-specific review.
         choices = []
