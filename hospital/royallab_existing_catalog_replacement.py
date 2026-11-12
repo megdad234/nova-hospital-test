@@ -39,6 +39,9 @@ def replacement_plan(conn, library):
     if any(not t["name"].strip() for t in tests):
         raise RuntimeError("Unnamed Royal Lab test")
     missing_fields = [f for t in tests for f in t["fields"] if not f["source_format_id"]]
+    duplicate_fields = [t["source_test_id"] for t in tests if len([str(f["source_format_id"]) for f in t["fields"] if f["source_format_id"] is not None]) != len({str(f["source_format_id"]) for f in t["fields"] if f["source_format_id"] is not None})]
+    if duplicate_fields:
+        raise RuntimeError("Duplicate Royal Lab result format IDs in tests: " + ", ".join(duplicate_fields[:10]))
     return {"tests": tests, "new_codes": new_codes,
             "existing_tests": conn.execute("SELECT COUNT(*) FROM " + TESTS).fetchone()[0],
             "source_field_count": sum(len(t["fields"]) for t in tests),
@@ -67,9 +70,6 @@ def replace_catalog(conn, library, *, approved=False):
                        if row[3] and row[4] is None and not row[5] and name not in allowed]
         if unsupported:
             raise RuntimeError("Unsupported required " + table + " columns: " + ", ".join(unsupported))
-    if any(t["review_flags"] for t in plan["tests"]):
-        # Unreviewed Royal Lab formats must not be silently presented as approved.
-        pass
     conn.execute("SAVEPOINT royal_catalog_replacement")
     try:
         # Never delete old test/parameter IDs: historical lab orders may reference them.
