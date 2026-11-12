@@ -119,7 +119,9 @@ class TwoPersonClinicalReviewTests(unittest.TestCase):
         self.assertFalse(vitamin["fields"][0]["source_proven"])
         self.assertEqual(vitamin["fields"][0]["option_labels"],[])
         original=review_suggestion(self.db,self.cid,"60")
-        self.assertTrue(all(x["source_proven"] for x in original["fields"]))
+        self.assertGreater(len(original["fields"]),0)
+        self.assertTrue(any(x["source_was_inactive"] for x in original["fields"]))
+        self.assertTrue(any("inactive" in w for w in original["warnings"]))
         self.assertFalse(any(x["unit"] is None for x in original["fields"]))
         with self.assertRaisesRegex(ValueError,"already has"):
             review_suggestion(self.db,self.cid,"21")
