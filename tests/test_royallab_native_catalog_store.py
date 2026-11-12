@@ -169,7 +169,7 @@ class NativeCatalogStoreTests(unittest.TestCase):
   self.assertEqual(test_form(self.conn,cid,"0")["review_flags"],
                    ["source_format_missing_or_incomplete_free_text_fallback"])
 
- def test_unnamed_missing_format_stays_blocked(self):
+ def test_unnamed_and_untyped_source_placeholder_is_not_a_result(self):
   cid=install(self.conn,self.library,'4'*64)
   form=test_form(self.conn,cid,"0")
   field=form["fields"][0]
@@ -178,8 +178,12 @@ class NativeCatalogStoreTests(unittest.TestCase):
   form["review_flags"]=["source_format_missing_or_incomplete_free_text_fallback","missing_source_field_label"]
   self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
                     (json.dumps(form),cid))
-  self.assertIn("missing_source_field_label",clinical_test_form(self.conn,cid,"0")["review_flags"])
-  with self.assertRaises(ValueError):
+  edited=clinical_test_form(self.conn,cid,"0")
+  self.assertEqual(edited["review_flags"],[])
+  self.assertEqual(edited["excluded_unnamed_untyped_placeholders"],1)
+  self.assertNotIn("ANALYTE-0",{f["source_format_id"] for f in edited["fields"]})
+  self.assertEqual(test_form(self.conn,cid,"0")["fields"][0]["source_format_id"],"ANALYTE-0")
+  with self.assertRaisesRegex(ValueError,"Unknown Royal Lab result format"):
    save_draft(self.conn,"LAB-ORDER-1","0",{"ANALYTE-0":"guess"})
 
  def test_same_analyte_populated_dropdown_replaces_only_empty_legacy_format(self):
