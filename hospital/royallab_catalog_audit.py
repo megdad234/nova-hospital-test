@@ -19,6 +19,7 @@ def audit(path=SOURCE):
     ready = []
     blocked = []
     excluded_inactive_count = 0
+    excluded_blank_placeholder_count = 0
     live_flags = Counter()
     for test in tests:
         active_form = effective_source_form({
@@ -26,6 +27,7 @@ def audit(path=SOURCE):
             "review_flags": list(test["review_flags"]), "fields": test["fields"]
         })
         excluded_inactive_count += active_form.get("excluded_inactive_source_fields", 0)
+        excluded_blank_placeholder_count += active_form.get("excluded_blank_placeholder_options", 0)
         live_flags.update(active_form.get("review_flags", []))
         try:
             validate_source_form(active_form)
@@ -81,6 +83,7 @@ def audit(path=SOURCE):
         "runtime_blocked_tests": blocked,
         "active_review_flags": dict(sorted(live_flags.items())),
         "inactive_fields_excluded_from_entry": excluded_inactive_count,
+        "blank_source_placeholders_excluded_from_entry": excluded_blank_placeholder_count,
         "test_count": len(tests),
         "source_analyte_count": len(library.get("analytes", [])),
         "source_result_field_count": sum(len(t["fields"]) for t in tests),
