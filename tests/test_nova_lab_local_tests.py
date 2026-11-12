@@ -135,6 +135,21 @@ class NOVALocalTests(unittest.TestCase):
         self.assertEqual(self.db.execute("""SELECT active FROM hospital_lab_tests
                      WHERE id=?""",(item["nova_test_id"],)).fetchone()[0],1)
 
+    def test_legacy_local_department_other_backfills_without_erasing_manual_edits(self):
+        item=self.create()
+        self.db.execute("UPDATE hospital_lab_tests SET category='Other' WHERE id=?",
+                        (item["nova_test_id"],))
+        self.assertEqual(local.restore_active(self.db),1)
+        self.assertEqual(self.db.execute(
+            "SELECT category FROM hospital_lab_tests WHERE id=?",
+            (item["nova_test_id"],)).fetchone()[0],"Biochemistry")
+        self.db.execute("UPDATE hospital_lab_tests SET category='قسم مخصص' WHERE id=?",
+                        (item["nova_test_id"],))
+        self.assertEqual(local.restore_active(self.db),1)
+        self.assertEqual(self.db.execute(
+            "SELECT category FROM hospital_lab_tests WHERE id=?",
+            (item["nova_test_id"],)).fetchone()[0],"قسم مخصص")
+
     def test_existing_nova_order_result_types_enriched_without_altering_other_tests(self):
         item=self.create()
         tid=item["nova_test_id"]
