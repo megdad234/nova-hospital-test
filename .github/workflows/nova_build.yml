@@ -444,6 +444,8 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_royallab_native_result_drafts.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native draft persistence regression failed' }
+          python -m unittest discover -s tests -p 'test_royallab_real_catalog_order_roundtrip.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Real laboratory source 271-test paid-order save/reopen regression failed' }
           python -m unittest discover -s tests -p 'test_royallab_native_form_html.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab form rendering tests failed' }
           node --check hospital/static/royallab-native-picker.js
