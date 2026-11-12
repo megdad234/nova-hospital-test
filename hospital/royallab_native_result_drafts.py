@@ -49,6 +49,8 @@ def validate_source_form(form):
             option_ids = [str(o.get('id')) for o in options if isinstance(o, dict)]
             if len(option_ids) != len(options) or any(x in ('', 'None') for x in option_ids) or len(set(option_ids)) != len(option_ids):
                 raise ValueError('Source dropdown option IDs are missing or duplicated')
+            if any(not str(o.get('label') or '').strip() for o in options):
+                raise ValueError('Source dropdown option labels are missing')
 
 def save_draft(conn, order_key, source_test_id, values):
     """Save validated values atomically; caller must authorize the order first."""
