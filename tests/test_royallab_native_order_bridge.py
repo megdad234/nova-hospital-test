@@ -61,6 +61,17 @@ class OrderBridgeTests(unittest.TestCase):
         self.db.execute("UPDATE hospital_lab_tests SET code='ROYAL-T1' WHERE id=10")
         self.assertTrue(attach_native_test(self.db,ADMIN,22,"T1")["linked"])
 
+    def test_paid_order_changed_after_link_cannot_save_or_read_wrong_results(self):
+        attach_native_test(self.db, ADMIN, 22, "T1")
+        save_order_item_draft(self.db, ADMIN, 22, {"1":"A"})
+        self.db.execute("UPDATE hospital_order_items SET test_id=11 WHERE id=22")
+        with self.assertRaisesRegex(ValueError,"does not match"):
+            save_order_item_draft(self.db, ADMIN, 22, {"1":"A"})
+        with self.assertRaisesRegex(ValueError,"does not match"):
+            load_order_item_draft(self.db, ADMIN, 22)
+        self.assertEqual(self.db.execute(
+            "SELECT COUNT(*) FROM royal_lab_native_result_drafts").fetchone()[0],1)
+
     def test_rebinding_and_unauthorized_access_blocked(self):
         attach_native_test(self.db,ADMIN,22,"T1")
         with self.assertRaises(ValueError):
