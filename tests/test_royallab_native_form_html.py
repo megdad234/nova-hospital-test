@@ -19,6 +19,17 @@ class NativeFormHtmlTests(unittest.TestCase):
         self.assertNotIn('<script>', html)
         self.assertIn('&lt;img&gt;', html)
 
+    def test_source_codes_are_not_visible_but_ids_remain_bound(self):
+        html=render_form({"source_test_id":"ROYAL-001", "name":"ROYAL-001 CBC",
+            "fields":[{"source_format_id":"F4", "label":"ROYAL-002 WBC", "kind":"select",
+                       "unit":"", "options":[{"id":"1","label":"ROYAL-003 Positive","active":True}]}]})
+        self.assertIn('data-source-test-id="ROYAL-001"',html)
+        self.assertIn('data-source-format-id="F4"',html)
+        self.assertIn('<h2>CBC</h2>',html)
+        self.assertIn('>WBC</span>',html)
+        self.assertIn('>Positive</option>',html)
+        self.assertNotIn('>ROYAL-',html)
+
     def test_unknown_field_is_review_only(self):
         html=render_form({"source_test_id":"8","name":"Test","fields":[
             {"source_format_id":"F3","label":"Unclear","kind":"unknown"}]})
