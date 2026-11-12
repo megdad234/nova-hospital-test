@@ -51,6 +51,21 @@ class ReplacementTests(unittest.TestCase):
     def test_imported_format_codes_match_nova_line_resolver(self):
         replace_catalog(self.db,{},approved=True)
         self.assertEqual(self.db.execute("SELECT code FROM hospital_lab_parameters WHERE test_id=(SELECT id FROM hospital_lab_tests WHERE code='ROYAL-0')").fetchone()[0],"ROYAL_FMT_1")
+    def test_atomic_rollback_on_parameter_insert_failure(self):
+        self.db.execute("""CREATE TRIGGER reject_royal_parameter BEFORE INSERT ON hospital_lab_parameters
+            WHEN NEW.code LIKE 'ROYAL_FMT_%'
+            BEGIN SELECT RAISE(ABORT,'synthetic insert failure'); END""")
+        with self.assertRaises(sqlite3.DatabaseError):
+            replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM hospital_lab_tests").fetchone()[0],1)
+        self.assertEqual(self.db.execute("SELECT active FROM hospital_lab_tests WHERE code='OLD'").fetchone()[0],1)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM sqlite_master WHERE name='royal_lab_nova_parameter_metadata'").fetchone()[0],0)
+    def test_import_preserves_existing_parameter_identity(self):
+        replace_catalog(self.db,{},approved=True)
+        first=self.db.execute("SELECT id FROM hospital_lab_parameters WHERE code='ROYAL_FMT_1'").fetchone()[0]
+        replace_catalog(self.db,{},approved=True)
+        second=self.db.execute("SELECT id FROM hospital_lab_parameters WHERE code='ROYAL_FMT_1'").fetchone()[0]
+        self.assertEqual(first,second)
     def test_missing_active_column_blocks_without_writes(self):
         self.db.execute("ALTER TABLE hospital_lab_tests RENAME TO old_tests")
         self.db.execute("CREATE TABLE hospital_lab_tests(id INTEGER PRIMARY KEY,code TEXT,name TEXT)")
