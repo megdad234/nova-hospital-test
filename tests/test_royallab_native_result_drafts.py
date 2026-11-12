@@ -1,5 +1,6 @@
 """Synthetic regression for native Royal Lab result drafts."""
 import sqlite3
+import json
 import unittest
 from hospital.royallab_native_result_drafts import save_draft, load_draft
 
@@ -37,6 +38,24 @@ class DraftTests(unittest.TestCase):
         result=save_draft(self.db,"ORDER-1","TEST-2",{"12":"9"})
         self.assertEqual(result["values"],{"12":"9"})
         self.assertEqual(load_draft(self.db,"ORDER-1","TEST-2")["values"],{"12":"9"})
+
+    def test_server_rejects_unreviewed_test_without_changing_existing_draft(self):
+        save_draft(self.db, "ORDER-1", "TEST-1", {"F1": "A"})
+        row = self.db.execute("SELECT form_json FROM royal_lab_native_tests WHERE source_test_id=?", ("TEST-1",)).fetchone()
+        form = json.loads(row[0])
+        form["review_flags"] = ["no_source_analytes"]
+        self.db.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE source_test_id=?", (json.dumps(form), "TEST-1"))
+        with self.assertRaisesRegex(ValueError, "clinical review"):
+            save_draft(self.db, "ORDER-1", "TEST-1", {"F1": "B"})
+        self.assertEqual(load_draft(self.db, "ORDER-1", "TEST-1")["values"], {"F1": "A"})
+
+    def test_server_rejects_inactive_fields_even_with_valid_option(self):
+        row = self.db.execute("SELECT form_json FROM royal_lab_native_tests WHERE source_test_id=?", ("TEST-1",)).fetchone()
+        form = json.loads(row[0])
+        form["fields"][0]["active"] = False
+        self.db.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE source_test_id=?", (json.dumps(form), "TEST-1"))
+        with self.assertRaisesRegex(ValueError, "inactive"):
+            save_draft(self.db, "ORDER-1", "TEST-1", {"F1": "A"})
 
     def test_separate_orders_and_missing_draft(self):
         self.assertIsNone(load_draft(self.db, "ORDER-2", "TEST-1"))
