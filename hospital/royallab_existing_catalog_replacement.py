@@ -74,6 +74,15 @@ def replace_catalog(conn, library, *, approved=False):
     try:
         # Never delete old test/parameter IDs: historical lab orders may reference them.
         conn.execute("UPDATE hospital_lab_tests SET active=0 WHERE code NOT LIKE 'ROYAL-%'")
+        conn.execute("""CREATE TABLE IF NOT EXISTS royal_lab_nova_parameter_metadata (
+            nova_parameter_id INTEGER PRIMARY KEY,
+            source_test_id TEXT NOT NULL,
+            source_format_id TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            options_json TEXT NOT NULL,
+            numeric_ranges_json TEXT NOT NULL,
+            text_ranges_json TEXT NOT NULL
+        )""")
         for test in plan["tests"]:
             code = "ROYAL-" + test["source_test_id"]
             row = conn.execute("SELECT id FROM hospital_lab_tests WHERE code=?", (code,)).fetchone()
@@ -98,6 +107,27 @@ def replace_catalog(conn, library, *, approved=False):
                 else:
                     conn.execute("INSERT INTO hospital_lab_parameters(test_id,code,name,unit) VALUES(?,?,?,?)",
                                  (test_id,param_code,field["label"],field["unit"]))
+        # Source options/ranges remain attached to original NOVA parameter IDs.
+        for test in plan["tests"]:
+            code = "ROYAL-" + test["source_test_id"]
+            test_id = conn.execute("SELECT id FROM hospital_lab_tests WHERE code=?", (code,)).fetchone()[0]
+            for field in test["fields"]:
+                if field["source_format_id"] is None:
+                    continue
+                parameter_id = conn.execute(
+                    "SELECT id FROM hospital_lab_parameters WHERE test_id=? AND code=?",
+                    (test_id, "RL-" + str(field["source_format_id"]))).fetchone()[0]
+                conn.execute("""INSERT INTO royal_lab_nova_parameter_metadata
+                    (nova_parameter_id,source_test_id,source_format_id,kind,options_json,
+                     numeric_ranges_json,text_ranges_json) VALUES(?,?,?,?,?,?,?)
+                    ON CONFLICT(nova_parameter_id) DO UPDATE SET
+                     kind=excluded.kind,options_json=excluded.options_json,
+                     numeric_ranges_json=excluded.numeric_ranges_json,
+                     text_ranges_json=excluded.text_ranges_json""",
+                    (parameter_id,test["source_test_id"],str(field["source_format_id"]),
+                     field["kind"],json.dumps(field["options"],ensure_ascii=False),
+                     json.dumps(field["numeric_ranges"],ensure_ascii=False),
+                     json.dumps(field["text_ranges"],ensure_ascii=False)))
         count = conn.execute("SELECT COUNT(*) FROM hospital_lab_tests WHERE code LIKE 'ROYAL-%' AND active=1").fetchone()[0]
         if count != 367:
             raise RuntimeError("NOVA replacement count mismatch")
