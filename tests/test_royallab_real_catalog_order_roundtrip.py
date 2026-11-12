@@ -23,12 +23,12 @@ def synthetic_value(field):
         if active:
             return str(active[0]["id"])
         if kind == "select_or_number":
-            return "1.25"
+            return "2" if "IntegerResultFormat" in (field.get("types") or []) else "1.25"
         if kind == "select_or_text":
             return "TEST-DRAFT"
         raise ValueError("No active source dropdown options")
     if kind == "number":
-        return "1.25"
+        return "2" if "IntegerResultFormat" in (field.get("types") or []) else "1.25"
     if kind == "text":
         return "TEST-DRAFT"
     raise ValueError("Unsupported clinical field kind")
