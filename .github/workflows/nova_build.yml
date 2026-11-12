@@ -118,6 +118,15 @@ on:
       - '.github/ci/royallab_native_autoseed_patch.py'
       - 'tests/test_royallab_native_autoseed_patch.py'
       - 'tests/test_royallab_native_gateway_patch.py'
+      - 'hospital/royallab_native_result_drafts.py'
+      - 'hospital/royallab_native_order_bridge.py'
+      - 'hospital/royallab_native_form_html.py'
+      - 'hospital/royallab_replacement_readiness.py'
+      - 'hospital/static/royallab-native-picker.js'
+      - 'tests/test_royallab_native_result_drafts.py'
+      - 'tests/test_royallab_native_order_bridge.py'
+      - 'tests/test_royallab_native_form_html.py'
+      - 'tests/test_royallab_replacement_readiness.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -423,6 +432,8 @@ jobs:
           node --check hospital/static/royallab-native-picker.js
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native picker syntax invalid' }
           python -m unittest discover -s tests -p 'test_royallab_replacement_readiness.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab replacement readiness tests failed' }
+          python -m unittest discover -s tests -p 'test_royallab_native_order_bridge.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native draft persistence regression failed' }
       - name: Block misleading Royal Lab installer until live migration is proven
         shell: pwsh
