@@ -424,11 +424,11 @@ def validate_save_payload(conn, data):
     for value in values:
         if not isinstance(value,dict) or type(value.get("line_id")) is not int:
             raise ValueError("Invalid local test result line")
-        line=conn.execute("""SELECT l.code,l.parameter_id FROM hospital_lab_lines l
+        line=conn.execute("""SELECT l.code FROM hospital_lab_lines l
                   WHERE l.id=? AND l.item_id=?""",(value["line_id"],item_id)).fetchone()
         if not line:
             raise ValueError("Result line does not belong to this NOVA order")
-        param_id=line[1]
+        param_id=None
         if param_id is None:
             q=conn.execute("""SELECT p.id FROM hospital_lab_parameters p
                       JOIN hospital_order_items i ON i.test_id=p.test_id
