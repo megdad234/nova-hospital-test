@@ -51,10 +51,12 @@ def validate_result_values(test_form,values):
     values={str(key):value for key,value in values.items()}
     known={str(key):field for key,field in known.items()}
     if set(values)-set(known):raise ValueError("Unknown Royal Lab result format")
+    if any(not isinstance(f,dict) for f in fields):raise ValueError("Invalid source field definition")
     out={}
     for sid,value in values.items():
         f=known[sid];kind=f["kind"]
         if kind in ("unknown","related"):raise ValueError("Unsupported Royal Lab result format")
+        if f.get("active") in (False,0,"False","false","0"):raise ValueError("Inactive source field cannot receive results")
         if value is None or value=="":out[sid]=None;continue
         if isinstance(value,bool):raise ValueError("Boolean is not a valid result")
         if kind=="select":
@@ -77,6 +79,14 @@ def validate_result_values(test_form,values):
             out[sid]=str(value)
         elif kind in ("text","select_or_text"):
             if not isinstance(value,(str,int,float)):raise ValueError("Invalid result value")
+            if isinstance(value,float):
+                import math
+                if not math.isfinite(value):raise ValueError("Non-finite result value")
+            if kind=="select_or_text":
+                option_ids={str(o["id"]) for o in f.get("options",[]) if o.get("active") not in (False,0,"False","false","0")}
+                if str(value) in option_ids:
+                    out[sid]=str(value)
+                    continue
             out[sid]=str(value)
         else:raise ValueError("Unsupported result kind")
     return out
