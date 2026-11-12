@@ -23,7 +23,7 @@ class AdapterTests(unittest.TestCase):
   tests=[{"TestID":str(i),"Name":"Test"} for i in range(367)]
   tests[-1]["TestID"]="0"
   analytes=[{"analyte_id":str(i),"test_id":"0","name":"A","result_formats":[]} for i in range(1245)]
-  with self.assertRaisesRegex(ValueError,"Duplicate source test IDs"):
+  with self.assertRaisesRegex(ValueError,"duplicate source test IDs"):
    m.build_fields({"tests":tests,"analytes":analytes})
  def test_duplicate_field_identity_requires_review(self):
   tests=[{"TestID":str(i),"Name":"Test"} for i in range(367)]
