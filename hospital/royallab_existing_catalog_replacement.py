@@ -8,6 +8,8 @@ import json
 import sqlite3
 from hospital.royallab_native_result_form import native_catalog
 from hospital.royallab_nova_parameter_plan import source_code
+from hospital.royallab_nova_departments import (
+    DEPARTMENT_SCHEMA, for_source_test, verify_original_departments)
 
 TESTS = "hospital_lab_tests"
 PARAMETERS = "hospital_lab_parameters"
@@ -38,6 +40,10 @@ def replacement_plan(conn, library):
     tests_schema, params_schema = _required_columns(conn)
     catalog = native_catalog(library)
     tests = catalog["tests"]
+    # Real source always supplies LaboratoryID. CI's synthetic fixture may not,
+    # so check for completeness whenever this is sourced from real metadata.
+    if any(str(t.get("source_department_id") or "").strip() for t in tests):
+        verify_original_departments(catalog)
     if len(tests) != 367 or len({t["source_test_id"] for t in tests}) != 367:
         raise RuntimeError("Royal Lab source tests incomplete")
     new_codes = ["ROYAL-" + t["source_test_id"] for t in tests]
@@ -103,21 +109,55 @@ def replace_catalog(conn, library, *, approved=False):
             numeric_ranges_json TEXT NOT NULL,
             text_ranges_json TEXT NOT NULL
         )""")
+        # NO executescript() inside the SAVEPOINT: SQLite would commit it.
+        for statement in DEPARTMENT_SCHEMA.split(";"):
+            if statement.strip():
+                conn.execute(statement)
         for test in plan["tests"]:
             code = "ROYAL-" + test["source_test_id"]
+            source_group = for_source_test(test)
+            category = source_group["category"]
             row = conn.execute("SELECT id FROM hospital_lab_tests WHERE code=?", (code,)).fetchone()
             if row:
                 test_id = row[0]
-                conn.execute("UPDATE hospital_lab_tests SET name=?,active=1 WHERE id=?",
-                             (test["name"],test_id))
-            else:
-                if "price" in tests_schema:
-                    cur = conn.execute("INSERT INTO hospital_lab_tests(code,name,price,active) VALUES(?,?,0,1)",
-                                       (code,test["name"]))
+                # Preserve user-edited categories; only repair the unclassified
+                # original NOVA default 'Other' (or an empty category).
+                if "category" in tests_schema:
+                    conn.execute("""UPDATE hospital_lab_tests
+                         SET name=?, active=1,
+                         category=CASE
+                           WHEN LOWER(TRIM(COALESCE(category,''))) IN ('','other')
+                           THEN ? ELSE category END
+                         WHERE id=?""", (test["name"], category, test_id))
                 else:
-                    cur = conn.execute("INSERT INTO hospital_lab_tests(code,name,active) VALUES(?,?,1)",
-                                       (code,test["name"]))
+                    conn.execute("UPDATE hospital_lab_tests SET name=?,active=1 WHERE id=?",
+                                 (test["name"],test_id))
+            else:
+                columns = ["code","name","active"]
+                values = [code,test["name"],1]
+                if "price" in tests_schema:
+                    columns.append("price")
+                    values.append(0)
+                if "category" in tests_schema:
+                    columns.append("category")
+                    values.append(category)
+                cur = conn.execute("INSERT INTO hospital_lab_tests(" + ",".join(columns) +
+                                   ") VALUES (" + ",".join("?" for _ in values) + ")",values)
                 test_id = cur.lastrowid
+            conn.execute("""INSERT INTO royal_lab_nova_department_metadata
+                (nova_test_id,source_test_id,source_department_id,
+                 original_department_name,nova_display_department,assignment_kind)
+                VALUES(?,?,?,?,?,?)
+                ON CONFLICT(nova_test_id) DO UPDATE SET
+                   source_test_id=excluded.source_test_id,
+                   source_department_id=excluded.source_department_id,
+                   original_department_name=excluded.original_department_name,
+                   nova_display_department=excluded.nova_display_department,
+                   assignment_kind=excluded.assignment_kind""",
+                (test_id,source_group["source_test_id"],
+                 source_group["source_department_id"],
+                 source_group["original_department_name"],category,
+                 source_group["assignment_kind"]))
             for index, field in enumerate(test["fields"]):
                 sid = field["source_format_id"]
                 if sid is None:
@@ -156,6 +196,11 @@ def replace_catalog(conn, library, *, approved=False):
         count = conn.execute("SELECT COUNT(*) FROM hospital_lab_tests WHERE code LIKE 'ROYAL-%' AND active=1").fetchone()[0]
         if count != 367:
             raise RuntimeError("NOVA replacement count mismatch")
+        department_rows = conn.execute("""SELECT COUNT(*) FROM royal_lab_nova_department_metadata m
+            JOIN hospital_lab_tests t ON t.id=m.nova_test_id
+            WHERE t.code LIKE 'ROYAL-%'""").fetchone()[0]
+        if department_rows != 367:
+            raise RuntimeError("Royal Lab department metadata incomplete")
         active_legacy = conn.execute(
             "SELECT COUNT(*) FROM hospital_lab_tests WHERE active=1 AND code NOT LIKE 'ROYAL-%'").fetchone()[0]
         if active_legacy:
@@ -178,4 +223,5 @@ def replace_catalog(conn, library, *, approved=False):
         conn.execute("RELEASE SAVEPOINT royal_catalog_replacement")
         raise
     return {"active_royal_lab_tests":367,"historical_tests_preserved":True,
+            "department_metadata_rows":367,
             "source_fields_needing_review":plan["source_fields_needing_review"]}
