@@ -137,6 +137,35 @@ class NativeCatalogStoreTests(unittest.TestCase):
   self.assertEqual(self.conn.execute(
     "SELECT COUNT(*) FROM royal_lab_native_catalog_form_backups").fetchone()[0],0)
 
+ def test_named_missing_format_can_be_manually_entered_as_draft_only(self):
+  cid=install(self.conn,self.library,'3'*64)
+  form=test_form(self.conn,cid,"0")
+  field=form["fields"][0]
+  field.update({"source_format_id":"ANALYTE-0","source_analyte_id":"0",
+                "kind":"text","types":[],"label":"Microscopy note","options":[]})
+  form["review_flags"]=["source_format_missing_or_incomplete_free_text_fallback"]
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  effective=clinical_test_form(self.conn,cid,"0")
+  self.assertEqual(effective["review_flags"],[])
+  self.assertTrue(effective["fields"][0]["manual_untyped_draft_only"])
+  self.assertEqual(save_draft(self.conn,"LAB-ORDER-1","0",{"ANALYTE-0":"No organisms seen"})["status"],"draft")
+  self.assertEqual(test_form(self.conn,cid,"0")["review_flags"],
+                   ["source_format_missing_or_incomplete_free_text_fallback"])
+
+ def test_unnamed_missing_format_stays_blocked(self):
+  cid=install(self.conn,self.library,'4'*64)
+  form=test_form(self.conn,cid,"0")
+  field=form["fields"][0]
+  field.update({"source_format_id":"ANALYTE-0","source_analyte_id":"0",
+                "kind":"text","types":[],"label":"","options":[]})
+  form["review_flags"]=["source_format_missing_or_incomplete_free_text_fallback","missing_source_field_label"]
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  self.assertIn("missing_source_field_label",clinical_test_form(self.conn,cid,"0")["review_flags"])
+  with self.assertRaises(ValueError):
+   save_draft(self.conn,"LAB-ORDER-1","0",{"ANALYTE-0":"guess"})
+
  def test_duplicate_id_rejected(self):
   self.library['tests'][1]['TestID']=0
   with self.assertRaisesRegex(ValueError,'duplicate'):install(self.conn,self.library,'b'*64)
