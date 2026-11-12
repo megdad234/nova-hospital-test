@@ -7,6 +7,7 @@ on:
       - 'hospital/royallab_staging.py'
       - 'tests/test_royallab_staging.py'
       - 'hospital/royallab_field_adapter.py'
+      - 'hospital/royallab_source_numeric_format_map.py'
       - 'hospital/royallab_catalog_audit.py'
       - 'tests/test_royallab_catalog_audit.py'
       - 'hospital/royallab_native_result_form.py'
