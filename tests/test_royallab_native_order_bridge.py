@@ -35,6 +35,19 @@ class OrderBridgeTests(unittest.TestCase):
             save_order_item_draft(self.db,ADMIN,11,{"1":"A"})
         with self.assertRaises(PermissionError):
             save_order_item_draft(self.db,ADMIN,23,{"1":"A"})
+    def test_unreviewed_source_cannot_be_attached_to_patient(self):
+        self.db.execute("""UPDATE royal_lab_native_tests
+           SET form_json=? WHERE source_test_id='T1'""",
+           ('{"source_test_id":"T1","review_flags":["no_source_analytes"],'
+            '"fields":[{"source_format_id":"1","label":"Synthetic result",'
+            '"kind":"select","options":[{"id":"A","active":true}]}]}',))
+        with self.assertRaisesRegex(ValueError, "requires review"):
+            attach_native_test(self.db, ADMIN, 22, "T1")
+        self.db.execute("""CREATE TABLE IF NOT EXISTS royal_lab_native_order_items
+           (nova_item_id INTEGER PRIMARY KEY, source_test_id TEXT, catalog_id INTEGER)""")
+        self.assertIsNone(self.db.execute(
+            "SELECT source_test_id FROM royal_lab_native_order_items WHERE nova_item_id=22").fetchone())
+
     def test_rebinding_and_unauthorized_access_blocked(self):
         attach_native_test(self.db,ADMIN,22,"T1")
         with self.assertRaises(ValueError):
