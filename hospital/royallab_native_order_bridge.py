@@ -36,6 +36,16 @@ def _actor(actor):
     if actor.get("role") not in ("admin", "lab"):
         raise PermissionError("Only lab staff or administrators may enter results")
 
+def _check_order_test(conn, nova_item, source_test_id):
+    """Require immutable identity between the paid item and the source result."""
+    source_test_id = str(source_test_id)
+    order_test = conn.execute(
+        "SELECT code FROM hospital_lab_tests WHERE id=?", (nova_item[3],)
+    ).fetchone()
+    if not order_test or str(order_test[0]) != "ROYAL-" + source_test_id:
+        raise ValueError("NOVA order test ID does not match original source test")
+
+
 def attach_native_test(conn, actor, nova_item_id, source_test_id):
     """Attach the original test to a real NOVA item, never a name-based guess."""
     _actor(actor)
@@ -49,11 +59,7 @@ def attach_native_test(conn, actor, nova_item_id, source_test_id):
     # The order item must have been placed for this exact source test.
     # An unrelated paid lab item must never become a vehicle to record
     # another test's results, even when staff selects a valid source form.
-    order_test = conn.execute(
-        "SELECT code FROM hospital_lab_tests WHERE id=?", (item[3],)
-    ).fetchone()
-    if not order_test or str(order_test[0]) != "ROYAL-" + source_test_id:
-        raise ValueError("NOVA order test ID does not match original source test")
+    _check_order_test(conn, item, source_test_id)
     conn.execute(SCHEMA)
     row = conn.execute("SELECT source_test_id FROM royal_lab_native_order_items WHERE nova_item_id=?",
                        (nova_item_id,)).fetchone()
@@ -81,16 +87,18 @@ def save_order_item_draft(conn, actor, nova_item_id, values):
                         (nova_item_id,)).fetchone()
     if not link:
         raise ValueError("NOVA order item has no Royal Lab test binding")
+    _check_order_test(conn, item, link[0])
     result = save_draft(conn, "NOVA-ITEM-" + str(nova_item_id), link[0], values)
     result["nova_item_id"] = nova_item_id
     return result
 
 def load_order_item_draft(conn, actor, nova_item_id):
     _actor(actor)
-    _existing_order(conn, nova_item_id)
+    item = _existing_order(conn, nova_item_id)
     conn.execute(SCHEMA)
     link = conn.execute("SELECT source_test_id FROM royal_lab_native_order_items WHERE nova_item_id=?",
                         (nova_item_id,)).fetchone()
     if not link:
         return None
+    _check_order_test(conn, item, link[0])
     return load_draft(conn, "NOVA-ITEM-" + str(nova_item_id), link[0])
