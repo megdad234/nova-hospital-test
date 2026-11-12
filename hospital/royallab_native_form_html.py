@@ -22,7 +22,7 @@ def render_form(test):
         if key is None:
             rows.append('<div class="royal-field royal-review">حقل غير مكتمل: '+_visible(field.get("label"))+'</div>')
             continue
-        label = _e(field.get("label"))
+        label = _visible(field.get("label"))
         unit = _e(field.get("unit"))
         name = _e(key)
         common = ' name="royal_'+name+'" data-source-format-id="'+name+'"'
