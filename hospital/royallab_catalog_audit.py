@@ -7,7 +7,7 @@ import json
 from collections import Counter
 from pathlib import Path
 from hospital.royallab_field_adapter import build_fields
-from hospital.royallab_native_catalog_store import effective_source_form
+from hospital.royallab_native_catalog_store import effective_source_form, is_non_lab_service
 from hospital.royallab_native_result_drafts import validate_source_form
 
 SOURCE = Path(__file__).resolve().parent / "royallab_source" / "nova_lab_library.json"
@@ -18,14 +18,20 @@ def audit(path=SOURCE):
     tests = result["tests"]
     ready = []
     blocked = []
+    services = []
     excluded_inactive_count = 0
     excluded_blank_placeholder_count = 0
     live_flags = Counter()
     for test in tests:
         active_form = effective_source_form({
             "source_test_id": test["source_id"], "name": test["name"],
+            "source_department_id": str(test["source"].get("LaboratoryID") or ""),
             "review_flags": list(test["review_flags"]), "fields": test["fields"]
         })
+        if is_non_lab_service(active_form):
+            services.append({"source_test_id": test["source_id"], "name": test["name"],
+                             "source_department_id": active_form["source_department_id"]})
+            continue
         excluded_inactive_count += active_form.get("excluded_inactive_source_fields", 0)
         excluded_blank_placeholder_count += active_form.get("excluded_blank_placeholder_options", 0)
         live_flags.update(active_form.get("review_flags", []))
@@ -77,6 +83,9 @@ def audit(path=SOURCE):
             })
     return {
         "repair_queue_by_cause": dict(sorted(review_by_cause.items())),
+        "non_lab_service_count": len(services),
+        "non_lab_services": services,
+        "clinical_test_count": len(ready) + len(blocked),
         "runtime_ready_test_count": len(ready),
         "runtime_blocked_test_count": len(blocked),
         "runtime_ready_tests": ready,
