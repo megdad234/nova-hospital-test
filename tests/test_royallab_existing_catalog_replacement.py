@@ -37,13 +37,13 @@ class ReplacementTests(unittest.TestCase):
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM hospital_lab_tests").fetchone()[0],368)
     def test_source_department_populates_nova_picker_and_preserves_manual_override(self):
         replace_catalog(self.db,{},approved=True)
-        expected = {"ROYAL-7":"التحاليل العامة والطفيليات",
-                    "ROYAL-21":"أمراض الدم والتخثر",
-                    "ROYAL-36":"الهرمونات",
-                    "ROYAL-40":"المناعة",
-                    "ROYAL-77":"المزارع والأحياء الدقيقة",
-                    "ROYAL-120":"خدمات غير معملية",
-                    "ROYAL-287":"الأحياء الدقيقة والسيرولوجيا"}
+        expected = {"ROYAL-7":"Urinalysis",
+                    "ROYAL-21":"Hematology",
+                    "ROYAL-36":"Hormones",
+                    "ROYAL-40":"Immunology",
+                    "ROYAL-77":"Microbiology",
+                    "ROYAL-120":"Non-laboratory services",
+                    "ROYAL-287":"Microbiology"}
         for code,category in expected.items():
             self.assertEqual(self.db.execute(
                 "SELECT category FROM hospital_lab_tests WHERE code=?",(code,)).fetchone()[0], category)
@@ -63,6 +63,25 @@ class ReplacementTests(unittest.TestCase):
             "تصنيف محلي مراجع")
         self.assertEqual(self.db.execute(
             "SELECT COUNT(*) FROM royal_lab_nova_department_metadata").fetchone()[0],367)
+
+    def test_previous_imported_arabic_label_migrates_to_existing_english_category(self):
+        replace_catalog(self.db,{},approved=True)
+        row=self.db.execute("SELECT id FROM hospital_lab_tests WHERE code='ROYAL-21'").fetchone()
+        self.db.execute("UPDATE hospital_lab_tests SET category='أمراض الدم والتخثر' WHERE id=?",row)
+        self.db.execute("""UPDATE royal_lab_nova_department_metadata
+                        SET nova_display_department='أمراض الدم والتخثر'
+                        WHERE nova_test_id=?""",row)
+        replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute(
+            "SELECT category FROM hospital_lab_tests WHERE id=?",row).fetchone()[0],
+            "Hematology")
+        # Same Arabic label entered by an administrator without importer provenance
+        # is NOT assumed to be ours.
+        self.db.execute("UPDATE hospital_lab_tests SET category='الهرمونات' WHERE id=?",row)
+        replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute(
+            "SELECT category FROM hospital_lab_tests WHERE id=?",row).fetchone()[0],
+            "الهرمونات")
 
     def test_missing_original_department_in_mixed_real_source_is_rejected_safely(self):
         catalog=synthetic_catalog()
