@@ -7,6 +7,13 @@ on:
       - 'hospital/royallab_staging.py'
       - 'tests/test_royallab_staging.py'
       - 'hospital/royallab_field_adapter.py'
+      - 'hospital/royallab_catalog_audit.py'
+      - 'tests/test_royallab_catalog_audit.py'
+      - 'hospital/royallab_native_result_form.py'
+      - 'hospital/royallab_native_catalog_api.py'
+      - 'hospital/static/royallab-native-picker.js'
+      - 'tests/test_royallab_native_result_form.py'
+      - 'tests/test_royallab_native_catalog_api.py'
       - 'tests/test_royallab_field_adapter.py'
       - '.github/ci/royallab_import_offline.py'
       - 'tests/test_royallab_import_offline.py'
@@ -110,5 +117,7 @@ jobs:
         run: python .github/ci/royallab_order_route_audit.py
       - name: Audit actual lab print A4 styles and existing patches
         run: python .github/ci/royallab_print_css_audit.py
+      - name: Audit bundled original laboratory forms and review flags
+        run: python -m hospital.royallab_catalog_audit > /tmp/nova_lab_catalog_audit.json && python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print({k:v for k,v in r.items() if k not in ('flagged_tests','priority_test_forms')})"
       - name: Verify isolated staging invariants
         run: python -m unittest discover -s tests -p 'test_royallab_*.py' -v
