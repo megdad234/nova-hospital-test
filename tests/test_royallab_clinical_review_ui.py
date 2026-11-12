@@ -13,6 +13,8 @@ class ClinicalReviewUIContractTests(unittest.TestCase):
         js = SCRIPT.read_text(encoding="utf-8")
         self.assertIn("review/propose", js)
         self.assertIn("review/approve", js)
+        self.assertIn("review/suggestion/", js)
+        self.assertIn("تعبئة الحقول من المصدر", js)
         self.assertIn("review/history/", js)
         self.assertIn("review/details/", js)
         self.assertIn("source_test_id: reviewSelect.value", js)
