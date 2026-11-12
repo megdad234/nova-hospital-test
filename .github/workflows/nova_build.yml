@@ -142,6 +142,7 @@ on:
       - 'tests/test_royallab_existing_schema_audit.py'
       - 'tests/test_royallab_existing_catalog_replacement.py'
       - 'tests/test_royallab_existing_line_overlay.py'
+      - '.github/ci/nova_legacy_lab_category_audit.py'
       - '.github/ci/royallab_existing_catalog_patch.py'
       - '.github/ci/royallab_actual_nova_schema_gate.py'
       - 'tests/test_royallab_existing_catalog_patch.py'
@@ -173,6 +174,11 @@ jobs:
           if(!(Test-Path 'windows/build-windows.ps1')){throw 'Windows build script missing'}
           if(!(Test-Path 'windows/ci-acceptance.ps1')){throw 'Windows acceptance script missing'}
           Write-Host 'NOVA_SOURCE_EXTRACTED'
+      - name: Inspect exact original NOVA English lab category labels
+        shell: pwsh
+        run: |
+          python .github/ci/nova_legacy_lab_category_audit.py
+          if ($LASTEXITCODE -ne 0) { throw 'Original NOVA category labels must be preserved' }
       - name: Inspect original NOVA POS source before financial modifications
         shell: pwsh
         run: python .github/ci/nova_pos_source_audit.py
