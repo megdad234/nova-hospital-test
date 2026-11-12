@@ -29,7 +29,8 @@ class OrderBridgeTests(unittest.TestCase):
         self.assertEqual(load_order_item_draft(self.db,ADMIN,22)["values"],{"1":"A"})
     def test_unpaid_and_approved_are_blocked(self):
         attach_native_test(self.db,ADMIN,11,"T1")
-        attach_native_test(self.db,ADMIN,23,"T1")
+        with self.assertRaises(PermissionError):
+            attach_native_test(self.db,ADMIN,23,"T1")
         with self.assertRaises(PermissionError):
             save_order_item_draft(self.db,ADMIN,11,{"1":"A"})
         with self.assertRaises(PermissionError):
