@@ -15,7 +15,7 @@ class ReplacementTests(unittest.TestCase):
     def setUp(self):
         self.db=sqlite3.connect(":memory:")
         self.db.execute("CREATE TABLE hospital_lab_tests(id INTEGER PRIMARY KEY,code TEXT UNIQUE,name TEXT,active INTEGER DEFAULT 1)")
-        self.db.execute("CREATE TABLE hospital_lab_parameters(id INTEGER PRIMARY KEY,test_id INTEGER,code TEXT,name TEXT,unit TEXT)")
+        self.db.execute("CREATE TABLE hospital_lab_parameters(id INTEGER PRIMARY KEY,test_id INTEGER,code TEXT,name TEXT,unit TEXT,active INTEGER DEFAULT 1)")
         self.db.execute("INSERT INTO hospital_lab_tests(code,name) VALUES('OLD','Old test')")
         self.db.execute("INSERT INTO hospital_lab_parameters(test_id,code,name,unit) VALUES(1,'OLD-P','Old parameter','')")
         self.patcher=patch("hospital.royallab_existing_catalog_replacement.native_catalog",
