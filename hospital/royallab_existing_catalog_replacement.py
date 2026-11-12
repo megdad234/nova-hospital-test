@@ -71,7 +71,7 @@ def replace_catalog(conn, library, *, approved=False):
     tests_schema, params_schema = _required_columns(conn)
     # Reject unknown NOT NULL columns unless the database itself supplies defaults.
     for table, schema, supplied in (
-        (TESTS, tests_schema, {"code","name","active"}),
+        (TESTS, tests_schema, {"code","name","active","price"}),
         (PARAMETERS, params_schema, {"test_id","code","name","unit","active"})):
         unsupported = [name for name,row in schema.items()
                        if row[3] and row[4] is None and not row[5] and name not in supplied]
@@ -107,7 +107,7 @@ def replace_catalog(conn, library, *, approved=False):
                 conn.execute("UPDATE hospital_lab_tests SET name=?,active=1 WHERE id=?",
                              (test["name"],test_id))
             else:
-                cur = conn.execute("INSERT INTO hospital_lab_tests(code,name,active) VALUES(?,?,1)",
+                cur = conn.execute("INSERT INTO hospital_lab_tests(code,name,price,active) VALUES(?,?,0,1)",
                                    (code,test["name"]))
                 test_id = cur.lastrowid
             for index, field in enumerate(test["fields"]):
