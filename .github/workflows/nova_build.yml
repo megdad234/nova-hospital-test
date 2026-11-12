@@ -474,11 +474,15 @@ jobs:
           $script = 'windows/build-windows.ps1'
           $source = Get-Content -LiteralPath $script -Raw
           $extra = '--add-data "hospital/royallab_source/nova_lab_library.json;hospital/royallab_source"'
-          $pattern = '(?i)(python\s+-m\s+pyinstaller|pyinstaller(?:\.exe)?)'
-          $hits = [regex]::Matches($source, $pattern)
-          if ($hits.Count -ne 1) { throw "Expected one PyInstaller invocation, found $($hits.Count)" }
-          $hit = $hits[0]
-          $source = $source.Substring(0, $hit.Index) + $hit.Value + ' ' + $extra + $source.Substring($hit.Index + $hit.Length)
+          # Target the server build command, not comments or installer references.
+          $lines = $source -split "`r?`n"
+          $targets = @(for ($n=0; $n -lt $lines.Count; $n++) {
+            if ($lines[$n] -match '(?i)pyinstaller' -and $lines[$n] -match '(?i)nova_server|nova-server|NOVA-Hospital-Server') { $n }
+          })
+          if ($targets.Count -ne 1) { throw "Cannot uniquely identify server PyInstaller command: $($targets.Count) matches" }
+          $n = $targets[0]
+          $lines[$n] = $lines[$n] -replace '(?i)(pyinstaller(?:\\.exe)?)', ('$1 ' + $extra)
+          $source = $lines -join "`r`n"
           Set-Content -LiteralPath $script -Value $source -Encoding utf8
           Write-Host 'ROYALLAB_PYINSTALLER_DATA_INCLUDED'
       - name: Build Windows installer freshly from fully patched source (no cached executable)
