@@ -163,8 +163,8 @@
       section.setAttribute('aria-label', 'قسم الفحص');
       const price = document.createElement('input');
       price.type = 'number';
-      price.min = '0.01';
-      price.step = '0.01';
+      price.min = '1';
+      price.step = '1';
       price.placeholder = 'سعر الفحص بالجنيه';
       price.setAttribute('aria-label','سعر الفحص');
       const fieldsArea = document.createElement('section');
@@ -288,6 +288,7 @@
           const form = await fetchJson('/local/form/' + encodeURIComponent(id));
           if (token !== loadToken || id !== selector.value) return;
           name.value = safeText(form.name);
+          section.value = safeText(form.section);
           price.value = safeText(form.price);
           fieldsArea.replaceChildren();
           for (const f of form.fields || []) makeField(f);
