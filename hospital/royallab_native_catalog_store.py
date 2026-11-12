@@ -128,6 +128,26 @@ def effective_source_form(raw):
             choices.append(option)
         cleaned_active.append({**field, "options": choices})
     active = cleaned_active
+    # Original Seminal Culture (TestID 284) has ten source analytes whose
+    # actual stored name is a literal "-" and whose closed format has no
+    # answer choices. These are unusable separator placeholders, not result
+    # values. Exclude ONLY those independently audited source identities.
+    # Preserve them all in the immutable original source catalogue.
+    separators = {str(x) for x in range(1185, 1195)}
+    excluded_empty_source_separators = 0
+    if str(raw.get("source_test_id")) == "284":
+        remaining = []
+        for field in active:
+            if (str(field.get("source_analyte_id")) in separators and
+                str(field.get("label") or "").strip() == "-" and
+                field.get("kind") == "select" and
+                "ColoseEndedResultFormat" in (field.get("types") or []) and
+                not field.get("options")):
+                excluded_empty_source_separators += 1
+            else:
+                remaining.append(field)
+        if remaining:
+            active = remaining
     # Original historical result tables sometimes carried two closed formats
     # for the SAME source analyte. One can have no option rows while the
     # other contains actual named choices used in reported orders. Suppress
@@ -234,6 +254,7 @@ def effective_source_form(raw):
             "excluded_blank_placeholder_options": blank_placeholders,
             "manual_untyped_draft_fields": manual_fallback_count,
             "excluded_redundant_empty_closed_formats": redundant_incomplete_choices,
+            "excluded_empty_source_separators": excluded_empty_source_separators,
             "manual_missing_closed_options_draft_fields": missing_closed_choice_draft_count}
 
 def clinical_test_form(conn, catalog_id, source_test_id):
