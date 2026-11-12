@@ -91,7 +91,8 @@
         if (!displayText(test.name).toLocaleLowerCase().includes(q)) continue;
         const option = document.createElement('option');
         option.value = safeText(test.source_test_id);
-        option.textContent = displayText(test.name);
+        option.disabled = test.result_entry_ready === false;
+        option.textContent = displayText(test.name) + (option.disabled ? ' — يحتاج مراجعة' : '');
         picker.appendChild(option);
       }
       detail.replaceChildren();
@@ -111,7 +112,9 @@
         throw new Error('كتالوج الفحوصات غير مكتمل أو يحتوي على تكرار');
       tests = data.tests;
       filter();
-      status.textContent = 'تم تحميل ' + data.total + ' فحص';
+      const readyCount = Number.isSafeInteger(data.ready_for_result_entry) ? data.ready_for_result_entry : null;
+      status.textContent = readyCount === null ? 'تم تحميل ' + data.total + ' فحص' :
+        'تم تحميل ' + data.total + ' فحص؛ ' + readyCount + ' جاهز لإدخال النتائج، والبقية تحتاج مراجعة';
     }
     async function showSelected() {
       const id = picker.value;
