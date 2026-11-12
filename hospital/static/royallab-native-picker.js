@@ -192,7 +192,7 @@
           } else if (field.kind === 'number' || field.kind === 'text') {
             control = document.createElement('input');
             control.type = field.kind === 'number' ? 'number' : 'text';
-            if (field.kind === 'number') control.step = 'any';
+            if (field.kind === 'number') control.step = Array.isArray(field.types) && field.types.includes('IntegerResultFormat') ? '1' : 'any';
           } else {
             const warning = document.createElement('em');
             warning.textContent = 'الحقل يحتاج مراجعة';
@@ -205,7 +205,7 @@
           if (field.kind === 'select_or_number' || field.kind === 'select_or_text') {
             const alternative = document.createElement('input');
             alternative.type = field.kind === 'select_or_number' ? 'number' : 'text';
-            if (alternative.type === 'number') alternative.step = 'any';
+            if (alternative.type === 'number') alternative.step = Array.isArray(field.types) && field.types.includes('IntegerResultFormat') ? '1' : 'any';
             alternative.placeholder = 'أو أدخل قيمة';
             alternative.dataset.alternativeFor = safeText(field.source_format_id);
             line.appendChild(alternative);
