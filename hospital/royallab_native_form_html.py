@@ -23,6 +23,7 @@ def render_form(test):
             rows.append('<div class="royal-field royal-review">حقل غير مكتمل: '+_visible(field.get("label"))+'</div>')
             continue
         label = _visible(field.get("label"))
+        numeric_step = "1" if "IntegerResultFormat" in (field.get("types") or []) else "any"
         unit = _e(field.get("unit"))
         name = _e(key)
         common = ' name="royal_'+name+'" data-source-format-id="'+name+'"'
@@ -39,7 +40,7 @@ def render_form(test):
                 select += '<input type="text" data-alternative-for="'+name+'" placeholder="أو نص">'
             control = select
         elif kind == "number":
-            control = '<input type="number" step="any"'+common+'>'
+            control = '<input type="number" step="'+numeric_step+'"'+common+'>'
         elif kind == "text":
             control = '<input type="text"'+common+'>'
         else:
