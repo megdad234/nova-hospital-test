@@ -54,6 +54,22 @@ class ReplacementTests(unittest.TestCase):
         self.db.execute("UPDATE hospital_lab_parameters SET active=0 WHERE code='ROYAL_FMT_1'")
         replace_catalog(self.db,{},approved=True)
         self.assertEqual(self.db.execute("SELECT active FROM hospital_lab_parameters WHERE code='ROYAL_FMT_1'").fetchone()[0],1)
+    def test_explicitly_inactive_source_field_stays_inactive_with_metadata(self):
+        catalog=synthetic_catalog()
+        catalog["tests"][0]["fields"][0]["active"]=False
+        with patch("hospital.royallab_existing_catalog_replacement.native_catalog",
+                   return_value=catalog):
+            replace_catalog(self.db,{},approved=True)
+            replace_catalog(self.db,{},approved=True)
+        row=self.db.execute("""SELECT p.active,m.source_format_id
+          FROM hospital_lab_parameters p
+          JOIN royal_lab_nova_parameter_metadata m ON m.nova_parameter_id=p.id
+          WHERE p.code='ROYAL_FMT_1'""").fetchone()
+        self.assertEqual(row,(0,"1"))
+        self.assertEqual(self.db.execute(
+            "SELECT COUNT(*) FROM hospital_lab_parameters WHERE code LIKE 'ROYAL_FMT_%' AND active=1"
+        ).fetchone()[0],366)
+
     def test_imported_format_codes_match_nova_line_resolver(self):
         replace_catalog(self.db,{},approved=True)
         self.assertEqual(self.db.execute("SELECT code FROM hospital_lab_parameters WHERE test_id=(SELECT id FROM hospital_lab_tests WHERE code='ROYAL-0')").fetchone()[0],"ROYAL_FMT_1")
