@@ -51,6 +51,28 @@ def audit(root):
             if pos>=0: print('NOVA_TEST_DDL_SOURCE',p.name,repr(body[max(0,pos-100):pos+1100]),flush=True)
         for table in ('hospital_lab_tests','hospital_lab_parameters','hospital_lab_lines'):
             print('NOVA_REAL_SCHEMA',table,list(db.execute('PRAGMA table_info('+table+')')),flush=True)
+        # Print actionable source-specific review cases before the strict gate.
+        from hospital.royallab_native_result_form import native_catalog
+        native=native_catalog(library)
+        review=[]
+        for test in native["tests"]:
+            for field in test["fields"]:
+                if field["source_format_id"] is None or field["kind"] in ("unknown","related"):
+                    review.append({"test_id":test["source_test_id"],
+                                   "test_name":test["name"],
+                                   "analyte_id":field["source_analyte_id"],
+                                   "label":field["label"],
+                                   "format_id":field["source_format_id"],
+                                   "kind":field["kind"],
+                                   "types":field["types"]})
+        print("ROYAL_REVIEW_COUNTS",json.dumps({
+            "missing_format_id":sum(x["format_id"] is None for x in review),
+            "unknown_kind":sum(x["kind"]=="unknown" for x in review),
+            "related_kind":sum(x["kind"]=="related" for x in review),
+            "affected_tests":len({x["test_id"] for x in review}),
+            "total_review_rows":len(review)},ensure_ascii=False),flush=True)
+        for entry in review:
+            print("ROYAL_REVIEW_CASE",json.dumps(entry,ensure_ascii=False),flush=True)
         # Schema-only preflight: source catalogue must fit the real tables.
         plan=replacement_plan(db,library)
         tests=plan["tests"]
