@@ -18,7 +18,7 @@ def run(root=ROOT):
   if len(tests)!=367:raise RuntimeError('Real Royal Lab catalog import incomplete')
   readiness=verify_replacement_catalog(db)
   db.execute("CREATE TABLE hospital_lab_tests(id INTEGER PRIMARY KEY,code TEXT UNIQUE,name TEXT,active INTEGER DEFAULT 1)")
-  db.execute("CREATE TABLE hospital_lab_parameters(id INTEGER PRIMARY KEY,test_id INTEGER,code TEXT,name TEXT,unit TEXT)")
+  db.execute("CREATE TABLE hospital_lab_parameters(id INTEGER PRIMARY KEY,test_id INTEGER,code TEXT,name TEXT,unit TEXT,active INTEGER DEFAULT 1)")
   db.execute("INSERT INTO hospital_lab_tests(code,name) VALUES('OLD-NOVA','Legacy')")
   replacement=replace_catalog(db,lib,approved=True)
   if replacement['active_royal_lab_tests']!=367:
