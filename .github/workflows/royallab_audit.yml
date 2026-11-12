@@ -12,6 +12,7 @@ on:
       - 'hospital/royallab_native_result_form.py'
       - 'hospital/royallab_native_result_drafts.py'
       - 'tests/test_royallab_native_result_drafts.py'
+      - 'tests/test_royallab_real_catalog_order_roundtrip.py'
       - 'hospital/royallab_native_catalog_api.py'
       - 'hospital/static/royallab-native-picker.js'
       - 'tests/test_royallab_native_result_form.py'
