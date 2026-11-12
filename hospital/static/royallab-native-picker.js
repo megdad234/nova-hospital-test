@@ -20,6 +20,48 @@
     status.setAttribute('role', 'status');
     root.dir = 'rtl';
     root.append(search, picker, status, detail);
+    const orderItem = document.createElement('input');
+    orderItem.type = 'number';
+    orderItem.min = '1';
+    orderItem.placeholder = 'رقم بند طلب المعمل';
+    orderItem.setAttribute('aria-label', 'رقم بند طلب المعمل');
+    const saveButton = document.createElement('button');
+    saveButton.type = 'button';
+    saveButton.textContent = 'حفظ مسودة النتيجة';
+    saveButton.disabled = true;
+    root.append(orderItem, saveButton);
+    async function send(path, payload) {
+      const response = await fetch(base + path, {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error('تعذر حفظ مسودة المعمل؛ تحقق من الصلاحية وحالة الدفع');
+      return response.json();
+    }
+    async function saveSelectedDraft() {
+      const itemId = Number(orderItem.value);
+      if (!Number.isSafeInteger(itemId) || itemId <= 0 || !picker.value)
+        throw new Error('اختر الفحص وأدخل رقم بند طلب صحيح');
+      const values = {};
+      for (const control of detail.querySelectorAll('[data-source-format-id]')) {
+        const id = control.dataset.sourceFormatId;
+        if (!id || id === 'null') continue;
+        const alternative = Array.from(detail.querySelectorAll('[data-alternative-for]'))
+          .find(function (x) { return x.dataset.alternativeFor === id; });
+        values[id] = alternative && alternative.value.trim() !== '' ?
+          alternative.value.trim() : control.value;
+      }
+      await send('/order/attach', { nova_item_id: itemId, source_test_id: picker.value });
+      await send('/order/draft', { nova_item_id: itemId, values: values });
+      status.textContent = 'تم حفظ مسودة النتائج، ولم يتم اعتمادها أو نشرها';
+    }
+    saveButton.addEventListener('click', function () {
+      saveButton.disabled = true;
+      saveSelectedDraft().catch(function (error) {
+        status.textContent = safeText(error.message);
+      }).finally(function () { saveButton.disabled = !picker.value; });
+    });
     let tests = [];
     let requestSerial = 0;
     function filter() {
@@ -38,6 +80,7 @@
         picker.appendChild(option);
       }
       detail.replaceChildren();
+      saveButton.disabled = true;
     }
     async function load() {
       status.textContent = 'جاري تحميل كتالوج Royal Lab...';
@@ -54,6 +97,7 @@
       const id = picker.value;
       const serial = ++requestSerial;
       detail.replaceChildren();
+      saveButton.disabled = true;
       if (!id) return;
       status.textContent = 'جاري تحميل حقول الفحص...';
       try {
@@ -124,6 +168,7 @@
           detail.appendChild(line);
         }
         status.textContent = 'تم عرض حقول الفحص';
+        saveButton.disabled = false;
       } catch (error) {
         if (serial === requestSerial) status.textContent = safeText(error.message);
       }
