@@ -66,7 +66,9 @@
     });
     let tests = [];
     let requestSerial = 0;
+    let loadSerial = 0;
     function filter() {
+      ++requestSerial; // Discard a previously requested form when search changes.
       const q = search.value.trim().toLocaleLowerCase();
       picker.replaceChildren();
       const empty = document.createElement('option');
@@ -85,9 +87,11 @@
     }
     async function load() {
       status.textContent = 'جاري تحميل فحوصات المعمل...';
+      const serial = ++loadSerial;
       const response = await fetch(base + '/tests', { credentials: 'same-origin' });
       if (!response.ok) throw new Error('تعذر تحميل فحوصات المعمل');
       const data = await response.json();
+      if (serial !== loadSerial) return;
       if (!Array.isArray(data.tests) || data.total !== 367 || data.tests.length !== 367)
         throw new Error('كتالوج الفحوصات غير مكتمل');
       tests = data.tests;
@@ -114,7 +118,7 @@
           const line = document.createElement('label');
           line.className = 'royal-lab-field';
           const label = document.createElement('span');
-          label.textContent = displayText(field.label) + (field.unit ? ' (' + safeText(field.unit) + ')' : '');
+          label.textContent = displayText(field.label) + (field.unit ? ' (' + displayText(field.unit) + ')' : '');
           line.appendChild(label);
           const ranges = [];
           for (const range of field.numeric_ranges || []) ranges.push(range);
@@ -129,6 +133,7 @@
               }).map(function (pair) { return pair[0] + ': ' + String(pair[1]); }).join('، ');
               return '';
             }).filter(Boolean).join(' | ');
+            reference.textContent = displayText(reference.textContent);
             line.appendChild(reference);
           }
           let control;
@@ -169,7 +174,7 @@
           detail.appendChild(line);
         }
         status.textContent = 'تم عرض حقول الفحص';
-        saveButton.disabled = false;
+        saveButton.disabled = !detail.querySelector('[data-source-format-id]');
       } catch (error) {
         if (serial === requestSerial) status.textContent = safeText(error.message);
       }
