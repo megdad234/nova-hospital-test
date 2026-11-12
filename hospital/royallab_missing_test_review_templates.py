@@ -45,10 +45,13 @@ REFERENCES = {
 
 def build_review_proposals(library):
     """Produce ONLY non-operative proposals from exact source identifiers."""
+    from hospital.royallab_native_catalog_store import is_non_lab_service
     tests = build_fields(library)["tests"]
     output = []
     for test in tests:
         if test["fields"] or "no_source_analytes" not in test["review_flags"]:
+            continue
+        if is_non_lab_service({"fields": [], "source_department_id": str(test["source"].get("LaboratoryID") or "")}):
             continue
         source_id = test["source_id"]
         # No clinically undocumented choice list, unit or normal range is copied.
