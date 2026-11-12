@@ -47,25 +47,62 @@ ORIGINAL_LAB_GROUPS = {
 }
 
 # Display taxonomy deliberately does not repeat the misleading raw group names.
+# Match the ORIGINAL NOVA seed categories (hospital/lab_catalog.py TESTS
+# positional tuple category), NOT newly translated Arabic department labels.
 DISPLAY_DEPARTMENTS = {
-    "1": "الكيمياء الحيوية",
-    "2": "التحاليل العامة والطفيليات",
-    "3": "أمراض الدم والتخثر",
-    "4": "الأحياء الدقيقة والسيرولوجيا",
-    "8": "الهرمونات",
-    "9": "الأحياء الجزيئية",
-    "10": "المناعة",
-    "11": "بنك الدم",
-    "35": "الأحياء الدقيقة والسيرولوجيا",
-    "43": "الأحياء الدقيقة والسيرولوجيا",
-    "47": "الكيمياء الحيوية",
-    "49": "الكيمياء الحيوية",
-    "53": "الكيمياء الحيوية",
-    "54": "المزارع والأحياء الدقيقة",
+    "1": "Chemistry",
+    "2": "Parasitology",
+    "3": "Hematology",
+    "4": "Microbiology",
+    "8": "Hormones",
+    "9": "Microbiology",  # no new molecular department until original catalog proves it
+    "10": "Immunology",
+    "11": "Blood bank",
+    "35": "Microbiology",
+    "43": "Microbiology",
+    "47": "Chemistry",
+    "49": "Chemistry",
+    "53": "Chemistry",
+    "54": "Microbiology",
 }
-NON_LAB_GROUP_IDS = frozenset(str(x) for x in range(12,28))
-NON_LAB_LABEL = "خدمات غير معملية"
-UNKNOWN_LABEL = "غير مصنف — للمراجعة"
+# Where recovered dbo.Laboratory groups lump unrelated tests together,
+# use audited source TestID exceptions rather than a fuzzy name heuristic.
+SOURCE_TEST_DEPARTMENT_OVERRIDES = {
+    "7": "Urinalysis",
+    "8": "Parasitology",
+    "13": "Parasitology",
+    "14": "Parasitology",
+    "21": "Hematology",
+    "22": "Coagulation",
+    "73": "Blood bank",
+    "76": "Parasitology",
+    "78": "Urinalysis",
+    "81": "Urinalysis",
+    "84": "Parasitology",
+    "87": "Parasitology",
+    "95": "Urinalysis",
+    "101": "Hematology",
+    "115": "Serology",
+    "57": "Serology",
+    "58": "Serology",
+    "59": "Serology",
+    "69": "Tumor markers",
+    "309": "Serology",
+    "347": "Serology",
+    "369": "Serology",
+}
+NON_LAB_GROUP_IDS = frozenset(str(x) for x in range(12, 28))
+# This is a source bookkeeping group, not a clinical lab department.
+NON_LAB_LABEL = "Non-laboratory services"
+UNKNOWN_LABEL = "Uncategorized - Review"
+# EXACT previous NOVA-import Arabic categories only. Never overwrite any
+# other administrator-created labels.
+PREVIOUS_AUTO_ARABIC_CATEGORIES = frozenset((
+    "الكيمياء الحيوية", "أمراض الدم والتخثر",
+    "التحاليل العامة والطفيليات", "الأحياء الدقيقة والسيرولوجيا",
+    "المزارع والأحياء الدقيقة", "الهرمونات", "المناعة",
+    "الأحياء الجزيئية", "بنك الدم", "خدمات غير معملية",
+))
 
 DEPARTMENT_SCHEMA = """
 CREATE TABLE IF NOT EXISTS royal_lab_nova_department_metadata (
@@ -88,7 +125,8 @@ def for_source_test(test):
     original_id = str(test.get("source_department_id") or "").strip()
     original_label = ORIGINAL_LAB_GROUPS.get(original_id, "")
     if original_id in DISPLAY_DEPARTMENTS:
-        category = DISPLAY_DEPARTMENTS[original_id]
+        category = SOURCE_TEST_DEPARTMENT_OVERRIDES.get(
+            str(test.get("source_test_id") or ""), DISPLAY_DEPARTMENTS[original_id])
         kind = "conservative_lab_source_group"
     elif original_id in NON_LAB_GROUP_IDS:
         # Do not call these assays or silently remove an existing orderable row.
