@@ -78,8 +78,9 @@ class RealCatalogOrderRoundtrip(unittest.TestCase):
             self.assertLessEqual(blocked, 59)
             self.assertEqual(ready + blocked, 330)
             self.assertIn("select", kinds)
-            # This pinned export exposes numeric-looking results as text;
-            # do not invent numeric field kinds without original format evidence.
+            # Original relational metadata (not a name or range guess)
+            # proves that CBC and other source values are numeric.
+            self.assertIn("number", kinds)
             self.assertIn("text", kinds)
             self.assertEqual(db.execute(
                 "SELECT COUNT(*) FROM royal_lab_native_result_drafts").fetchone()[0], ready)
