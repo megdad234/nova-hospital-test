@@ -34,6 +34,23 @@ class ReplacementTests(unittest.TestCase):
         self.assertEqual(self.db.execute("SELECT options_json FROM royal_lab_nova_parameter_metadata LIMIT 1").fetchone()[0].count("Positive"),1)
         replace_catalog(self.db,{},approved=True)
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM hospital_lab_tests").fetchone()[0],368)
+    def test_unresolved_format_never_hides_existing_catalogue(self):
+        catalog=synthetic_catalog()
+        catalog["tests"][0]["fields"][0]["source_format_id"]=None
+        with patch("hospital.royallab_existing_catalog_replacement.native_catalog",
+                   return_value=catalog):
+            with self.assertRaises(RuntimeError):
+                replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute("SELECT active FROM hospital_lab_tests WHERE code='OLD'").fetchone()[0],1)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM hospital_lab_tests").fetchone()[0],1)
+    def test_unexpected_royal_prefix_is_not_modified(self):
+        self.db.execute("INSERT INTO hospital_lab_tests(code,name) VALUES('ROYAL-UNKNOWN','Other')")
+        with self.assertRaises(RuntimeError):
+            replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute("SELECT active FROM hospital_lab_tests WHERE code='OLD'").fetchone()[0],1)
+    def test_imported_format_codes_match_nova_line_resolver(self):
+        replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute("SELECT code FROM hospital_lab_parameters WHERE test_id=(SELECT id FROM hospital_lab_tests WHERE code='ROYAL-0')").fetchone()[0],"ROYAL_FMT_1")
     def test_missing_active_column_blocks_without_writes(self):
         self.db.execute("ALTER TABLE hospital_lab_tests RENAME TO old_tests")
         self.db.execute("CREATE TABLE hospital_lab_tests(id INTEGER PRIMARY KEY,code TEXT,name TEXT)")
