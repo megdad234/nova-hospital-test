@@ -201,9 +201,13 @@ class NativeCatalogStoreTests(unittest.TestCase):
   self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
                     (json.dumps(form),cid))
   resolved=clinical_test_form(self.conn,cid,"0")
-  self.assertIn("source_format_missing_or_incomplete_free_text_fallback",resolved["review_flags"])
-  with self.assertRaises(ValueError):
-   save_draft(self.conn,"LAB-ORDER-1","0",{"1":"P"})
+  self.assertEqual(resolved["excluded_redundant_empty_closed_formats"],0)
+  unresolved=next(f for f in resolved["fields"] if f["source_analyte_id"]=="DIFFERENT")
+  self.assertEqual(unresolved["kind"],"text")
+  self.assertEqual(unresolved["options"],[])
+  self.assertTrue(unresolved["manual_missing_closed_options_draft_only"])
+  self.assertEqual(save_draft(self.conn,"LAB-ORDER-1","0",
+                 {"INCOMPLETE-3":"manual observation"})["status"],"draft")
 
  def test_optionless_named_closed_source_can_only_be_manually_drafted(self):
   cid=install(self.conn,self.library,'9'*64)
