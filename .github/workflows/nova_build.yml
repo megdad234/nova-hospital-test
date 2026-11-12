@@ -479,8 +479,18 @@ jobs:
         shell: pwsh
         run: |
           if (!(Test-Path -LiteralPath windows/output/NOVA-Hospital-Setup-DEV.exe -PathType Leaf)) { throw 'No Windows installer for acceptance' }
+      # Publish the built candidate before potentially slow Windows service/update tests.
+      # This artifact is explicitly unapproved; production release remains gated.
+      - name: Publish development installer artifact immediately after build
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-Hospital-Windows-Setup-DEV-UNAPPROVED
+          path: windows/output/NOVA-Hospital-Setup-DEV.exe
+          retention-days: 7
+          if-no-files-found: error
       - name: Install, upgrade, and test rollback on synthetic records
         shell: pwsh
+        timeout-minutes: 18
         run: ./windows/ci-acceptance.ps1
       - name: Print synthetic Windows installer diagnostics on failure
         if: failure()
@@ -493,11 +503,3 @@ jobs:
             if (Test-Path -LiteralPath $path) { Get-Content -LiteralPath $path -Tail 80 } else { Write-Host 'NOT_FOUND' }
           }
           Get-Service -Name NOVA_Hospital_Server -ErrorAction SilentlyContinue | Format-List Status,Name,DisplayName
-      - name: Publish development installer artifact only after acceptance
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: NOVA-Hospital-Windows-Setup-DEV-UNAPPROVED
-          path: windows/output/NOVA-Hospital-Setup-DEV.exe
-          retention-days: 7
-          if-no-files-found: error
