@@ -416,7 +416,7 @@ jobs:
       - name: Verify Royal Lab native result draft persistence
         shell: pwsh
         run: |
-          python -m unittest -v tests.test_royallab_native_result_drafts
+          python -m unittest discover -s tests -p 'test_royallab_native_result_drafts.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native draft persistence regression failed' }
       - name: Block misleading Royal Lab installer until live migration is proven
         shell: pwsh
