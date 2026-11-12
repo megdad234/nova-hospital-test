@@ -15,6 +15,11 @@ class PickerReviewGateTests(unittest.TestCase):
         self.assertIn("new Set(fieldIds).size !== fieldIds.length", script)
         self.assertIn("fields.some(function (f)", script)
         self.assertIn("saveButton.disabled = true;", script)
+        self.assertIn("let formReady = false;", script)
+        self.assertIn("let saving = false;", script)
+        self.assertIn("if (!formReady || saving) return;", script)
+        self.assertIn("saveButton.disabled = !formReady;", script)
+        self.assertNotIn("saveButton.disabled = !picker.value || !detail.querySelector", script)
         self.assertIn("selectedSerial !== requestSerial", script)
         self.assertIn("if (serial !== requestSerial) return;", script)
 
