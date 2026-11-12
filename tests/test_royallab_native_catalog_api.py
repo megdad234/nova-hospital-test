@@ -25,6 +25,9 @@ class NativeAPI(unittest.TestCase):
   cid=install(self.conn,self.lib,'c'*64)
   self.assertEqual(current_catalog_id(self.conn),cid)
   self.assertEqual(catalog_response(self.conn)['total'],367)
+  self.assertEqual(catalog_response(self.conn)['ready_for_result_entry'],1)
+  self.assertFalse(catalog_response(self.conn)['tests'][0]['result_entry_ready'])
+  self.assertTrue(catalog_response(self.conn,'cbc')['tests'][0]['result_entry_ready'])
   self.assertEqual(catalog_response(self.conn,'cbc')['tests'][0]['source_test_id'],'1')
   self.assertEqual(catalog_response(self.conn,'ROYAL-999')['total'],0)
   f=form_response(self.conn,1)['test']
