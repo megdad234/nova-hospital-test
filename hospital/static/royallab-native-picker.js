@@ -92,7 +92,8 @@
         const option = document.createElement('option');
         option.value = safeText(test.source_test_id);
         option.disabled = test.result_entry_ready === false;
-        option.textContent = displayText(test.name) + (option.disabled ? ' — يحتاج مراجعة' : '');
+        const suffix = test.entry_status === 'non_lab_service' ? ' — خدمة غير معملية' : ' — يحتاج مراجعة';
+        option.textContent = displayText(test.name) + (option.disabled ? suffix : '');
         picker.appendChild(option);
       }
       detail.replaceChildren();
@@ -113,8 +114,12 @@
       tests = data.tests;
       filter();
       const readyCount = Number.isSafeInteger(data.ready_for_result_entry) ? data.ready_for_result_entry : null;
+      const serviceCount = Number.isSafeInteger(data.non_lab_services) ? data.non_lab_services : 0;
+      const clinicalBlocked = Number.isSafeInteger(data.clinical_needing_review) ?
+        data.clinical_needing_review : data.total - (readyCount || 0) - serviceCount;
       status.textContent = readyCount === null ? 'تم تحميل ' + data.total + ' فحص' :
-        'تم تحميل ' + data.total + ' فحص؛ ' + readyCount + ' جاهز لإدخال النتائج، والبقية تحتاج مراجعة';
+        'جاهز لإدخال النتائج: ' + readyCount + '؛ يحتاج مراجعة: ' + clinicalBlocked +
+        '؛ خدمات غير معملية: ' + serviceCount;
     }
     async function showSelected() {
       const id = picker.value;
