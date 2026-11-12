@@ -261,7 +261,7 @@ def review_suggestion(conn,catalog_id,source_test_id):
     Staff must complete method, evidence and two-person signoff separately.
     """
     from hospital.royallab_native_catalog_store import effective_source_form
-    from hospital.royallab_missing_test_review_templates import CANDIDATE_FIELDS
+    from hospital.royallab_missing_test_review_templates import CANDIDATE_FIELDS, REVIEW_EVIDENCE
     original = _source(conn,catalog_id,str(source_test_id))
     source_id = str(source_test_id)
     form = effective_source_form(original)
@@ -312,8 +312,13 @@ def review_suggestion(conn,catalog_id,source_test_id):
         warnings.append("No unambiguous template fields exist; obtain actual method and kit protocol")
     if len(proposal)>MAX_FIELDS:
         raise ValueError("More than 120 potential source fields requires laboratory review")
+    hint = REVIEW_EVIDENCE.get(source_id)
+    guidance = ({"topic":hint[0],"method_question":hint[1],
+                 "external_reference_url":hint[2],
+                 "clinical_source_proven":False,
+                 "can_activate_without_review":False} if hint else None)
     return {"source_test_id":source_id,"source_test_name":original["name"],
-            "fields":proposal,"warnings":warnings,
+            "fields":proposal,"warnings":warnings,"external_guidance":guidance,
             "ready_for_patient_results":False,
             "needs_method_documentation":True,
             "requires_independent_approval":True,
