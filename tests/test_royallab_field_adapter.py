@@ -49,6 +49,14 @@ class AdapterTests(unittest.TestCase):
   self.assertEqual(next(f for f in fields if f["source_format_id"]=="258")["kind"],"number")
   self.assertEqual(next(f for f in fields if f["source_format_id"]=="564")["kind"],"text")
   self.assertIn("DoubleResultFormat",next(f for f in fields if f["source_format_id"]=="258")["types"])
+ def test_numeric_source_provenance_is_nonoverlapping(self):
+  from hospital.royallab_source_numeric_format_map import (
+   DOUBLE_RESULT_FORMAT_IDS, INTEGER_RESULT_FORMAT_IDS, SOURCE_COMMIT)
+  self.assertEqual(len(DOUBLE_RESULT_FORMAT_IDS),490)
+  self.assertEqual(len(INTEGER_RESULT_FORMAT_IDS),76)
+  self.assertFalse(DOUBLE_RESULT_FORMAT_IDS.intersection(INTEGER_RESULT_FORMAT_IDS))
+  self.assertIn("258",DOUBLE_RESULT_FORMAT_IDS)
+  self.assertEqual(len(SOURCE_COMMIT),40)
  def test_reject_partial_source(self):
   with self.assertRaises(ValueError):m.build_fields({"tests":[],"analytes":[]})
 if __name__=="__main__":unittest.main()
