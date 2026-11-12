@@ -78,7 +78,7 @@ def audit(path=SOURCE):
          "field_count": len(t["fields"]),
          "review_flags": t["review_flags"],
          "fields": [{"id": f["source_format_id"], "name": f["label"],
-                     "kind": f["kind"], "option_count": len(f.get("options", []))}
+                     "kind": f["kind"], "types": f.get("types", []), "option_count": len(f.get("options", []))}
                     for f in t["fields"]]}
         for t in tests if any(term in str(t["name"]).casefold() for term in focus_terms)
     ]
