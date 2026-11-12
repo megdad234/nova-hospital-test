@@ -9,7 +9,7 @@ def build_fields(library):
     analytes=library.get("analytes",[])
     if len(tests)!=367 or len(analytes)!=1245:raise ValueError("Royal Lab source is incomplete")
     ids=[str(t["TestID"]) for t in tests]
-    if len(set(ids))!=len(ids):raise ValueError("Duplicate source test IDs")
+    if len(set(ids))!=len(ids):raise ValueError("duplicate source test IDs")
     by_test={str(t["TestID"]):{"source_id":str(t["TestID"]),"name":t.get("Name",""),"source":t,"fields":[],"review_flags":[]} for t in tests}
     detached=[]
     for a in analytes:
