@@ -25,6 +25,7 @@ def audit(path=SOURCE):
     manual_untyped_draft_count = 0
     excluded_redundant_closed_format_count = 0
     excluded_separator_count = 0
+    excluded_nameless_untyped_count = 0
     manual_missing_closed_options_count = 0
     live_flags = Counter()
     for test in tests:
@@ -42,6 +43,7 @@ def audit(path=SOURCE):
         manual_untyped_draft_count += active_form.get("manual_untyped_draft_fields", 0)
         excluded_redundant_closed_format_count += active_form.get("excluded_redundant_empty_closed_formats", 0)
         excluded_separator_count += active_form.get("excluded_empty_source_separators", 0)
+        excluded_nameless_untyped_count += active_form.get("excluded_unnamed_untyped_placeholders", 0)
         manual_missing_closed_options_count += active_form.get("manual_missing_closed_options_draft_fields", 0)
         live_flags.update(active_form.get("review_flags", []))
         try:
@@ -129,6 +131,7 @@ def audit(path=SOURCE):
         "manual_untyped_draft_fields": manual_untyped_draft_count,
         "excluded_redundant_empty_closed_formats": excluded_redundant_closed_format_count,
         "excluded_empty_source_separators": excluded_separator_count,
+        "excluded_unnamed_untyped_placeholders": excluded_nameless_untyped_count,
         "manual_missing_closed_options_draft_fields": manual_missing_closed_options_count,
         "test_count": len(tests),
         "source_analyte_count": len(library.get("analytes", [])),
