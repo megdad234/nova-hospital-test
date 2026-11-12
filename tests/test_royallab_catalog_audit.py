@@ -13,6 +13,7 @@ class CatalogAuditTests(unittest.TestCase):
         self.assertEqual(report["runtime_ready_test_count"], len(report["runtime_ready_tests"]))
         self.assertEqual(report["runtime_blocked_test_count"], len(report["runtime_blocked_tests"]))
         self.assertGreaterEqual(report["inactive_fields_excluded_from_entry"], 0)
+        self.assertGreaterEqual(report["blank_source_placeholders_excluded_from_entry"], 0)
         self.assertEqual(report["detached_analyte_count"], sum(x["analyte_count"] for x in report["detached_source_test_groups"]))
         self.assertEqual(len(report["tests_without_analytes"]), report["review_flags"].get("no_source_analytes", 0))
         self.assertEqual(report["orphan_groups_missing_source_test"], sum(not x["source_test_exists"] for x in report["detached_source_test_groups"]))
