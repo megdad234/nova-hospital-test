@@ -30,8 +30,9 @@ def historical_headers(directory, library):
             continue
         test_id = match.group(1)
         # Only the first line is opened/read. Patient rows never leave storage.
-        with path.open("r", encoding="utf-8-sig", newline="") as fh:
-            header = fh.readline(250_000)
+        with path.open("rb", buffering=0) as fh:
+            header_bytes = fh.readline(250_000)
+        header = header_bytes.decode("utf-8-sig")
         if not header or not header.endswith(("\n", "\r")):
             raise ValueError("Missing or oversized clinical result header: " + path.name)
         columns = next(csv.reader([header]))
