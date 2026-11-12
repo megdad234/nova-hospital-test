@@ -19,7 +19,7 @@ class OrderBridgeTests(unittest.TestCase):
            PRIMARY KEY(catalog_id,source_test_id))""")
         self.db.execute("""INSERT INTO royal_lab_native_tests VALUES
            (1,'T1','Test','{"source_test_id":"T1","fields":[{"source_format_id":"1",
-           "label":"Synthetic result","kind":"select","options":[{"id":"A","active":true}]}]}')""")
+           "label":"Synthetic result","kind":"select","options":[{"id":"A","label":"A","active":true}]}]}')""")
     def tearDown(self):
         self.db.close()
     def test_attach_and_save_paid_draft(self):
@@ -40,7 +40,7 @@ class OrderBridgeTests(unittest.TestCase):
            SET form_json=? WHERE source_test_id='T1'""",
            ('{"source_test_id":"T1","review_flags":["no_source_analytes"],'
             '"fields":[{"source_format_id":"1","label":"Synthetic result",'
-            '"kind":"select","options":[{"id":"A","active":true}]}]}',))
+            '"kind":"select","options":[{"id":"A","label":"A","active":true}]}]}',))
         with self.assertRaisesRegex(ValueError, "requires clinical review"):
             attach_native_test(self.db, ADMIN, 22, "T1")
         self.db.execute("""CREATE TABLE IF NOT EXISTS royal_lab_native_order_items
