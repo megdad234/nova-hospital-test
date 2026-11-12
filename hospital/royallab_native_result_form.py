@@ -44,6 +44,8 @@ def validate_result_values(test_form,values):
     known={f["source_format_id"]:f for f in fields if f["source_format_id"] is not None}
     if len(known)!=len([f for f in fields if f["source_format_id"] is not None]):
         raise ValueError("Duplicate source format IDs")
+    values={str(key):value for key,value in values.items()}
+    known={str(key):field for key,field in known.items()}
     if set(values)-set(known):raise ValueError("Unknown Royal Lab result format")
     out={}
     for sid,value in values.items():
