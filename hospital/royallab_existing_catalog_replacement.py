@@ -145,6 +145,22 @@ def replace_catalog(conn, library, *, approved=False):
         count = conn.execute("SELECT COUNT(*) FROM hospital_lab_tests WHERE code LIKE 'ROYAL-%' AND active=1").fetchone()[0]
         if count != 367:
             raise RuntimeError("NOVA replacement count mismatch")
+        active_legacy = conn.execute(
+            "SELECT COUNT(*) FROM hospital_lab_tests WHERE active=1 AND code NOT LIKE 'ROYAL-%'").fetchone()[0]
+        if active_legacy:
+            raise RuntimeError("Legacy NOVA tests still active after replacement")
+        expected_parameters = sum(len(t["fields"]) for t in plan["tests"])
+        actual_metadata = conn.execute(
+            "SELECT COUNT(*) FROM royal_lab_nova_parameter_metadata").fetchone()[0]
+        if actual_metadata != expected_parameters:
+            raise RuntimeError("Royal Lab parameter metadata count mismatch: %d != %d" %
+                               (actual_metadata,expected_parameters))
+        missing_metadata = conn.execute("""SELECT COUNT(*) FROM hospital_lab_parameters p
+            JOIN hospital_lab_tests t ON t.id=p.test_id
+            LEFT JOIN royal_lab_nova_parameter_metadata m ON m.nova_parameter_id=p.id
+            WHERE t.code LIKE 'ROYAL-%' AND m.nova_parameter_id IS NULL""").fetchone()[0]
+        if missing_metadata:
+            raise RuntimeError("Royal Lab NOVA parameters missing result metadata")
         conn.execute("RELEASE SAVEPOINT royal_catalog_replacement")
     except BaseException:
         conn.execute("ROLLBACK TO SAVEPOINT royal_catalog_replacement")
