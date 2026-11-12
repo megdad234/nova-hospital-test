@@ -63,13 +63,15 @@ def replace_catalog(conn, library, *, approved=False):
     if approved is not True:
         raise PermissionError("Explicit approval of NOVA lab catalogue replacement required")
     tests_schema, params_schema = _required_columns(conn)
-    for table, schema, allowed in (
-        (TESTS, tests_schema, {"id","code","name","active","category","price","popular","created_at","updated_at"}),
-        (PARAMETERS, params_schema, {"id","test_id","code","name","unit","reference_range","section_name","sort_order","created_at","updated_at"})):
+    # Reject unknown NOT NULL columns unless the database itself supplies defaults.
+    for table, schema, supplied in (
+        (TESTS, tests_schema, {"code","name","active"}),
+        (PARAMETERS, params_schema, {"test_id","code","name","unit"})):
         unsupported = [name for name,row in schema.items()
-                       if row[3] and row[4] is None and not row[5] and name not in allowed]
+                       if row[3] and row[4] is None and not row[5] and name not in supplied]
         if unsupported:
-            raise RuntimeError("Unsupported required " + table + " columns: " + ", ".join(unsupported))
+            raise RuntimeError("Required columns need explicit NOVA mapping in " +
+                               table + ": " + ", ".join(unsupported))
     conn.execute("SAVEPOINT royal_catalog_replacement")
     try:
         # Never delete old test/parameter IDs: historical lab orders may reference them.
