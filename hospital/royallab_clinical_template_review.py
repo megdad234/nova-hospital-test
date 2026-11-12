@@ -252,3 +252,62 @@ def review_details(conn,catalog_id,source_test_id,revision):
             "method":row[3],"evidence":row[4],"rationale":row[5],
             "proposed_by":row[6],"approved_by":row[7],
             "can_publish_patient_results":False}
+
+
+def review_suggestion(conn,catalog_id,source_test_id):
+    """Prefill only source-proven fields or explicitly UNAPPROVED candidates.
+
+    No patient data, kit-dependent invented answer choices or reference ranges.
+    Staff must complete method, evidence and two-person signoff separately.
+    """
+    from hospital.royallab_native_catalog_store import effective_source_form
+    from hospital.royallab_missing_test_review_templates import CANDIDATE_FIELDS
+    original = _source(conn,catalog_id,str(source_test_id))
+    source_id = str(source_test_id)
+    form = effective_source_form(original)
+    source_fields = form.get("fields") or []
+    proposal = []
+    warnings = []
+    inactive=(False,0,"False","false","0")
+    if source_fields:
+        for field in source_fields:
+            if field.get("active") in inactive:
+                warnings.append("Source contains an inactive field; original status must be reviewed")
+                continue
+            kind = field.get("kind")
+            label = str(field.get("label") or "").strip()
+            if not label:
+                warnings.append("Unnamed original source field needs a verified label")
+                continue
+            if kind not in KINDS:
+                warnings.append("Mixed or unsupported source field requires method-specific input review: " + label)
+                continue
+            choices = []
+            if kind == "select":
+                options = [o for o in field.get("options",[]) if isinstance(o,dict)
+                           and o.get("active") not in inactive]
+                labels = [str(o.get("label") or "").strip() for o in options]
+                if not labels or any(not x for x in labels) or len(set(x.casefold() for x in labels))!=len(labels):
+                    warnings.append("Missing or ambiguous dropdown: " + label)
+                    continue
+                choices = labels
+            proposal.append({"key":"f"+str(len(proposal)+1),
+                             "label":label, "kind":kind,
+                             "unit":str(field.get("unit") or ""), "option_labels":choices,
+                             "evidence_source_format_id":field.get("source_format_id"),
+                             "source_proven":True})
+    else:
+        for label,kind in CANDIDATE_FIELDS.get(source_id, []):
+            proposal.append({"key":"f"+str(len(proposal)+1),
+                             "label":label, "kind":kind, "unit":"",
+                             "option_labels":[], "source_proven":False})
+    if not proposal:
+        warnings.append("No unambiguous template fields exist; obtain actual method and kit protocol")
+    if len(proposal)>MAX_FIELDS:
+        raise ValueError("More than 120 potential source fields requires laboratory review")
+    return {"source_test_id":source_id,"source_test_name":original["name"],
+            "fields":proposal,"warnings":warnings,
+            "ready_for_patient_results":False,
+            "needs_method_documentation":True,
+            "requires_independent_approval":True,
+            "source_archive_unchanged":True}
