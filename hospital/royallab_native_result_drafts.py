@@ -26,14 +26,9 @@ def _key(value):
         raise ValueError("A nonempty order key up to 128 characters is required")
     return value.strip()
 
-def save_draft(conn, order_key, source_test_id, values):
-    """Save validated values atomically; caller must authorize the order first."""
-    if not isinstance(conn, sqlite3.Connection):
-        raise TypeError("SQLite connection required")
-    order_key = _key(order_key)
-    source_test_id = str(source_test_id)
-    catalog_id = current_catalog_id(conn)
-    form = test_form(conn, catalog_id, source_test_id)
+
+def validate_source_form(form):
+    """Single safety gate for patient-order attachment and draft persistence."""
     if form.get('review_flags'):
         raise ValueError('Source test requires clinical review before saving a draft')
     fields = form.get('fields')
@@ -54,6 +49,16 @@ def save_draft(conn, order_key, source_test_id, values):
             option_ids = [str(o.get('id')) for o in options if isinstance(o, dict)]
             if len(option_ids) != len(options) or any(x in ('', 'None') for x in option_ids) or len(set(option_ids)) != len(option_ids):
                 raise ValueError('Source dropdown option IDs are missing or duplicated')
+
+def save_draft(conn, order_key, source_test_id, values):
+    """Save validated values atomically; caller must authorize the order first."""
+    if not isinstance(conn, sqlite3.Connection):
+        raise TypeError("SQLite connection required")
+    order_key = _key(order_key)
+    source_test_id = str(source_test_id)
+    catalog_id = current_catalog_id(conn)
+    form = test_form(conn, catalog_id, source_test_id)
+    validate_source_form(form)
     validated = validate_result_values(form, values)
     with conn:
         conn.execute(SCHEMA)
