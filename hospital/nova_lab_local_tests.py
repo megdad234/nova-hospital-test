@@ -198,7 +198,7 @@ def _columns(conn, table):
     return {x[1] for x in conn.execute("PRAGMA table_info(" + table + ")")}
 
 
-def _sync_approved(conn, local_id, nova_test_id, code, name, price, form, revision):
+def _sync_approved(conn, local_id, nova_test_id, code, name, price, section, form, revision):
     tests = _columns(conn, "hospital_lab_tests")
     params = _columns(conn, "hospital_lab_parameters")
     if not {"id", "code", "name", "price", "active"}.issubset(tests):
@@ -206,16 +206,26 @@ def _sync_approved(conn, local_id, nova_test_id, code, name, price, form, revisi
     if not {"id", "test_id", "code", "name", "unit", "active"}.issubset(params):
         raise RuntimeError("NOVA lab parameter schema incompatible")
     if nova_test_id is None:
-        cur = conn.execute("""INSERT INTO hospital_lab_tests(code,name,price,active)
-                              VALUES (?,?,?,1)""", (code,name,int(price)))
+        cols = ["code","name","price","active"]
+        vals = [code,name,int(price),1]
+        if "category" in tests:
+            cols.append("category")
+            vals.append(section)
+        cur = conn.execute("INSERT INTO hospital_lab_tests (" +
+                           ",".join(cols)+") VALUES ("+",".join("?" for _ in vals)+")",vals)
         nova_test_id = cur.lastrowid
     else:
         existing = conn.execute("SELECT code FROM hospital_lab_tests WHERE id=?",
                                 (nova_test_id,)).fetchone()
         if not existing or existing[0] != code:
             raise RuntimeError("Local test identity changed")
-        conn.execute("""UPDATE hospital_lab_tests SET name=?,price=?,active=1
-                        WHERE id=?""", (name,int(price),nova_test_id))
+        fields = ["name=?","price=?","active=1"]
+        values = [name,int(price)]
+        if "category" in tests:
+            fields.append("category=?")
+            values.append(section)
+        conn.execute("UPDATE hospital_lab_tests SET "+",".join(fields)+" WHERE id=?",
+                     (*values,nova_test_id))
     keys = set()
     for order,field in enumerate(form["fields"]):
         param_code = PARAM_PREFIX + str(local_id) + "_" + field["key"]
@@ -297,7 +307,7 @@ def approve(conn, actor, proposal_id, form_hash, *, attestation):
         if not name or not section:
             raise ValueError("Incomplete clinical form name or department")
         version = last_revision+1
-        nova_test_id = _sync_approved(conn,local_id,nova_test_id,code,name,price,form,version)
+        nova_test_id = _sync_approved(conn,local_id,nova_test_id,code,name,price,section,form,version)
         conn.execute("""UPDATE nova_lab_local_tests SET nova_test_id=?,approved_revision=?,
                     section=?,approved_form_json=?,approved_form_hash=?,approved_by=?,
                     updated_at=CURRENT_TIMESTAMP WHERE id=?""",
