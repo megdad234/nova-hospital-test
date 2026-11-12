@@ -19,7 +19,7 @@ class OrderBridgeTests(unittest.TestCase):
            PRIMARY KEY(catalog_id,source_test_id))""")
         self.db.execute("""INSERT INTO royal_lab_native_tests VALUES
            (1,'T1','Test','{"source_test_id":"T1","fields":[{"source_format_id":"1",
-           "kind":"select","options":[{"id":"A","active":true}]}]}')""")
+           "label":"Synthetic result","kind":"select","options":[{"id":"A","active":true}]}]}')""")
     def tearDown(self):
         self.db.close()
     def test_attach_and_save_paid_draft(self):
