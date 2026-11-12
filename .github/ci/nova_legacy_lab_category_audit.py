@@ -29,6 +29,23 @@ for node in ast.walk(tree):
         categories.add(members["category"])
         if len(dict_samples)<12:
             dict_samples.append({x:y for x,y in members.items() if x in ("category","name","code")})
+# Original NOVA uses positional tuples in TESTS: code, label, category, ...
+for stmt in tree.body:
+    if not isinstance(stmt,(ast.Assign,ast.AnnAssign)):
+        continue
+    targets=stmt.targets if isinstance(stmt,ast.Assign) else [stmt.target]
+    if not any(isinstance(t,ast.Name) and t.id=="TESTS" for t in targets):
+        continue
+    if isinstance(stmt.value,(ast.List,ast.Tuple)):
+        for entry in stmt.value.elts:
+            if isinstance(entry,(ast.Tuple,ast.List)) and len(entry.elts)>=3:
+                cat=entry.elts[2]
+                if isinstance(cat,ast.Constant) and isinstance(cat.value,str):
+                    categories.add(cat.value)
+                    if len(dict_samples)<20:
+                        display=entry.elts[1]
+                        label=display.value if isinstance(display,ast.Constant) else None
+                        dict_samples.append({"category":cat.value,"label":label})
 for match in re.finditer(r"""['"]category['"]\s*:\s*['"]([^'"\r\n]{1,100})['"]""",source,re.I):
     categories.add(match.group(1))
 print("NOVA_ORIGINAL_CATEGORIES="+json.dumps(sorted(categories),ensure_ascii=False))
