@@ -66,7 +66,12 @@ PARAM_PREFIX = "NLOCAL_"
 def init(conn):
     if not isinstance(conn, sqlite3.Connection):
         raise TypeError("SQLite NOVA connection required")
-    conn.executescript(SCHEMA)
+    # sqlite3.executescript() silently commits an existing NOVA transaction.
+    # Each schema statement is DDL with IF NOT EXISTS, so execute it without
+    # crossing the caller's transaction boundary.
+    for statement in SCHEMA.split(";"):
+        if statement.strip():
+            conn.execute(statement)
 
 
 def _actor(actor, admin=False):
