@@ -30,6 +30,8 @@ def audit(root):
     library=json.loads((root/"hospital/royallab_source/nova_lab_library.json").read_text(encoding="utf-8-sig"))
     with sqlite3.connect(":memory:") as db:
         db.executescript(schema)
+        for table in ('hospital_lab_tests','hospital_lab_parameters','hospital_lab_lines'):
+            print('NOVA_REAL_SCHEMA',table,list(db.execute('PRAGMA table_info('+table+')')),flush=True)
         # Schema-only preflight: source catalogue must fit the real tables.
         plan=replacement_plan(db,library)
         tests=plan["tests"]
