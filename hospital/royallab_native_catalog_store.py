@@ -230,8 +230,14 @@ def effective_source_form(raw):
             "manual_missing_closed_options_draft_fields": missing_closed_choice_draft_count}
 
 def clinical_test_form(conn, catalog_id, source_test_id):
-    """Return the safely editable subset without changing stored source data."""
-    return effective_source_form(test_form(conn, catalog_id, source_test_id))
+    """Show verified source data, or an independently reviewed local template.
+
+    A source test stays blocked until its template is explicitly approved.
+    Historical original source data and patient drafts are never overwritten.
+    """
+    from hospital.royallab_clinical_template_review import active_reviewed_form
+    original = effective_source_form(test_form(conn, catalog_id, source_test_id))
+    return active_reviewed_form(conn, catalog_id, source_test_id, original)
 
 # Department IDs verified against the original dbo.Test / dbo.Laboratory tables.
 # Administrative, nursing, radiology, dentistry, operations and physiotherapy
