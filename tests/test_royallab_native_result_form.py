@@ -18,6 +18,14 @@ class NativeForms(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,'listed source option'):validate_result_values(form,{'1':999})
   with self.assertRaisesRegex(ValueError,'numeric'):validate_result_values(form,{'2':'abc'})
   with self.assertRaisesRegex(ValueError,'Unknown Royal'):validate_result_values(form,{'99999':'x'})
+ def test_inactive_and_malformed_fields_rejected(self):
+  form={"fields":[{"source_format_id":"A","kind":"text","active":False}]}
+  with self.assertRaisesRegex(ValueError,"Inactive"):validate_result_values(form,{"A":"result"})
+  with self.assertRaisesRegex(ValueError,"Invalid source field"):validate_result_values({"fields":[None]},{"A":"result"})
+ def test_nonfinite_text_float_rejected(self):
+  form={"fields":[{"source_format_id":"A","kind":"text","active":True}]}
+  with self.assertRaisesRegex(ValueError,"Non-finite"):validate_result_values(form,{"A":float("nan")})
+  with self.assertRaisesRegex(ValueError,"Non-finite"):validate_result_values(form,{"A":float("inf")})
  def test_unknown_test_is_rejected(self):
   with self.assertRaisesRegex(ValueError,'Unknown'):native_test_form(native_catalog(self.library),'not-exists')
 if __name__=='__main__':unittest.main()
