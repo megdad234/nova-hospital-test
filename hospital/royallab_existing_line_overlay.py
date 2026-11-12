@@ -35,13 +35,18 @@ def overlay_existing_order_lines(conn, detail):
                   WHERE i.id=? AND p.id=?""",(item_id,param_id)).fetchone()
             if not row:
                 continue
-            options=json.loads(row[1])
+            try:
+                options=json.loads(row[1])
+                numeric_ranges=json.loads(row[2])
+                text_ranges=json.loads(row[3])
+            except (ValueError,TypeError):
+                continue
             line["royal_lab_field"]={
                 "kind":row[0],
                 "options":[str(x.get("label","")) for x in options
                            if x.get("active") not in (False,0,"False","false","0")
                            and str(x.get("label","")).strip()],
-                "numeric_ranges":json.loads(row[2]),
-                "text_ranges":json.loads(row[3])}
+                "numeric_ranges":numeric_ranges,
+                "text_ranges":text_ranges}
         result["items"].append(clone)
     return result
