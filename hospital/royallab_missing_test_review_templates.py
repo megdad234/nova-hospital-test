@@ -71,3 +71,52 @@ def build_review_proposals(library):
             "reference": REFERENCES.get(source_id),
         })
     return output
+
+
+# Exactly the 20 clinical source tests with NO source analyte definitions as of
+# the audited 2026-11-12 original catalogue. Every entry is an advisory,
+# method-selection question, NOT an operational answer set or normal range.
+# Sources establish clinical concepts only; local IFU and professional review
+# remain mandatory for actual choices, units, limits and specimens.
+REVIEW_EVIDENCE = {
+    "287": ("Vibrio cholerae Ag", "Confirm stool antigen RDT versus culture/PCR and the manufacturer's O1/O139 cassette layout.",
+            "https://www.cdc.gov/cholera/php/laboratories/cholera-clinical-detection.html"),
+    "288": ("O1", "Confirm whether O1 is a component of the cholera parent test, not an independently orderable patient test.",
+            "https://www.cdc.gov/yellow-book/hcp/travel-associated-infections-diseases/cholera.html"),
+    "289": ("O139", "Confirm whether this O139 row is an assay component or a standalone test; distinguish original duplicated identifiers.",
+            "https://www.cdc.gov/yellow-book/hcp/travel-associated-infections-diseases/cholera.html"),
+    "291": ("O139", "Same clinical name as another source row: compare the exact source test IDs and local assay before using either.",
+            "https://www.cdc.gov/cholera/php/laboratories/cholera-clinical-detection.html"),
+    "320": ("CBC 5-part", "Confirm the exact hematology analyzer's exported fields, units and five differential populations; do not assume a 3-part panel.",
+            "https://medlineplus.gov/lab-tests/blood-differential/"),
+    "336": ("HCV", "First choose anti-HCV antibody screening or HCV RNA NAT; they use different fields and interpretation.",
+            "https://www.cdc.gov/hepatitis-c/hcp/diagnosis-testing/"),
+    "339": ("Hemocytine", "Source label has unclear clinical identity; obtain original request slip or assay documentation before defining any field.",
+            ""),
+    "340": ("Herpes", "Identify HSV-1/HSV-2 antigen, IgM/IgG serology, or PCR and specimen before fields are proposed.",
+            ""),
+    "341": ("ADA", "Confirm ADA specimen (e.g. pleural fluid), method and reporting unit with the actual laboratory protocol.",
+            "https://www.mayocliniclabs.com/test-catalog/overview/75664"),
+    "343": ("Food Panel Profile", "Identify the specific manufacturer allergy panel and exact allergen list; do not invent food choices.",
+            ""),
+    "344": ("Food Panel 2", "Confirm whether this differs from Food Panel Profile and get the exact local reagent/analyte list.",
+            ""),
+    "347": ("ICT for typhoid", "Confirm the kit antigen/antibody principle and whether IgM, IgG, or combined results are actually supplied.",
+            "https://www.cdc.gov/yellow-book/hcp/travel-associated-infections-diseases/typhoid-and-paratyphoid-fever.html"),
+    "352": ("Blood Sugar Curve", "Confirm the protocol and timed sample points; avoid inventing fasting/1h/2h/3h fields.",
+            ""),
+    "353": ("Blood Fluid Analysis", "Identify the body-fluid specimen and its laboratory-specific panel before creating any analytes.",
+            ""),
+    "368": ("Vitamin D", "Confirm whether the method measures 25-hydroxyvitamin D or 1,25-dihydroxyvitamin D.",
+            "https://www.mayocliniclabs.com/test-catalog/overview/8822"),
+    "369": ("Dengue ICT", "Confirm manufacturer's NS1, IgM, IgG cassette targets, timing and permissible invalid results.",
+            "https://www.who.int/publications/i/item/B09394"),
+    "378": ("RPL", "Ambiguous legacy abbreviation; require the original laboratory name and method.",
+            ""),
+    "391": ("Vitamin B12", "Confirm quantitative serum assay, analyzer and reporting unit; verify reagent-specific limits.",
+            "https://www.mayocliniclabs.com/test-catalog/Overview/800083"),
+    "346": ("Fructose qualitative", "Confirm whether the specimen is semen, and whether the kit really uses a qualitative result.",
+            "https://www.mayocliniclabs.com/test-catalog/overview/92187"),
+    "351": ("Blood Ammonia", "Confirm exact specimen collection, analyzer method, unit and reference source.",
+            "https://medlineplus.gov/lab-tests/ammonia-levels/"),
+}
