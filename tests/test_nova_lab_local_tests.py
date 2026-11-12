@@ -58,6 +58,7 @@ class NOVALocalTests(unittest.TestCase):
         one=local.local_form(self.db,data["local_id"])
         self.assertEqual(len(one["fields"]),3)
         self.assertEqual(one["fields"][1]["options"],["Nonreactive","Reactive"])
+        self.assertEqual(one["section"],"Biochemistry")
         rows=self.db.execute("""SELECT code,name,price,active FROM hospital_lab_tests
                     WHERE id=?""",(data["nova_test_id"],)).fetchone()
         self.assertEqual(rows,(data["code"],"Test for NOVA",1500,1))
@@ -84,6 +85,9 @@ class NOVALocalTests(unittest.TestCase):
                 self.propose(fields=fields)
         with self.assertRaises(ValueError):
             local.propose(self.db,LAB,name="X",section="Biochemistry",price=0,
+                          fields=FIELDS,**NOTES)
+        with self.assertRaises(ValueError):
+            local.propose(self.db,LAB,name="Test",section="Biochemistry",price="12.5",
                           fields=FIELDS,**NOTES)
         with self.assertRaises(PermissionError):
             self.propose(actor={"id":77,"role":"pharmacy"})
