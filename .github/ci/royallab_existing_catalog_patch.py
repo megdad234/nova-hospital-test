@@ -11,6 +11,9 @@ WRAPPER='''
 _original_nova_lab_init = init
 def init(c, *args, **kwargs):
     result = _original_nova_lab_init(c, *args, **kwargs)
+    import os as _royal_os
+    if _royal_os.environ.get("NOVA_LEGACY_LAB_REGRESSION") == "1":
+        return result
     from pathlib import Path as _RoyalPath
     import json as _royal_json
     import sys as _royal_sys
