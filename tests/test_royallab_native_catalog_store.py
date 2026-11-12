@@ -100,6 +100,43 @@ class NativeCatalogStoreTests(unittest.TestCase):
   self.assertFalse(is_non_lab_service({"source_department_id":"15","fields":[{"kind":"text"}]}))
   self.assertFalse(is_non_lab_service({"source_department_id":"15","fields":None}))
 
+ def test_existing_catalog_form_upgrade_archives_old_forms_and_preserves_drafts(self):
+  from hospital.royallab_native_result_drafts import SCHEMA as DRAFT_SCHEMA
+  cid=install(self.conn,self.library,'8'*64)
+  old_form=test_form(self.conn,cid,'0')
+  old_form["fields"][0]["kind"]="text"
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(old_form),cid))
+  # Simulate a previously installed version with already-entered historical draft.
+  self.conn.execute("DELETE FROM royal_lab_native_catalog_generators WHERE catalog_id=?",(cid,))
+  self.conn.execute(DRAFT_SCHEMA)
+  self.conn.execute("""INSERT INTO royal_lab_native_result_drafts
+      (order_key,source_test_id,catalog_id,values_json) VALUES(?,?,?,?)""",
+      ("ORDER-EXISTING","0",cid,json.dumps({"1":"original stored draft"})))
+  self.assertEqual(install(self.conn,self.library,'8'*64),cid)
+  self.assertEqual(test_form(self.conn,cid,'0')["fields"][0]["kind"],"number")
+  archived=self.conn.execute("""SELECT form_json FROM royal_lab_native_catalog_form_backups
+       WHERE catalog_id=? AND source_test_id='0' AND generator_version=1""",(cid,)).fetchone()
+  self.assertEqual(json.loads(archived[0])["fields"][0]["kind"],"text")
+  self.assertEqual(self.conn.execute(
+    "SELECT values_json FROM royal_lab_native_result_drafts WHERE order_key='ORDER-EXISTING'"
+  ).fetchone()[0],json.dumps({"1":"original stored draft"}))
+  self.assertEqual(self.conn.execute(
+    "SELECT COUNT(*) FROM royal_lab_native_catalog_form_backups WHERE catalog_id=?",(cid,)
+  ).fetchone()[0],367)
+  install(self.conn,self.library,'8'*64)
+  self.assertEqual(self.conn.execute(
+    "SELECT COUNT(*) FROM royal_lab_native_catalog_form_backups WHERE catalog_id=?",(cid,)
+  ).fetchone()[0],367)
+
+ def test_newer_installed_catalog_version_is_not_downgraded(self):
+  cid=install(self.conn,self.library,'7'*64)
+  self.conn.execute("UPDATE royal_lab_native_catalog_generators SET generator_version=99 WHERE catalog_id=?",(cid,))
+  with self.assertRaisesRegex(ValueError,"downgrade blocked"):
+   install(self.conn,self.library,'7'*64)
+  self.assertEqual(self.conn.execute(
+    "SELECT COUNT(*) FROM royal_lab_native_catalog_form_backups").fetchone()[0],0)
+
  def test_duplicate_id_rejected(self):
   self.library['tests'][1]['TestID']=0
   with self.assertRaisesRegex(ValueError,'duplicate'):install(self.conn,self.library,'b'*64)
