@@ -24,6 +24,8 @@ def _required_columns(conn):
         raise RuntimeError("NOVA parameter schema differs: expected id/test_id/code/name/unit")
     if "active" not in tests:
         raise RuntimeError("NOVA test active column missing: cannot safely hide old catalogue")
+    if "active" not in params:
+        raise RuntimeError("NOVA parameter active column missing: result resolver requires active=1")
     return tests, params
 
 def replacement_plan(conn, library):
@@ -70,7 +72,7 @@ def replace_catalog(conn, library, *, approved=False):
     # Reject unknown NOT NULL columns unless the database itself supplies defaults.
     for table, schema, supplied in (
         (TESTS, tests_schema, {"code","name","active"}),
-        (PARAMETERS, params_schema, {"test_id","code","name","unit"})):
+        (PARAMETERS, params_schema, {"test_id","code","name","unit","active"})):
         unsupported = [name for name,row in schema.items()
                        if row[3] and row[4] is None and not row[5] and name not in supplied]
         if unsupported:
@@ -116,10 +118,10 @@ def replace_catalog(conn, library, *, approved=False):
                 row = conn.execute("SELECT id FROM hospital_lab_parameters WHERE test_id=? AND code=?",
                                    (test_id,param_code)).fetchone()
                 if row:
-                    conn.execute("UPDATE hospital_lab_parameters SET name=?,unit=? WHERE id=?",
+                    conn.execute("UPDATE hospital_lab_parameters SET name=?,unit=?,active=1 WHERE id=?",
                                  (field["label"],field["unit"],row[0]))
                 else:
-                    conn.execute("INSERT INTO hospital_lab_parameters(test_id,code,name,unit) VALUES(?,?,?,?)",
+                    conn.execute("INSERT INTO hospital_lab_parameters(test_id,code,name,unit,active) VALUES(?,?,?,?,1)",
                                  (test_id,param_code,field["label"],field["unit"]))
         # Source options/ranges remain attached to original NOVA parameter IDs.
         for test in plan["tests"]:
