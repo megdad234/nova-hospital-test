@@ -134,6 +134,7 @@ on:
       - 'tests/test_royallab_existing_catalog_replacement.py'
       - 'tests/test_royallab_existing_line_overlay.py'
       - '.github/ci/royallab_existing_catalog_patch.py'
+      - '.github/ci/royallab_actual_nova_schema_gate.py'
       - 'tests/test_royallab_existing_catalog_patch.py'
   workflow_dispatch:
 permissions:
@@ -432,6 +433,8 @@ jobs:
         run: |
           python .github/ci/royallab_bundle_source.py --root .
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab original catalog unavailable or source integrity failed' }
+          python .github/ci/royallab_actual_nova_schema_gate.py
+          if ($LASTEXITCODE -ne 0) { throw 'Real NOVA lab schema incompatible with Royal Lab replacement' }
           python .github/ci/royallab_native_bundle_smoke.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab real source native SQLite import failed' }
       - name: Verify Royal Lab native result draft persistence
