@@ -68,10 +68,11 @@ def effective_source_form(raw):
     if not active:
         return raw  # Never make an empty or fully inactive test writable.
     excluded = len(all_fields) - len(active)
-    # The source table explicitly uses empty, order-zero dropdown rows as
-    # "no selection" placeholders. The NOVA UI already inserts its own blank
-    # placeholder: do not offer an empty clinical option as a result.
-    # Preserve each original row in the stored catalogue for provenance.
+    # The original database contains blank dropdown values at order 0, 1, 11
+    # and 100. A choice with NO visible label cannot be safely selected or
+    # interpreted as a result. Exclude these choices from entry, regardless of
+    # sort order, retaining every original row in the archived source form.
+    # If no labeled choice remains the field still fails validation.
     blank_placeholders = 0
     cleaned_active = []
     for field in active:
@@ -80,8 +81,7 @@ def effective_source_form(raw):
             continue
         choices = []
         for option in field.get("options", []):
-            if (isinstance(option, dict) and not str(option.get("label") or "").strip()
-                    and option.get("order") in (0, "0")):
+            if isinstance(option, dict) and not str(option.get("label") or "").strip():
                 blank_placeholders += 1
                 continue
             choices.append(option)
