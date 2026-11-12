@@ -125,6 +125,8 @@ jobs:
         run: python -m hospital.royallab_catalog_audit > /tmp/nova_lab_catalog_audit.json && python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print({k:v for k,v in r.items() if k in ('test_count','source_analyte_count','source_result_field_count','detached_analyte_count','tests_requiring_review','runtime_ready_test_count','runtime_blocked_test_count','inactive_fields_excluded_from_entry','blank_source_placeholders_excluded_from_entry','review_flags','active_review_flags')})"
       - name: Show exact outstanding laboratory test reasons
         run: python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print(json.dumps(r['runtime_blocked_tests'],ensure_ascii=False))"
+      - name: Diagnose unresolved active dropdown option labels
+        run: python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print(json.dumps([{'source_test_id':x['source_test_id'],'fields':[f for f in x['fields'] if f['blank_options']]} for x in r['unresolved_field_evidence'] if any(f['blank_options'] for f in x['fields'])],ensure_ascii=False))"
       - name: Upload exact source catalog audit for remediation
         uses: actions/upload-artifact@v4
         with:
