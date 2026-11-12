@@ -491,7 +491,36 @@ jobs:
       - name: Install, upgrade, and test rollback on synthetic records
         shell: pwsh
         timeout-minutes: 18
-        run: ./windows/ci-acceptance.ps1
+        run: |
+          # The server may fail early and leave the installer waiting on a modal
+          # dialog. Surface its logs immediately rather than waiting 18 minutes.
+          $ErrorActionPreference='Stop'
+          $job = Start-Job -ScriptBlock {
+            Set-Location $using:PWD
+            & ./windows/ci-acceptance.ps1
+            if ($LASTEXITCODE -ne 0) { throw "Acceptance exited with $LASTEXITCODE" }
+          }
+          $logRoot=Join-Path $env:ProgramData 'NOVA_Hospital\logs'
+          try {
+            $deadline=(Get-Date).AddMinutes(15)
+            while ($job.State -eq 'Running' -and (Get-Date) -lt $deadline) {
+              Start-Sleep -Seconds 10
+              $stderr=Join-Path $logRoot 'stderr.log'
+              if (Test-Path $stderr) {
+                $tail=(Get-Content $stderr -Tail 30 -ErrorAction SilentlyContinue) -join "`n"
+                if ($tail -match 'Existing NOVA central database failed verification|Failed to execute script') {
+                  throw "NOVA server failed startup during installer acceptance. STDERR: $tail"
+                }
+              }
+            }
+            if ($job.State -eq 'Running') { throw 'NOVA installer acceptance exceeded 15-minute watchdog' }
+            Receive-Job $job -ErrorAction Stop
+            if ($job.State -ne 'Completed') { throw "NOVA acceptance job state: $($job.State)" }
+          }
+          finally {
+            if ($job.State -eq 'Running') { Stop-Job $job }
+            Remove-Job $job -Force -ErrorAction SilentlyContinue
+          }
       - name: Print synthetic Windows installer diagnostics on failure
         if: failure()
         shell: pwsh
