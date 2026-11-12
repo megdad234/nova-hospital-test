@@ -31,6 +31,13 @@ class DraftTests(unittest.TestCase):
             save_draft(self.db, "ORDER-1", "TEST-1", {"F1": "INVALID"})
         self.assertEqual(load_draft(self.db, "ORDER-1", "TEST-1")["values"], {"F1": "A"})
 
+    def test_numeric_source_format_id_is_accepted(self):
+        self.db.execute("""INSERT INTO royal_lab_native_tests VALUES
+          (1, 'TEST-2', 'Numeric ID', '{"source_test_id":"TEST-2","fields":[{"source_format_id":12,"kind":"select","options":[{"id":9,"active":true}]}]}')""")
+        result=save_draft(self.db,"ORDER-1","TEST-2",{"12":"9"})
+        self.assertEqual(result["values"],{"12":"9"})
+        self.assertEqual(load_draft(self.db,"ORDER-1","TEST-2")["values"],{"12":"9"})
+
     def test_separate_orders_and_missing_draft(self):
         self.assertIsNone(load_draft(self.db, "ORDER-2", "TEST-1"))
         save_draft(self.db, "ORDER-1", "TEST-1", {"F1": "A"})
