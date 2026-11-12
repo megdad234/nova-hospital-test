@@ -118,6 +118,9 @@
     const addFieldButton = document.createElement('button');
     addFieldButton.type = 'button';
     addFieldButton.textContent = 'إضافة حقل نتيجة';
+    const suggestButton = document.createElement('button');
+    suggestButton.type = 'button';
+    suggestButton.textContent = 'تعبئة الحقول من المصدر أو مقترح المراجعة';
     const methodInput = document.createElement('textarea');
     methodInput.placeholder = 'طريقة التحليل الفعلية بالمختبر (مطلوب)';
     methodInput.setAttribute('aria-label', 'طريقة التحليل المعتمدة بالمختبر');
@@ -133,7 +136,7 @@
     const reviewHistoryContainer = document.createElement('section');
     const help = document.createElement('p');
     help.textContent = 'لا تُفعّل النماذج أو القوائم إلا بعد مراجعة مختلفة واعتماد إداري. أدخل فقط ما تؤكده طريقة التحليل، بدون افتراض المدى المرجعي.';
-    reviewBody.append(help, reviewSelect, proposalFields, addFieldButton,
+    reviewBody.append(help, reviewSelect, suggestButton, proposalFields, addFieldButton,
       methodInput, evidenceInput, rationaleInput, proposeButton,
       reviewHistoryContainer, reviewStatus);
     reviewPanel.append(reviewHeading, reviewBody);
@@ -175,6 +178,49 @@
       return line;
     }
     addFieldButton.addEventListener('click', makeReviewField);
+    suggestButton.addEventListener('click', async function () {
+      const selected = reviewSelect.value;
+      if (!selected) {
+        reviewStatus.textContent = 'اختر فحصاً يحتاج إصلاحاً';
+        return;
+      }
+      if (proposalFields.querySelector('fieldset')) {
+        reviewStatus.textContent = 'حافظ على الحقول المكتوبة: امسحها يدوياً قبل استيراد المقترح';
+        return;
+      }
+      suggestButton.disabled = true;
+      try {
+        const response = await fetch(base + '/review/suggestion/' + encodeURIComponent(selected),
+          { credentials: 'same-origin' });
+        if (!response.ok) throw new Error('تعذر قراءة مقترحات المصدر؛ تحقق من الصلاحيات');
+        const result = await response.json();
+        if (selected !== reviewSelect.value) return;
+        if (!result || result.source_test_id !== selected || !Array.isArray(result.fields) ||
+            result.ready_for_patient_results !== false || result.requires_independent_approval !== true)
+          throw new Error('مقترح المراجعة غير صالح');
+        for (const candidate of result.fields) {
+          if (!candidate || !candidate.label || !['text','number','select'].includes(candidate.kind))
+            continue;
+          const row = makeReviewField();
+          row.querySelector('[data-review-label]').value = safeText(candidate.label);
+          row.querySelector('[data-review-kind]').value = candidate.kind;
+          row.querySelector('[data-review-unit]').value = safeText(candidate.unit);
+          const choices = row.querySelector('[data-review-choices]');
+          choices.value = Array.isArray(candidate.option_labels) ?
+            candidate.option_labels.map(safeText).join('\n') : '';
+          choices.hidden = candidate.kind !== 'select';
+        }
+        const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+        reviewStatus.textContent = result.fields.length +
+          ' حقل مقترح للمراجعة؛ تحقق من طريقة التحليل والقوائم، ولا تعتمدها دون مستند.' +
+          (warnings.length ? ' تنبيهات: ' + warnings.map(safeText).join('؛ ') : '');
+      } catch (error) {
+        reviewStatus.textContent = safeText(error.message);
+      } finally {
+        suggestButton.disabled = false;
+      }
+    });
+
     function refreshReviewOptions() {
       const previously = reviewSelect.value;
       reviewSelect.replaceChildren();
