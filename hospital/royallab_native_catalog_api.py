@@ -36,7 +36,7 @@ def catalog_response(conn,search="",limit=500):
  items=[{**t,"name":_visible_name(t["name"])} for t in list_tests(conn,cid)]
  if search.strip():
   q=search.strip().casefold()
-  items=[t for t in items if q in t["name"].casefold() or q in t["source_test_id"].casefold()]
+  items=[t for t in items if q in t["name"].casefold()]
  return {"catalog_id":cid,"source":"RoyalLabDB.bak","total":len(items),"tests":items[:limit]}
 
 def form_response(conn,source_test_id):
