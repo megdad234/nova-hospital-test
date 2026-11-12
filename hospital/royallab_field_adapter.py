@@ -2,6 +2,7 @@
 No medical inference, no guessed dropdown options, no database mutations.
 """
 from collections import Counter
+from hospital.royallab_source_numeric_format_map import (DOUBLE_RESULT_FORMAT_IDS, INTEGER_RESULT_FORMAT_IDS)
 
 def build_fields(library):
     if not isinstance(library,dict):raise ValueError("Royal Lab source must be a JSON object")
@@ -20,6 +21,18 @@ def build_fields(library):
         fields=[]
         for f in formats:
             kinds=set(f.get("types") or [])
+            # The extracted JSON knows OpenEndedResultFormat but omitted its
+            # Double/Integer subtype. Restore ONLY source-proven subtype IDs
+            # from the original database relationship tables. Do not coerce
+            # explicitly string or dropdown formats into numbers.
+            original_format_id=str(f.get("id") or "")
+            if ("OpenEndedResultFormat" in kinds and
+                    "StringResultFormat" not in kinds and
+                    "ColoseEndedResultFormat" not in kinds):
+                if original_format_id in DOUBLE_RESULT_FORMAT_IDS:
+                    kinds.add("DoubleResultFormat")
+                elif original_format_id in INTEGER_RESULT_FORMAT_IDS:
+                    kinds.add("IntegerResultFormat")
             options=[{"id":str(o.get("id","")),"label":o.get("label",""),"active":o.get("active"),"order":o.get("order"),"is_normal":o.get("is_normal")} for o in f.get("options",[])]
             if "ColoseEndedResultFormat" in kinds and options and ({"StringResultFormat","OpenEndedResultFormat","DoubleResultFormat","IntegerResultFormat"} & kinds):
                 kind="select_or_text"
