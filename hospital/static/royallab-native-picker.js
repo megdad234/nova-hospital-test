@@ -74,8 +74,7 @@
       empty.textContent = '— اختر الفحص —';
       picker.appendChild(empty);
       for (const test of tests) {
-        if (!safeText(test.name).toLocaleLowerCase().includes(q) &&
-            false) continue;
+        if (!displayText(test.name).toLocaleLowerCase().includes(q)) continue;
         const option = document.createElement('option');
         option.value = safeText(test.source_test_id);
         option.textContent = displayText(test.name);
