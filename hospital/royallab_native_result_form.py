@@ -69,6 +69,8 @@ def validate_result_values(test_form,values):
             try:n=decimal.Decimal(str(value))
             except decimal.InvalidOperation:raise ValueError("Invalid numeric result")
             if not n.is_finite():raise ValueError("Non-finite numeric result")
+            if "IntegerResultFormat" in (f.get("types") or []) and n != n.to_integral_value():
+                raise ValueError("Integer result required by original source format")
             out[sid]=str(n)
         elif kind=="select_or_number":
             import decimal
@@ -77,6 +79,8 @@ def validate_result_values(test_form,values):
                 try:n=decimal.Decimal(str(value))
                 except decimal.InvalidOperation:raise ValueError("Invalid numeric or source option result")
                 if not n.is_finite():raise ValueError("Non-finite numeric result")
+                if "IntegerResultFormat" in (f.get("types") or []) and n != n.to_integral_value():
+                    raise ValueError("Integer result required by original source format")
             out[sid]=str(value)
         elif kind in ("text","select_or_text"):
             if not isinstance(value,(str,int,float)):raise ValueError("Invalid result value")
