@@ -48,6 +48,12 @@ class ReplacementTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             replace_catalog(self.db,{},approved=True)
         self.assertEqual(self.db.execute("SELECT active FROM hospital_lab_tests WHERE code='OLD'").fetchone()[0],1)
+    def test_imported_parameters_are_active_for_existing_nova_resolver(self):
+        replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM hospital_lab_parameters WHERE code LIKE 'ROYAL_FMT_%' AND active=1").fetchone()[0],367)
+        self.db.execute("UPDATE hospital_lab_parameters SET active=0 WHERE code='ROYAL_FMT_1'")
+        replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute("SELECT active FROM hospital_lab_parameters WHERE code='ROYAL_FMT_1'").fetchone()[0],1)
     def test_imported_format_codes_match_nova_line_resolver(self):
         replace_catalog(self.db,{},approved=True)
         self.assertEqual(self.db.execute("SELECT code FROM hospital_lab_parameters WHERE test_id=(SELECT id FROM hospital_lab_tests WHERE code='ROYAL-0')").fetchone()[0],"ROYAL_FMT_1")
