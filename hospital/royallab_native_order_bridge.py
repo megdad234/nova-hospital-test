@@ -41,7 +41,9 @@ def attach_native_test(conn, actor, nova_item_id, source_test_id):
     _actor(actor)
     if not isinstance(conn, sqlite3.Connection):
         raise TypeError("SQLite connection required")
-    _existing_order(conn, nova_item_id)
+    item = _existing_order(conn, nova_item_id)
+    if item[1] == "approved":
+        raise PermissionError("Approved NOVA item cannot be rebound")
     catalog_id = current_catalog_id(conn)
     source_test_id = str(source_test_id)
     test_form(conn, catalog_id, source_test_id)
