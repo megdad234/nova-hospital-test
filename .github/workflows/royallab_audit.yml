@@ -13,6 +13,7 @@ on:
       - 'hospital/royallab_missing_test_review_templates.py'
       - 'hospital/royallab_clinical_template_review.py'
       - 'tests/test_royallab_clinical_template_review.py'
+      - 'tests/test_royallab_clinical_review_ui.py'
       - 'tests/test_royallab_missing_test_review_templates.py'
       - 'tests/test_royallab_historical_schema_audit.py'
       - 'tests/test_royallab_catalog_audit.py'
@@ -146,5 +147,7 @@ jobs:
           name: nova-laboratory-catalog-audit
           path: /tmp/nova_lab_catalog_audit.json
           retention-days: 14
+      - name: Verify in-app laboratory review JavaScript syntax
+        run: node --check hospital/static/royallab-native-picker.js
       - name: Verify isolated staging invariants
         run: python -m unittest discover -s tests -p 'test_royallab_*.py' -v
