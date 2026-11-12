@@ -124,6 +124,7 @@ on:
       - 'hospital/royallab_replacement_readiness.py'
       - 'hospital/static/royallab-native-picker.js'
       - 'tests/test_royallab_native_result_drafts.py'
+      - 'tests/test_royallab_real_catalog_order_roundtrip.py'
       - 'tests/test_royallab_native_order_bridge.py'
       - 'tests/test_royallab_native_form_html.py'
       - 'tests/test_royallab_replacement_readiness.py'
