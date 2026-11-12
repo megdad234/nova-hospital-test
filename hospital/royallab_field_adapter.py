@@ -10,6 +10,8 @@ def build_fields(library):
     if len(tests)!=367 or len(analytes)!=1245:raise ValueError("Royal Lab source is incomplete")
     ids=[str(t["TestID"]) for t in tests]
     if len(set(ids))!=len(ids):raise ValueError("duplicate source test IDs")
+    analyte_ids=[str(a.get("analyte_id")) for a in analytes]
+    if len(set(analyte_ids))!=len(analyte_ids):raise ValueError("duplicate source analyte IDs")
     by_test={str(t["TestID"]):{"source_id":str(t["TestID"]),"name":t.get("Name",""),"source":t,"fields":[],"review_flags":[]} for t in tests}
     detached=[]
     for a in analytes:
@@ -52,7 +54,8 @@ def build_fields(library):
         if len(format_ids)!=len(set(format_ids)):test["review_flags"].append("duplicate_source_format_ids")
         if any(not str(f.get("label") or "").strip() for f in test["fields"]):test["review_flags"].append("missing_source_field_label")
         if any(f.get("active") in (False,0,"False","false","0") for f in test["fields"]):test["review_flags"].append("inactive_source_field")
-        if any(f["kind"].startswith("select") and (not f.get("options") or len({str(o["id"]) for o in f["options"]})!=len(f["options"])) for f in test["fields"]):test["review_flags"].append("missing_or_duplicate_source_option_ids")
+        if any(f["kind"].startswith("select") and (not f.get("options") or any(not str(o.get("id") or "").strip() for o in f["options"]) or len({str(o["id"]) for o in f["options"]})!=len(f["options"])) for f in test["fields"]):test["review_flags"].append("missing_or_duplicate_source_option_ids")
+        if any(f["kind"].startswith("select") and any(not str(o.get("label") or "").strip() for o in f.get("options",[])) for f in test["fields"]):test["review_flags"].append("missing_source_option_label")
         if any(f["kind"]=="unknown" for f in test["fields"]):test["review_flags"].append("unknown_result_format")
         if any(f["kind"]=="related" for f in test["fields"]):test["review_flags"].append("related_result_format_requires_ui_support")
         if any(f["kind"].startswith("select_or_") for f in test["fields"]):test["review_flags"].append("mixed_format_requires_combobox")
