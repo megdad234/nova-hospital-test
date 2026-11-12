@@ -37,8 +37,9 @@ def patch(source):
  # Routes inherit existing authentication and database connection context.
  marker="                    if path=='/api/hospital/patients':"
  if source.count(marker)!=2:raise ValueError("Expected GET and POST patient routes")
- source=source.replace(marker,ROUTES+GET_DRAFT_ROUTE+marker,1)
- return source.replace(marker,POST_ROUTES+marker,1)
+ parts=source.split(marker)
+ if len(parts)!=3:raise ValueError("NOVA GET/POST patient anchors changed")
+ return parts[0]+ROUTES+GET_DRAFT_ROUTE+marker+parts[1]+POST_ROUTES+marker+parts[2]
 def apply(root):
  p=Path(root)/'hospital/gateway.py'
  p.write_text(patch(p.read_text(encoding='utf-8')),encoding='utf-8')
