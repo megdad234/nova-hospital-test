@@ -72,6 +72,13 @@ def replace_catalog(conn, library, *, approved=False):
         if unsupported:
             raise RuntimeError("Required columns need explicit NOVA mapping in " +
                                table + ": " + ", ".join(unsupported))
+    # Never silently override manually edited clinical catalogue rows.
+    existing_royal = conn.execute(
+        "SELECT code FROM hospital_lab_tests WHERE code LIKE 'ROYAL-%'").fetchall()
+    unexpected = sorted({row[0] for row in existing_royal} - set(plan["new_codes"]))
+    if unexpected:
+        raise RuntimeError("Unexpected existing ROYAL-prefixed tests: " +
+                           ", ".join(unexpected[:10]))
     conn.execute("SAVEPOINT royal_catalog_replacement")
     try:
         # Never delete old test/parameter IDs: historical lab orders may reference them.
