@@ -22,6 +22,20 @@ class NativeForms(unittest.TestCase):
   form={"fields":[{"source_format_id":"A","kind":"text","active":False}]}
   with self.assertRaisesRegex(ValueError,"Inactive"):validate_result_values(form,{"A":"result"})
   with self.assertRaisesRegex(ValueError,"Invalid source field"):validate_result_values({"fields":[None]},{"A":"result"})
+ def test_exact_source_integer_fields_refuse_fractional_results(self):
+  form={"fields":[{"source_format_id":"INT","kind":"number",
+                   "types":["OpenEndedResultFormat","IntegerResultFormat"],"active":True},
+                  {"source_format_id":"DOUBLE","kind":"number",
+                   "types":["OpenEndedResultFormat","DoubleResultFormat"],"active":True}]}
+  self.assertEqual(validate_result_values(form,{"INT":"2","DOUBLE":"2.5"}),
+                   {"INT":"2","DOUBLE":"2.5"})
+  with self.assertRaisesRegex(ValueError,"Integer result required"):
+   validate_result_values(form,{"INT":"2.5"})
+  with self.assertRaisesRegex(ValueError,"Integer result required"):
+   validate_result_values({"fields":[{"source_format_id":"SELECT_INT","kind":"select_or_number",
+                                       "types":["IntegerResultFormat"],
+                                       "options":[{"id":"A","active":True}]}]},
+                          {"SELECT_INT":"2.5"})
  def test_nonfinite_text_float_rejected(self):
   form={"fields":[{"source_format_id":"A","kind":"text","active":True}]}
   with self.assertRaisesRegex(ValueError,"Non-finite"):validate_result_values(form,{"A":float("nan")})
