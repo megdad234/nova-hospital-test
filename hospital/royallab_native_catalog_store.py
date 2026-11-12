@@ -172,6 +172,7 @@ def effective_source_form(raw):
     # not a reconstructed numeric type, a normal range or clinical approval.
     # Preserve its synthetic identity so the real analyte can be audited.
     manual_fallback_count = 0
+    missing_closed_choice_draft_count = 0
     manual_fields = []
     for f in active:
         types = f.get("types") or []
@@ -181,13 +182,27 @@ def effective_source_form(raw):
                      and str(f.get("source_analyte_id") or "").strip()
                      and str(f.get("label") or "").strip()
                      and not f.get("options"))
+        # This is a genuinely missing historical dropdown: the source format
+        # exists but its source option rows do not. A named textual observation
+        # may be entered as a DRAFT only; never synthesize a positive/negative
+        # list or claim the original format was a free-text result.
+        is_missing_closed = (
+            "ColoseEndedResultFormat" in types and not f.get("options")
+            and f.get("kind") == "text"
+            and str(f.get("source_format_id") or "").strip()
+            and str(f.get("source_analyte_id") or "").strip()
+            and str(f.get("label") or "").strip() not in ("", "-", "*")
+        )
         if is_manual:
             manual_fallback_count += 1
-        manual_fields.append({**f, "manual_untyped_draft_only": bool(is_manual)})
+        if is_missing_closed:
+            missing_closed_choice_draft_count += 1
+        manual_fields.append({**f, "manual_untyped_draft_only": bool(is_manual),
+                              "manual_missing_closed_options_draft_only": bool(is_missing_closed)})
     active = manual_fields
     def valid_source_format(f):
         types = f.get("types") or []
-        if f.get("manual_untyped_draft_only"):
+        if f.get("manual_untyped_draft_only") or f.get("manual_missing_closed_options_draft_only"):
             return True
         return (bool(types) and not str(f.get("source_format_id") or "").startswith("ANALYTE-")
                 and not ("ColoseEndedResultFormat" in types and not f.get("options")))
@@ -211,7 +226,8 @@ def effective_source_form(raw):
             "excluded_inactive_source_fields": excluded,
             "excluded_blank_placeholder_options": blank_placeholders,
             "manual_untyped_draft_fields": manual_fallback_count,
-            "excluded_redundant_empty_closed_formats": redundant_incomplete_choices}
+            "excluded_redundant_empty_closed_formats": redundant_incomplete_choices,
+            "manual_missing_closed_options_draft_fields": missing_closed_choice_draft_count}
 
 def clinical_test_form(conn, catalog_id, source_test_id):
     """Return the safely editable subset without changing stored source data."""
