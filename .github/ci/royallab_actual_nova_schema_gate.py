@@ -7,6 +7,9 @@ import ast
 import json
 import pathlib
 import sqlite3
+import sys
+ROOT=pathlib.Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path: sys.path.insert(0,str(ROOT))
 from hospital.royallab_existing_catalog_replacement import replacement_plan, replace_catalog
 
 def schema_from_source(source):
