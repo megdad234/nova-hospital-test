@@ -39,7 +39,8 @@ def audit(path=SOURCE):
             validate_source_form(active_form)
         except ValueError as exc:
             blocked.append({"source_test_id": test["source_id"], "name": test["name"],
-                            "reason": str(exc), "active_field_count": len(active_form.get("fields", []))})
+                            "reason": str(exc), "review_flags": active_form.get("review_flags", []),
+                            "active_field_count": len(active_form.get("fields", []))})
         else:
             ready.append({"source_test_id": test["source_id"], "name": test["name"],
                           "active_field_count": len(active_form["fields"])})
