@@ -34,6 +34,13 @@ def save_draft(conn, order_key, source_test_id, values):
     source_test_id = str(source_test_id)
     catalog_id = current_catalog_id(conn)
     form = test_form(conn, catalog_id, source_test_id)
+    if form.get('review_flags'):
+        raise ValueError('Source test requires clinical review before saving a draft')
+    fields = form.get('fields')
+    if not isinstance(fields, list) or not fields:
+        raise ValueError('Source test has no valid result fields')
+    if any(not isinstance(field, dict) or field.get('active') in (False, 0, 'False', 'false', '0') for field in fields):
+        raise ValueError('Source test contains inactive or invalid result fields')
     validated = validate_result_values(form, values)
     with conn:
         conn.execute(SCHEMA)
