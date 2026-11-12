@@ -30,11 +30,24 @@ def audit(path=SOURCE):
         for t in tests if any(term in str(t["name"]).casefold() for term in focus_terms)
     ]
     flags = Counter(flag for t in tests for flag in t["review_flags"])
+    detached_by_test = Counter(str(x["source_test_id"]) for x in result["detached_analytes"])
+    detached_details = [
+        {"source_test_id": test_id, "analyte_count": count,
+         "analytes": [{"source_analyte_id": str(x["analyte"].get("analyte_id", "")),
+                       "name": str(x["analyte"].get("name", ""))}
+                      for x in result["detached_analytes"] if str(x["source_test_id"]) == test_id]}
+        for test_id, count in sorted(detached_by_test.items())
+    ]
     return {
         "test_count": len(tests),
         "source_analyte_count": len(library.get("analytes", [])),
         "source_result_field_count": sum(len(t["fields"]) for t in tests),
         "detached_analyte_count": len(result["detached_analytes"]),
+        "detached_source_test_groups": detached_details,
+        "tests_without_analytes": [
+            {"source_test_id": t["source_id"], "name": t["name"]}
+            for t in tests if not t["fields"]
+        ],
         "field_kinds": result["field_kinds"],
         "tests_requiring_review": len(flagged),
         "review_flags": dict(sorted(flags.items())),
