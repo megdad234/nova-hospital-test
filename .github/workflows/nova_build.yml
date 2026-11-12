@@ -127,6 +127,12 @@ on:
       - 'tests/test_royallab_native_order_bridge.py'
       - 'tests/test_royallab_native_form_html.py'
       - 'tests/test_royallab_replacement_readiness.py'
+      - 'hospital/royallab_existing_schema_audit.py'
+      - 'hospital/royallab_existing_catalog_replacement.py'
+      - 'hospital/royallab_existing_line_overlay.py'
+      - 'tests/test_royallab_existing_schema_audit.py'
+      - 'tests/test_royallab_existing_catalog_replacement.py'
+      - 'tests/test_royallab_existing_line_overlay.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -434,6 +440,12 @@ jobs:
           python -m unittest discover -s tests -p 'test_royallab_replacement_readiness.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab replacement readiness tests failed' }
           python -m unittest discover -s tests -p 'test_royallab_native_order_bridge.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native order bridge regression failed' }
+          python -m unittest discover -s tests -p 'test_royallab_existing_schema_audit.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Existing NOVA lab schema audit regression failed' }
+          python -m unittest discover -s tests -p 'test_royallab_existing_catalog_replacement.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Direct Royal Lab catalogue replacement regression failed' }
+          python -m unittest discover -s tests -p 'test_royallab_existing_line_overlay.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native draft persistence regression failed' }
       - name: Block misleading Royal Lab installer until live migration is proven
         shell: pwsh
