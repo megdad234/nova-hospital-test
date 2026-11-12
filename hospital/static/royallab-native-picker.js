@@ -4,16 +4,18 @@
 (function (global) {
   'use strict';
   function safeText(value) { return String(value == null ? '' : value); }
+  // Source identifiers remain internal for binding only; never display them to staff.
+  function displayText(value) { return safeText(value).replace(/\bROYAL[\s_-]*\d+\b/gi, '').replace(/\s{2,}/g, ' ').trim(); }
   function createRoyalLabPicker(root, apiBase) {
     if (!root || typeof root.appendChild !== 'function') throw new Error('Lab container required');
     const base = apiBase || '/api/hospital/royallab-native';
     root.replaceChildren();
     const search = document.createElement('input');
     search.type = 'search';
-    search.placeholder = 'ابحث عن فحص Royal Lab';
+    search.placeholder = 'ابحث عن فحص بالاسم';
     search.setAttribute('aria-label', 'بحث فحوصات المعمل');
     const picker = document.createElement('select');
-    picker.setAttribute('aria-label', 'فحوصات Royal Lab');
+    picker.setAttribute('aria-label', 'فحوصات المعمل');
     const detail = document.createElement('section');
     detail.dir = 'rtl';
     const status = document.createElement('p');
@@ -73,25 +75,25 @@
       picker.appendChild(empty);
       for (const test of tests) {
         if (!safeText(test.name).toLocaleLowerCase().includes(q) &&
-            !safeText(test.source_test_id).toLocaleLowerCase().includes(q)) continue;
+            false) continue;
         const option = document.createElement('option');
         option.value = safeText(test.source_test_id);
-        option.textContent = safeText(test.name);
+        option.textContent = displayText(test.name);
         picker.appendChild(option);
       }
       detail.replaceChildren();
       saveButton.disabled = true;
     }
     async function load() {
-      status.textContent = 'جاري تحميل كتالوج Royal Lab...';
+      status.textContent = 'جاري تحميل فحوصات المعمل...';
       const response = await fetch(base + '/tests', { credentials: 'same-origin' });
       if (!response.ok) throw new Error('تعذر تحميل فحوصات المعمل');
       const data = await response.json();
       if (!Array.isArray(data.tests) || data.total !== 367 || data.tests.length !== 367)
-        throw new Error('كتالوج Royal Lab غير مكتمل');
+        throw new Error('كتالوج الفحوصات غير مكتمل');
       tests = data.tests;
       filter();
-      status.textContent = 'تم تحميل 367 فحص من Royal Lab';
+      status.textContent = 'تم تحميل 367 فحص';
     }
     async function showSelected() {
       const id = picker.value;
@@ -107,13 +109,13 @@
         if (serial !== requestSerial) return;
         if (!data.test || safeText(data.test.source_test_id) !== id) throw new Error('هوية الفحص غير متطابقة');
         const title = document.createElement('h3');
-        title.textContent = safeText(data.test.name);
+        title.textContent = displayText(data.test.name);
         detail.appendChild(title);
         for (const field of data.test.fields || []) {
           const line = document.createElement('label');
           line.className = 'royal-lab-field';
           const label = document.createElement('span');
-          label.textContent = safeText(field.label) + (field.unit ? ' (' + safeText(field.unit) + ')' : '');
+          label.textContent = displayText(field.label) + (field.unit ? ' (' + safeText(field.unit) + ')' : '');
           line.appendChild(label);
           const ranges = [];
           for (const range of field.numeric_ranges || []) ranges.push(range);
@@ -141,7 +143,7 @@
               if ([false, 0, 'False', 'false', '0'].includes(choice.active)) continue;
               const opt = document.createElement('option');
               opt.value = safeText(choice.id);
-              opt.textContent = safeText(choice.label);
+              opt.textContent = displayText(choice.label);
               control.appendChild(opt);
             }
           } else if (field.kind === 'number' || field.kind === 'text') {
