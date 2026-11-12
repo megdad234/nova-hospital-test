@@ -27,7 +27,16 @@ def overlay_existing_order_lines(conn, detail):
         for line in clone["lines"]:
             param_id=line.get("parameter_id")
             if type(param_id) is not int:
-                continue
+                # Resolve by exact original NOVA line code when parameter_id absent.
+                code=line.get("code")
+                if not isinstance(code,str) or not code.startswith("ROYAL_FMT_"):
+                    continue
+                matches=conn.execute("""SELECT p.id FROM hospital_lab_parameters p
+                    JOIN hospital_order_items i ON i.test_id=p.test_id
+                    WHERE i.id=? AND p.code=?""",(item_id,code)).fetchall()
+                if len(matches)!=1:
+                    continue
+                param_id=matches[0][0]
             row=conn.execute("""SELECT m.kind,m.options_json,m.numeric_ranges_json,
                   m.text_ranges_json FROM royal_lab_nova_parameter_metadata m
                   JOIN hospital_lab_parameters p ON p.id=m.nova_parameter_id
@@ -40,6 +49,10 @@ def overlay_existing_order_lines(conn, detail):
                 numeric_ranges=json.loads(row[2])
                 text_ranges=json.loads(row[3])
             except (ValueError,TypeError):
+                continue
+            if not isinstance(options,list) or not all(isinstance(o,dict) for o in options):
+                continue
+            if not isinstance(numeric_ranges,list) or not isinstance(text_ranges,list):
                 continue
             line["royal_lab_field"]={
                 "kind":row[0],
