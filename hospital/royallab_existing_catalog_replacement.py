@@ -40,6 +40,9 @@ def replacement_plan(conn, library):
     if any(not t["name"].strip() for t in tests):
         raise RuntimeError("Unnamed Royal Lab test")
     missing_fields = [f for t in tests for f in t["fields"] if not f["source_format_id"]]
+    unsupported_fields = [(t["source_test_id"],f.get("source_format_id")) for t in tests for f in t["fields"] if f.get("kind") in ("unknown","related")]
+    if missing_fields or unsupported_fields:
+        raise RuntimeError("Royal Lab source has unresolved result formats: missing=%d unsupported=%d" % (len(missing_fields),len(unsupported_fields)))
     duplicate_fields = [t["source_test_id"] for t in tests if len([str(f["source_format_id"]) for f in t["fields"] if f["source_format_id"] is not None]) != len({str(f["source_format_id"]) for f in t["fields"] if f["source_format_id"] is not None})]
     if duplicate_fields:
         raise RuntimeError("Duplicate Royal Lab result format IDs in tests: " + ", ".join(duplicate_fields[:10]))
@@ -80,6 +83,7 @@ def replace_catalog(conn, library, *, approved=False):
     if unexpected:
         raise RuntimeError("Unexpected existing ROYAL-prefixed tests: " +
                            ", ".join(unexpected[:10]))
+    # Never change active clinical catalogues while a source definition is unresolved.
     conn.execute("SAVEPOINT royal_catalog_replacement")
     try:
         # Never delete old test/parameter IDs: historical lab orders may reference them.
