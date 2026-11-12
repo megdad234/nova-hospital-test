@@ -469,7 +469,11 @@ jobs:
         shell: pwsh
         run: |
           if (Test-Path -LiteralPath windows/output/NOVA-Hospital-Setup-DEV.exe) { Remove-Item -LiteralPath windows/output/NOVA-Hospital-Setup-DEV.exe -Force }
-          ./windows/build-windows.ps1
+          # Legacy integration fixtures explicitly require the original CBC seed.
+          # This process-only flag does not change packaged runtime behavior.
+          $env:NOVA_LEGACY_LAB_REGRESSION='1'
+          try { ./windows/build-windows.ps1 }
+          finally { Remove-Item Env:NOVA_LEGACY_LAB_REGRESSION -ErrorAction SilentlyContinue }
           if ($LASTEXITCODE -ne 0) { throw 'Fresh Windows installer build failed' }
       - name: Verify installer exists before acceptance
         shell: pwsh
