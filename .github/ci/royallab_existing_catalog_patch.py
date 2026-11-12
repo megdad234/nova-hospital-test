@@ -29,7 +29,16 @@ def init(c, *args, **kwargs):
         raise RuntimeError("Royal Lab source missing; refusing old NOVA catalogue")
     _library = _royal_json.loads(_source.read_text(encoding="utf-8-sig"))
     _replace(c, _library, approved=True)
+    from hospital.nova_lab_local_tests import restore_active as _nova_local_restore
+    _nova_local_restore(c)
     return result
+
+# NOVA_LOCAL_SAVE_VALIDATION: keep original NOVA payment and revision checks.
+_original_nova_local_save_values = save_values
+def save_values(c,actor,data):
+    from hospital.nova_lab_local_tests import validate_save_payload as _nova_local_validate
+    _nova_local_validate(c,data)
+    return _original_nova_local_save_values(c,actor,data)
 '''
 
 def patch(source):
