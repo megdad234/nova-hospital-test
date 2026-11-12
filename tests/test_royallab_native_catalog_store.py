@@ -62,7 +62,7 @@ class NativeCatalogStoreTests(unittest.TestCase):
   self.assertEqual(len(test_form(self.conn,cid,"0")["fields"][0]["options"]),2)
   self.assertEqual(save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"P"})["status"],"draft")
 
- def test_unlabeled_nonplaceholder_source_option_stays_blocked(self):
+ def test_unlabeled_nonzero_source_choice_is_not_a_result(self):
   cid=install(self.conn,self.library,'1'*64)
   form=test_form(self.conn,cid,"0")
   field=form["fields"][0]
@@ -72,9 +72,26 @@ class NativeCatalogStoreTests(unittest.TestCase):
   form["review_flags"]=["missing_source_option_label"]
   self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
                     (json.dumps(form),cid))
-  self.assertIn("missing_source_option_label",clinical_test_form(self.conn,cid,"0")["review_flags"])
+  effective=clinical_test_form(self.conn,cid,"0")
+  self.assertEqual([o["id"] for o in effective["fields"][0]["options"]], ["P"])
+  self.assertEqual(effective["review_flags"], [])
+  self.assertEqual(save_draft(self.conn,"LAB-ORDER-1","0",
+                              {field["source_format_id"]:"P"})["status"],"draft")
   with self.assertRaises(ValueError):
-   save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"P"})
+   save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"UNKNOWN"})
+
+ def test_empty_only_source_dropdown_is_blocked(self):
+  cid=install(self.conn,self.library,'2'*64)
+  form=test_form(self.conn,cid,"0")
+  field=form["fields"][0]
+  field.update({"kind":"select","types":["ColoseEndedResultFormat"],
+                "options":[{"id":"BLANK","label":" ","order":100,"active":True}]})
+  form["review_flags"]=["missing_source_option_label"]
+  self.conn.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE catalog_id=? AND source_test_id='0'",
+                    (json.dumps(form),cid))
+  self.assertEqual(clinical_test_form(self.conn,cid,"0")["fields"][0]["options"],[])
+  with self.assertRaisesRegex(ValueError,"options are missing"):
+   save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"BLANK"})
 
  def test_original_department_only_marks_empty_service_as_non_lab(self):
   from hospital.royallab_native_catalog_store import is_non_lab_service
