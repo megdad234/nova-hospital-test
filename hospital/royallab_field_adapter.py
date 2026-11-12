@@ -51,6 +51,8 @@ def build_fields(library):
         format_ids=[str(f["source_format_id"]) for f in test["fields"]]
         if len(format_ids)!=len(set(format_ids)):test["review_flags"].append("duplicate_source_format_ids")
         if any(not str(f.get("label") or "").strip() for f in test["fields"]):test["review_flags"].append("missing_source_field_label")
+        if any(f.get("active") in (False,0,"False","false","0") for f in test["fields"]):test["review_flags"].append("inactive_source_field")
+        if any(f["kind"].startswith("select") and (not f.get("options") or len({str(o["id"]) for o in f["options"]})!=len(f["options"])) for f in test["fields"]):test["review_flags"].append("missing_or_duplicate_source_option_ids")
         if any(f["kind"]=="unknown" for f in test["fields"]):test["review_flags"].append("unknown_result_format")
         if any(f["kind"]=="related" for f in test["fields"]):test["review_flags"].append("related_result_format_requires_ui_support")
         if any(f["kind"].startswith("select_or_") for f in test["fields"]):test["review_flags"].append("mixed_format_requires_combobox")
