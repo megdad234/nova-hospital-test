@@ -13,7 +13,7 @@ class DraftTests(unittest.TestCase):
             catalog_id INTEGER, source_test_id TEXT, name TEXT, form_json TEXT,
             PRIMARY KEY(catalog_id, source_test_id))""")
         self.db.execute("""INSERT INTO royal_lab_native_tests VALUES
-          (1, 'TEST-1', 'Synthetic Test', '{"source_test_id":"TEST-1","fields":[{"source_format_id":"F1","label":"Color","kind":"select","options":[{"id":"A","active":true},{"id":"B","active":true}]}]}')""")
+          (1, 'TEST-1', 'Synthetic Test', '{"source_test_id":"TEST-1","fields":[{"source_format_id":"F1","label":"Color","kind":"select","options":[{"id":"A","label":"A","active":true},{"id":"B","label":"B","active":true}]}]}')""")
 
     def tearDown(self):
         self.db.close()
@@ -60,7 +60,7 @@ class DraftTests(unittest.TestCase):
     def test_duplicate_option_ids_blocked_on_server(self):
         row = self.db.execute("SELECT form_json FROM royal_lab_native_tests WHERE source_test_id=?", ("TEST-1",)).fetchone()
         form = json.loads(row[0])
-        form["fields"][0]["options"].append({"id": "A", "active": True})
+        form["fields"][0]["options"].append({"id": "A", "label": "A", "active": True})
         self.db.execute("UPDATE royal_lab_native_tests SET form_json=? WHERE source_test_id=?", (json.dumps(form), "TEST-1"))
         with self.assertRaisesRegex(ValueError, "duplicated"):
             save_draft(self.db, "ORDER-1", "TEST-1", {"F1": "A"})
