@@ -9,7 +9,7 @@ import unittest
 from hospital.royallab_catalog_audit import SOURCE, audit
 from hospital.royallab_native_catalog_store import install_file,clinical_test_form,test_form
 from hospital.royallab_clinical_template_review import (
-    propose,approve,review_history,review_details)
+    propose,approve,review_history,review_details,review_suggestion)
 from hospital.royallab_native_result_drafts import save_draft,validate_source_form
 from hospital.royallab_native_catalog_api import catalog_response,form_response
 
@@ -108,6 +108,21 @@ class TwoPersonClinicalReviewTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             approve(self.db,REVIEWER,self.cid,"368",1,p["form_hash"],attestation="")
         self.assertEqual(review_history(self.db,self.cid,"368")[0]["state"],"pending")
+
+    def test_suggestions_are_nonoperative_and_preserve_missing_source_evidence(self):
+        vitamin=review_suggestion(self.db,self.cid,"368")
+        self.assertEqual(vitamin["source_test_id"],"368")
+        self.assertFalse(vitamin["ready_for_patient_results"])
+        self.assertTrue(vitamin["requires_independent_approval"])
+        self.assertTrue(vitamin["source_archive_unchanged"])
+        self.assertEqual(len(vitamin["fields"]),1)
+        self.assertFalse(vitamin["fields"][0]["source_proven"])
+        self.assertEqual(vitamin["fields"][0]["option_labels"],[])
+        original=review_suggestion(self.db,self.cid,"60")
+        self.assertTrue(all(x["source_proven"] for x in original["fields"]))
+        self.assertFalse(any(x["unit"] is None for x in original["fields"]))
+        with self.assertRaisesRegex(ValueError,"already has"):
+            review_suggestion(self.db,self.cid,"21")
 
     def test_source_preserved_and_approved_form_tampering_detected(self):
         p=propose(self.db,LAB,self.cid,"368",NUMBER,**DETAILS)
