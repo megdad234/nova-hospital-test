@@ -7,6 +7,7 @@ Requires explicit schema verification before any writes.
 import json
 import sqlite3
 from hospital.royallab_native_result_form import native_catalog
+from hospital.royallab_nova_parameter_plan import source_code
 
 TESTS = "hospital_lab_tests"
 PARAMETERS = "hospital_lab_parameters"
@@ -107,7 +108,7 @@ def replace_catalog(conn, library, *, approved=False):
                 sid = field["source_format_id"]
                 if sid is None:
                     continue
-                param_code = "RL-" + str(sid)
+                param_code = source_code(sid)
                 row = conn.execute("SELECT id FROM hospital_lab_parameters WHERE test_id=? AND code=?",
                                    (test_id,param_code)).fetchone()
                 if row:
@@ -125,7 +126,7 @@ def replace_catalog(conn, library, *, approved=False):
                     continue
                 parameter_id = conn.execute(
                     "SELECT id FROM hospital_lab_parameters WHERE test_id=? AND code=?",
-                    (test_id, "RL-" + str(field["source_format_id"]))).fetchone()[0]
+                    (test_id, source_code(field["source_format_id"]))).fetchone()[0]
                 conn.execute("""INSERT INTO royal_lab_nova_parameter_metadata
                     (nova_parameter_id,source_test_id,source_format_id,kind,options_json,
                      numeric_ranges_json,text_ranges_json) VALUES(?,?,?,?,?,?,?)
