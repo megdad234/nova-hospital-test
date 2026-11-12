@@ -312,6 +312,10 @@ def review_suggestion(conn,catalog_id,source_test_id):
         warnings.append("No unambiguous template fields exist; obtain actual method and kit protocol")
     if len(proposal)>MAX_FIELDS:
         raise ValueError("More than 120 potential source fields requires laboratory review")
+    # Advisory metadata only: other original TestIDs NEVER become source
+    # evidence for this target or bypass independent clinical review.
+    from hospital.royallab_source_sibling_review import sibling_review_options
+    related_source_forms = sibling_review_options(conn,catalog_id,source_id)
     hint = REVIEW_EVIDENCE.get(source_id)
     guidance = ({"topic":hint[0],"method_question":hint[1],
                  "external_reference_url":hint[2],
@@ -319,6 +323,7 @@ def review_suggestion(conn,catalog_id,source_test_id):
                  "can_activate_without_review":False} if hint else None)
     return {"source_test_id":source_id,"source_test_name":original["name"],
             "fields":proposal,"warnings":warnings,"external_guidance":guidance,
+            "related_source_forms":related_source_forms,
             "ready_for_patient_results":False,
             "needs_method_documentation":True,
             "requires_independent_approval":True,
