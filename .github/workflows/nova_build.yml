@@ -380,6 +380,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native automatic catalogue initialization failed' }
           python -m unittest discover -s tests -p 'test_royallab_native_autoseed_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native autoseed patch tests failed' }
+          python -m py_compile hospital/royallab_existing_catalog_replacement.py hospital/royallab_existing_line_overlay.py
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab original NOVA table integration syntax invalid' }
           python .github/ci/royallab_existing_catalog_patch.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab existing NOVA catalogue patch failed' }
           python -m unittest discover -s tests -p 'test_royallab_existing_catalog_patch.py' -v
@@ -455,7 +457,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_royallab_existing_catalog_replacement.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Direct Royal Lab catalogue replacement regression failed' }
           python -m unittest discover -s tests -p 'test_royallab_existing_line_overlay.py' -v
-          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native draft persistence regression failed' }
+          if ($LASTEXITCODE -ne 0) { throw 'Original NOVA result line overlay regression failed' }
       - name: Block misleading Royal Lab installer until live migration is proven
         shell: pwsh
         run: |
