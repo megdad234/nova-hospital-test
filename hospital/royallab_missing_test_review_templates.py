@@ -35,11 +35,11 @@ CANDIDATE_FIELDS = {
 
 REFERENCES = {
     "336": "https://www.cdc.gov/hepatitis-c/hcp/diagnosis-testing/index.html",
-    "369": "https://www.who.int/publications/i/item/9789240016096",
+    "369": "https://www.who.int/publications/i/item/B09394",
     "320": "https://hl7.org/fhir/observation-definitions.html",
-    "368": "https://hl7.org/fhir/observation-definitions.html",
+    "368": "https://medlineplus.gov/lab-tests/vitamin-d-test/",
     "391": "https://hl7.org/fhir/observation-definitions.html",
-    "351": "https://hl7.org/fhir/observation-definitions.html",
+    "351": "https://medlineplus.gov/lab-tests/ammonia-levels/",
 }
 
 
