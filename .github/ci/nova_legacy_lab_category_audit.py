@@ -52,6 +52,8 @@ print("NOVA_ORIGINAL_CATEGORIES="+json.dumps(sorted(categories),ensure_ascii=Fal
 print("NOVA_ORIGINAL_CATEGORY_SAMPLES="+json.dumps(dict_samples,ensure_ascii=False))
 if not categories:
     raise SystemExit("Cannot identify any original NOVA category labels; do not overwrite them")
+import sys
+sys.path.insert(0,str(root))
 from hospital.royallab_nova_departments import (
     NOVA_LEGACY_ENGLISH_CATEGORIES, DISPLAY_DEPARTMENTS,
     SOURCE_TEST_DEPARTMENT_OVERRIDES)
