@@ -30,6 +30,14 @@ class AdapterTests(unittest.TestCase):
   analytes=[{"analyte_id":str(i),"test_id":"0","name":"A","result_formats":[{"id":"shared" if i<2 else str(i),"types":["DoubleResultFormat"]}]} for i in range(1245)]
   result=m.build_fields({"tests":tests,"analytes":analytes})
   self.assertIn("duplicate_source_format_ids",result["tests"][0]["review_flags"])
+ def test_inactive_and_duplicate_dropdown_options_flagged(self):
+  tests=[{"TestID":str(i),"Name":"Test"} for i in range(367)]
+  analytes=[{"analyte_id":str(i),"test_id":"0","name":"A","result_formats":[{"id":str(i),"types":["DoubleResultFormat"]}]} for i in range(1245)]
+  analytes[0]["active"]=False
+  analytes[1]["result_formats"]=[{"id":"1","types":["ColoseEndedResultFormat"],"options":[{"id":"x","label":"A"},{"id":"x","label":"B"}]}]
+  result=m.build_fields({"tests":tests,"analytes":analytes})
+  self.assertIn("inactive_source_field",result["tests"][0]["review_flags"])
+  self.assertIn("missing_or_duplicate_source_option_ids",result["tests"][0]["review_flags"])
  def test_reject_partial_source(self):
   with self.assertRaises(ValueError):m.build_fields({"tests":[],"analytes":[]})
 if __name__=="__main__":unittest.main()
