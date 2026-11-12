@@ -12,6 +12,8 @@ on:
       - 'hospital/royallab_historical_schema_audit.py'
       - 'hospital/royallab_missing_test_review_templates.py'
       - 'hospital/royallab_clinical_template_review.py'
+      - 'hospital/nova_lab_local_tests.py'
+      - 'tests/test_nova_lab_local_tests.py'
       - 'tests/test_royallab_clinical_template_review.py'
       - 'tests/test_royallab_clinical_review_ui.py'
       - 'tests/test_royallab_seminal_culture_source_placeholders.py'
@@ -151,5 +153,7 @@ jobs:
           retention-days: 14
       - name: Verify in-app laboratory review JavaScript syntax
         run: node --check hospital/static/royallab-native-picker.js
+      - name: Verify NOVA local lab tests creation and edit safety
+        run: python -m unittest discover -s tests -p 'test_nova_lab_local_tests.py' -v
       - name: Verify isolated staging invariants
         run: python -m unittest discover -s tests -p 'test_royallab_*.py' -v
