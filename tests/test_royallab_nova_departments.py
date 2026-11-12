@@ -30,19 +30,20 @@ class OriginalRoyalLabDepartmentTests(unittest.TestCase):
                             for t in self.catalog["tests"]))
 
     def test_nova_clinical_categories_are_semantically_correct(self):
-        expected={"7":"التحاليل العامة والطفيليات",
-                  "8":"التحاليل العامة والطفيليات",
-                  "13":"التحاليل العامة والطفيليات",
-                  "21":"أمراض الدم والتخثر",
-                  "101":"أمراض الدم والتخثر",
-                  "36":"الهرمونات",
-                  "40":"المناعة",
-                  "77":"المزارع والأحياء الدقيقة",
-                  "287":"الأحياء الدقيقة والسيرولوجيا",
-                  "320":"التحاليل العامة والطفيليات" if
-                        str(self.by_id["320"]["source_department_id"])=="2"
-                        else for_source_test(self.by_id["320"])["category"],
-                  "108":"بنك الدم"}
+        expected={"7":"Urinalysis",
+                  "8":"Parasitology",
+                  "13":"Parasitology",
+                  "21":"Hematology",
+                  "22":"Coagulation",
+                  "73":"Blood bank",
+                  "101":"Hematology",
+                  "36":"Hormones",
+                  "40":"Immunology",
+                  "77":"Microbiology",
+                  "115":"Serology",
+                  "287":"Microbiology",
+                  "320":"Hematology",
+                  "108":"Blood bank"}
         for source_id,label in expected.items():
             with self.subTest(source_id=source_id):
                 self.assertEqual(for_source_test(self.by_id[source_id])["category"],label)
@@ -51,7 +52,7 @@ class OriginalRoyalLabDepartmentTests(unittest.TestCase):
         cbc=for_source_test(self.by_id["21"])
         self.assertEqual(cbc["source_department_id"],"3")
         self.assertEqual(cbc["original_department_name"],"1 h.pp")
-        self.assertEqual(cbc["category"],"أمراض الدم والتخثر")
+        self.assertEqual(cbc["category"],"Hematology")
         urine=for_source_test(self.by_id["7"])
         self.assertEqual(urine["original_department_name"],"Renal Function Test(RFT)")
         self.assertNotEqual(urine["category"],"Renal Function Test(RFT)")
@@ -65,10 +66,10 @@ class OriginalRoyalLabDepartmentTests(unittest.TestCase):
         self.assertNotIn("Other",labels)
         self.assertNotIn("",labels)
         self.assertNotIn(UNKNOWN_LABEL,labels)
-        self.assertIn("الهرمونات",labels)
-        self.assertIn("المناعة",labels)
-        self.assertIn("بنك الدم",labels)
-        self.assertIn("الأحياء الجزيئية",labels)
+        self.assertIn("Hormones",labels)
+        self.assertIn("Immunology",labels)
+        self.assertIn("Blood bank",labels)
+        self.assertIn("Microbiology",labels)
         self.assertGreaterEqual(len(labels),8)
 
     def test_malformed_department_does_not_infer_from_name(self):
