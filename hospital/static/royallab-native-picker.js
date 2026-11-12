@@ -282,7 +282,7 @@
         const fields = rows.map(function (row, index) {
           const kind = row.querySelector('[data-review-kind]').value;
           const choicesText = row.querySelector('[data-review-choices]').value;
-          const options = kind === 'select' ? choicesText.split(/\\r?\\n/)
+          const options = kind === 'select' ? choicesText.split(/\r?\n/)
             .map(function (x) { return x.trim(); }).filter(Boolean)
             .map(function (label, i) { return { key: 'o' + (i + 1), label: label }; }) : [];
           return { key: 'f' + (index + 1), label: row.querySelector('[data-review-label]').value.trim(),
