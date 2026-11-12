@@ -4,7 +4,7 @@ ROOT=pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
 from hospital.royallab_native_catalog_store import install_file,list_tests,test_form
 from hospital.royallab_field_adapter import build_fields
-from hospital.royallab_native_result_drafts import save_draft,load_draft
+from hospital.royallab_native_result_drafts import save_draft,load_draft,validate_source_form
 from hospital.royallab_replacement_readiness import verify_replacement_catalog
 from hospital.royallab_existing_catalog_replacement import replace_catalog
 def run(root=ROOT):
@@ -39,8 +39,16 @@ def run(root=ROOT):
   if count<1000:raise RuntimeError('Real Royal Lab source has too few fields')
   if kinds.get('select',0)+kinds.get('select_or_text',0)+kinds.get('select_or_number',0)<1:raise RuntimeError('Real Royal Lab dropdowns missing')
   exercised=False
+  reviewed_dropdown_tests=0
+  blocked_source_tests=0
   for t in tests:
    form=test_form(db,cid,t['source_test_id'])
+   try:
+    validate_source_form(form)
+   except ValueError:
+    blocked_source_tests+=1
+    continue
+   reviewed_dropdown_tests+=1
    for field in form['fields']:
     if field['kind']!='select' or field.get('source_format_id') is None:continue
     active=[o for o in field.get('options',[]) if o.get('active') not in (False,0,'False','false','0')]
@@ -59,6 +67,8 @@ def run(root=ROOT):
          'kinds':kinds,'live_patient_results_written':False,
          'installed_windows_dropdowns_verified':False,
          'real_catalog_dropdown_draft_roundtrip':exercised,
+         'usable_source_tests_inspected':reviewed_dropdown_tests,
+         'blocked_source_tests_skipped':blocked_source_tests,
          'replacement_readiness':readiness,
          'synthetic_nova_table_replacement':True,
          'nova_parameter_metadata_count':metadata_count}
