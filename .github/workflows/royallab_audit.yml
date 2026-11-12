@@ -121,7 +121,7 @@ jobs:
       - name: Audit actual lab print A4 styles and existing patches
         run: python .github/ci/royallab_print_css_audit.py
       - name: Audit bundled original laboratory forms and review flags
-        run: python -m hospital.royallab_catalog_audit > /tmp/nova_lab_catalog_audit.json && python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print({k:v for k,v in r.items() if k not in ('flagged_tests','priority_test_forms')})"
+        run: python -m hospital.royallab_catalog_audit > /tmp/nova_lab_catalog_audit.json && python -c "import json; r=json.load(open('/tmp/nova_lab_catalog_audit.json')); print({k:v for k,v in r.items() if k in ('test_count','source_analyte_count','source_result_field_count','detached_analyte_count','tests_requiring_review','runtime_ready_test_count','runtime_blocked_test_count','inactive_fields_excluded_from_entry','review_flags','active_review_flags')})"
       - name: Upload exact source catalog audit for remediation
         uses: actions/upload-artifact@v4
         with:
