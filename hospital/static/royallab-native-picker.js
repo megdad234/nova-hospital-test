@@ -42,6 +42,8 @@
       return response.json();
     }
     async function saveSelectedDraft() {
+      const selectedTest = picker.value;
+      const selectedSerial = requestSerial;
       const itemId = Number(orderItem.value);
       if (!Number.isSafeInteger(itemId) || itemId <= 0 || !picker.value)
         throw new Error('اختر الفحص وأدخل رقم بند طلب صحيح');
@@ -54,15 +56,17 @@
         values[id] = alternative && alternative.value.trim() !== '' ?
           alternative.value.trim() : control.value;
       }
-      await send('/order/attach', { nova_item_id: itemId, source_test_id: picker.value });
+      await send('/order/attach', { nova_item_id: itemId, source_test_id: selectedTest });
+      if (selectedSerial !== requestSerial || picker.value !== selectedTest)
+        throw new Error('تغير الفحص أثناء الحفظ؛ أعد فتح الفحص وتحقق من النتائج');
       await send('/order/draft', { nova_item_id: itemId, values: values });
-      status.textContent = 'تم حفظ مسودة النتائج، ولم يتم اعتمادها أو نشرها';
+      if (selectedSerial === requestSerial) status.textContent = 'تم حفظ مسودة النتائج، ولم يتم اعتمادها أو نشرها';
     }
     saveButton.addEventListener('click', function () {
       saveButton.disabled = true;
       saveSelectedDraft().catch(function (error) {
         status.textContent = safeText(error.message);
-      }).finally(function () { saveButton.disabled = !picker.value; });
+      }).finally(function () { saveButton.disabled = !picker.value || !detail.querySelector('[data-source-format-id]'); });
     });
     let tests = [];
     let requestSerial = 0;
@@ -92,11 +96,13 @@
       if (!response.ok) throw new Error('تعذر تحميل فحوصات المعمل');
       const data = await response.json();
       if (serial !== loadSerial) return;
-      if (!Array.isArray(data.tests) || data.total !== 367 || data.tests.length !== 367)
-        throw new Error('كتالوج الفحوصات غير مكتمل');
+      if (!Array.isArray(data.tests) || !Number.isSafeInteger(data.total) || data.total <= 0 || data.tests.length !== data.total ||
+          data.tests.some(function (test) { return !test || !test.source_test_id || !displayText(test.name); }) ||
+          new Set(data.tests.map(function (test) { return safeText(test.source_test_id); })).size !== data.tests.length)
+        throw new Error('كتالوج الفحوصات غير مكتمل أو يحتوي على تكرار');
       tests = data.tests;
       filter();
-      status.textContent = 'تم تحميل 367 فحص';
+      status.textContent = 'تم تحميل ' + data.total + ' فحص';
     }
     async function showSelected() {
       const id = picker.value;
