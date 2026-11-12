@@ -76,6 +76,13 @@ class NativeCatalogStoreTests(unittest.TestCase):
   with self.assertRaises(ValueError):
    save_draft(self.conn,"LAB-ORDER-1","0",{field["source_format_id"]:"P"})
 
+ def test_original_department_only_marks_empty_service_as_non_lab(self):
+  from hospital.royallab_native_catalog_store import is_non_lab_service
+  self.assertTrue(is_non_lab_service({"source_department_id":"15","fields":[]}))
+  self.assertFalse(is_non_lab_service({"source_department_id":"3","fields":[]}))
+  self.assertFalse(is_non_lab_service({"source_department_id":"15","fields":[{"kind":"text"}]}))
+  self.assertFalse(is_non_lab_service({"source_department_id":"15","fields":None}))
+
  def test_duplicate_id_rejected(self):
   self.library['tests'][1]['TestID']=0
   with self.assertRaisesRegex(ValueError,'duplicate'):install(self.conn,self.library,'b'*64)
