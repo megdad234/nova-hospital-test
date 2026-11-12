@@ -43,7 +43,17 @@ def audit(path=SOURCE):
                       for x in result["detached_analytes"] if str(x["source_test_id"]) == test_id]}
         for test_id, count in sorted(detached_by_test.items())
     ]
+    # Classify actionable repair work without assuming that a missing relationship
+    # can be reconstructed from a similar clinical name.
+    review_by_cause = {}
+    for t in tests:
+        for flag in t["review_flags"]:
+            review_by_cause.setdefault(flag, []).append({
+                "source_test_id": t["source_id"], "name": t["name"],
+                "field_count": len(t["fields"])
+            })
     return {
+        "repair_queue_by_cause": dict(sorted(review_by_cause.items())),
         "test_count": len(tests),
         "source_analyte_count": len(library.get("analytes", [])),
         "source_result_field_count": sum(len(t["fields"]) for t in tests),
