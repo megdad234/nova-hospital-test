@@ -38,6 +38,17 @@ class AdapterTests(unittest.TestCase):
   result=m.build_fields({"tests":tests,"analytes":analytes})
   self.assertIn("inactive_source_field",result["tests"][0]["review_flags"])
   self.assertIn("missing_or_duplicate_source_option_ids",result["tests"][0]["review_flags"])
+ def test_restores_proven_numeric_subtypes_from_source_foreign_keys(self):
+  tests=[{"TestID":str(i),"Name":"T"+str(i)} for i in range(367)]
+  analytes=[{"analyte_id":str(i),"test_id":"21","name":"A"+str(i),
+             "result_formats":[{"id":str(10000+i),"types":["StringResultFormat"]}]} for i in range(1245)]
+  analytes[0]["result_formats"]=[{"id":"258","types":["OpenEndedResultFormat"]}]
+  analytes[1]["result_formats"]=[{"id":"564","types":["OpenEndedResultFormat","StringResultFormat"]}]
+  result=m.build_fields({"tests":tests,"analytes":analytes})
+  fields=result["tests"][21]["fields"]
+  self.assertEqual(next(f for f in fields if f["source_format_id"]=="258")["kind"],"number")
+  self.assertEqual(next(f for f in fields if f["source_format_id"]=="564")["kind"],"text")
+  self.assertIn("DoubleResultFormat",next(f for f in fields if f["source_format_id"]=="258")["types"])
  def test_reject_partial_source(self):
   with self.assertRaises(ValueError):m.build_fields({"tests":[],"analytes":[]})
 if __name__=="__main__":unittest.main()
