@@ -31,6 +31,13 @@ POST_ROUTES="""                    if path=='/api/hospital/royallab-native/order
                             core.integer(data.get('revision'),'نسخة نموذج المعمل',1),
                             data.get('form_hash'),attestation=data.get('attestation')))
 """
+REVIEW_DETAILS_ROUTE="""                    if path.startswith('/api/hospital/royallab-native/review/details/'):
+                        core.require_role(role,'admin','lab')
+                        parts=path.rsplit('/',2)
+                        return self.reply(royallab_clinical_template_review.review_details(
+                            c,royallab_native_catalog_api.current_catalog_id(c),
+                            parts[-2],core.integer(parts[-1],'نسخة نموذج المعمل',1)))
+"""
 REVIEW_HISTORY_ROUTE="""                    if path.startswith('/api/hospital/royallab-native/review/history/'):
                         core.require_role(role,'admin','lab')
                         return self.reply(royallab_clinical_template_review.review_history(
@@ -59,7 +66,7 @@ def patch(source):
  if source.count(marker)!=2:raise ValueError("Expected GET and POST patient routes")
  parts=source.split(marker)
  if len(parts)!=3:raise ValueError("NOVA GET/POST patient anchors changed")
- return parts[0]+ROUTES+GET_DRAFT_ROUTE+REVIEW_HISTORY_ROUTE+marker+parts[1]+POST_ROUTES+marker+parts[2]
+ return parts[0]+ROUTES+GET_DRAFT_ROUTE+REVIEW_HISTORY_ROUTE+REVIEW_DETAILS_ROUTE+marker+parts[1]+POST_ROUTES+marker+parts[2]
 def apply(root):
  p=Path(root)/'hospital/gateway.py'
  p.write_text(patch(p.read_text(encoding='utf-8')),encoding='utf-8')
