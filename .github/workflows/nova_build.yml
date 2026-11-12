@@ -111,6 +111,8 @@ on:
       - 'tests/test_royallab_native_result_form.py'
       - 'hospital/royallab_native_catalog_store.py'
       - 'tests/test_royallab_native_catalog_store.py'
+      - 'hospital/nova_lab_local_tests.py'
+      - 'tests/test_nova_lab_local_tests.py'
       - 'hospital/royallab_native_catalog_api.py'
       - 'tests/test_royallab_native_catalog_api.py'
       - '.github/ci/royallab_bundle_source.py'
@@ -391,6 +393,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab direct catalogue patch regression failed' }
           python .github/ci/royallab_native_gateway_patch.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native gateway patch failed' }
+          python -m unittest discover -s tests -p 'test_nova_lab_local_tests.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA local lab form review regression failed' }
           python -m unittest discover -s tests -p 'test_royallab_native_gateway_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native gateway regression failed' }
           python -m py_compile hospital/gateway.py hospital/royallab_nova_live_order_overlay.py hospital/royallab_nova_binding_loader.py hospital/royallab_nova_binding_schema.py hospital/royallab_nova_order_detail_gate.py hospital/royallab_nova_order_detail_types.py hospital/royallab_nova_typed_form_contract.py hospital/royallab_nova_order_line_resolver.py hospital/royallab_nova_parameter_plan.py hospital/royallab_catalog_preview.py hospital/royallab_field_adapter.py
