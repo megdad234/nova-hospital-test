@@ -19,6 +19,17 @@ class AdapterTests(unittest.TestCase):
   self.assertEqual(next(f for f in fields if f["source_format_id"]=="1")["label"],"Colour")
   self.assertEqual(next(f for f in fields if f["source_format_id"]=="2")["unit"],"mg/dL")
   self.assertEqual(next(f for f in fields if f["source_format_id"]=="3")["kind"],"select_or_text")
+ def test_duplicate_test_identity_is_rejected(self):
+  tests=[{"TestID":str(i),"Name":"Test"} for i in range(367)]
+  tests[-1]["TestID"]="0"
+  analytes=[{"analyte_id":str(i),"test_id":"0","name":"A","result_formats":[]} for i in range(1245)]
+  with self.assertRaisesRegex(ValueError,"Duplicate source test IDs"):
+   m.build_fields({"tests":tests,"analytes":analytes})
+ def test_duplicate_field_identity_requires_review(self):
+  tests=[{"TestID":str(i),"Name":"Test"} for i in range(367)]
+  analytes=[{"analyte_id":str(i),"test_id":"0","name":"A","result_formats":[{"id":"shared" if i<2 else str(i),"types":["DoubleResultFormat"]}]} for i in range(1245)]
+  result=m.build_fields({"tests":tests,"analytes":analytes})
+  self.assertIn("duplicate_source_format_ids",result["tests"][0]["review_flags"])
  def test_reject_partial_source(self):
   with self.assertRaises(ValueError):m.build_fields({"tests":[],"analytes":[]})
 if __name__=="__main__":unittest.main()
