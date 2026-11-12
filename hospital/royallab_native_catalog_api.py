@@ -6,6 +6,7 @@ The API exposes the original reference ranges and option IDs verbatim.
 import json,sqlite3
 from hospital.royallab_native_catalog_store import list_tests,test_form
 from hospital.royallab_native_result_form import validate_result_values
+from hospital.royallab_native_form_html import render_form
 
 def current_catalog_id(conn):
  if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='royal_lab_native_catalogs'").fetchone():
@@ -27,7 +28,7 @@ def catalog_response(conn,search="",limit=500):
 def form_response(conn,source_test_id):
  cid=current_catalog_id(conn)
  form=test_form(conn,cid,source_test_id)
- return {"catalog_id":cid,"source":"RoyalLabDB.bak","test":form}
+ return {"catalog_id":cid,"source":"RoyalLabDB.bak","test":form,"form_html":render_form(form)}
 
 def validate_response(conn,source_test_id,values):
  form=form_response(conn,source_test_id)["test"]
