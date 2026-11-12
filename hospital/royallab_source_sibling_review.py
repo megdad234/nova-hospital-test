@@ -18,7 +18,7 @@ SIBLING_REFERENCES = {
     "289": [("292", "possible_parent_components", "O139 may be a parent-assay component; also compare source ID 291.")],
     "291": [("292", "possible_parent_components", "A second O139 ID; investigate duplicate/parent relationship.")],
     "320": [("101", "five_part_cbc", "Verify the exact five-part hematology analyzer before selecting the 26-field template.")],
-    "336": [("337", "same_original_name", "The original sibling mixes genotyping, screen and CLIA: select the specific method first."),
+    "336": [("337", "same_name_distinct_assays", "The original sibling mixes genotyping, screen and CLIA: select the specific method first."),
             ("249", "related_other_assay", "This source ICT assay is not automatically equivalent to HCV genotyping or screening.")],
     "347": [("309", "same_original_name", "Confirm rapid kit IgG/IgM targets; this is NOT the Widal titre assay.")],
     "353": [("29", "related_specimen_panel", "Body fluid panel varies with fluid type, not necessarily this unspecified test."),
