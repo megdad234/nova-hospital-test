@@ -122,3 +122,15 @@ def effective_source_form(raw):
 def clinical_test_form(conn, catalog_id, source_test_id):
     """Return the safely editable subset without changing stored source data."""
     return effective_source_form(test_form(conn, catalog_id, source_test_id))
+
+# Department IDs verified against the original dbo.Test / dbo.Laboratory tables.
+# Administrative, nursing, radiology, dentistry, operations and physiotherapy
+# services must not be counted as missing clinical laboratory result templates.
+NON_LAB_DEPARTMENT_IDS = frozenset(("12", "13", "14", "15", "18", "19", "27"))
+
+def is_non_lab_service(form):
+    if not isinstance(form, dict):
+        return False
+    fields = form.get("fields")
+    return (isinstance(fields, list) and not fields
+            and str(form.get("source_department_id") or "") in NON_LAB_DEPARTMENT_IDS)
