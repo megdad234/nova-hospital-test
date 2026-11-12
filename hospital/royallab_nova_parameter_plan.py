@@ -9,8 +9,11 @@ def _inactive(value):
     return value is False or value == 0 or value in ('False','false','0')
 def source_code(source_format_id):
     value=str(source_format_id or "").strip()
-    if not re.fullmatch(r"[0-9]{1,18}",value):raise ValueError("Invalid Royal Lab format ID")
-    return "ROYAL_FMT_"+value
+    if re.fullmatch(r"[0-9]{1,18}",value):
+        return "ROYAL_FMT_"+value
+    if re.fullmatch(r"ANALYTE-[0-9]{1,18}(?:-FORMAT-[0-9]{1,5})?",value):
+        return "ROYAL_"+value.replace("-","_")
+    raise ValueError("Invalid Royal Lab format ID")
 
 def plan_existing_parameters(conn,test_id,fields):
     if type(test_id) is not int or test_id<=0:raise ValueError("NOVA test ID required")
