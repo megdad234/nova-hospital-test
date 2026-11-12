@@ -6,6 +6,7 @@ from hospital.royallab_existing_catalog_replacement import replacement_plan,repl
 
 def synthetic_catalog():
     return {"tests":[{"source_test_id":str(i),"name":"Royal Test "+str(i),
+             "source_department_id":{7:"2",21:"3",36:"8",40:"10",77:"54",120:"12",287:"35"}.get(i,"1"),
              "review_flags":[],"fields":[{"source_format_id":str(i+1),
              "label":"Result","kind":"select","unit":"",
              "options":[{"id":"P","label":"Positive","active":True}],
@@ -14,7 +15,7 @@ def synthetic_catalog():
 class ReplacementTests(unittest.TestCase):
     def setUp(self):
         self.db=sqlite3.connect(":memory:")
-        self.db.execute("CREATE TABLE hospital_lab_tests(id INTEGER PRIMARY KEY,code TEXT UNIQUE,name TEXT,active INTEGER DEFAULT 1)")
+        self.db.execute("CREATE TABLE hospital_lab_tests(id INTEGER PRIMARY KEY,code TEXT UNIQUE,name TEXT,category TEXT NOT NULL DEFAULT 'Other',active INTEGER DEFAULT 1)")
         self.db.execute("CREATE TABLE hospital_lab_parameters(id INTEGER PRIMARY KEY,test_id INTEGER,code TEXT,name TEXT,unit TEXT,active INTEGER DEFAULT 1)")
         self.db.execute("INSERT INTO hospital_lab_tests(code,name) VALUES('OLD','Old test')")
         self.db.execute("INSERT INTO hospital_lab_parameters(test_id,code,name,unit) VALUES(1,'OLD-P','Old parameter','')")
@@ -34,6 +35,45 @@ class ReplacementTests(unittest.TestCase):
         self.assertEqual(self.db.execute("SELECT options_json FROM royal_lab_nova_parameter_metadata LIMIT 1").fetchone()[0].count("Positive"),1)
         replace_catalog(self.db,{},approved=True)
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM hospital_lab_tests").fetchone()[0],368)
+    def test_source_department_populates_nova_picker_and_preserves_manual_override(self):
+        replace_catalog(self.db,{},approved=True)
+        expected = {"ROYAL-7":"التحاليل العامة والطفيليات",
+                    "ROYAL-21":"أمراض الدم والتخثر",
+                    "ROYAL-36":"الهرمونات",
+                    "ROYAL-40":"المناعة",
+                    "ROYAL-77":"المزارع والأحياء الدقيقة",
+                    "ROYAL-120":"خدمات غير معملية",
+                    "ROYAL-287":"الأحياء الدقيقة والسيرولوجيا"}
+        for code,category in expected.items():
+            self.assertEqual(self.db.execute(
+                "SELECT category FROM hospital_lab_tests WHERE code=?",(code,)).fetchone()[0], category)
+        self.assertEqual(self.db.execute(
+            "SELECT COUNT(*) FROM hospital_lab_tests WHERE code LIKE 'ROYAL-%' AND category='Other'"
+        ).fetchone()[0],0)
+        self.assertEqual(self.db.execute(
+            "SELECT COUNT(*) FROM royal_lab_nova_department_metadata").fetchone()[0],367)
+        evidence=self.db.execute("""SELECT source_department_id,original_department_name
+                   FROM royal_lab_nova_department_metadata
+                   WHERE source_test_id='21'""").fetchone()
+        self.assertEqual(evidence,("3","1 h.pp"))
+        self.db.execute("UPDATE hospital_lab_tests SET category='تصنيف محلي مراجع' WHERE code='ROYAL-21'")
+        replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute(
+            "SELECT category FROM hospital_lab_tests WHERE code='ROYAL-21'").fetchone()[0],
+            "تصنيف محلي مراجع")
+        self.assertEqual(self.db.execute(
+            "SELECT COUNT(*) FROM royal_lab_nova_department_metadata").fetchone()[0],367)
+
+    def test_missing_original_department_in_mixed_real_source_is_rejected_safely(self):
+        catalog=synthetic_catalog()
+        catalog["tests"][42].pop("source_department_id")
+        with patch("hospital.royallab_existing_catalog_replacement.native_catalog",
+                   return_value=catalog):
+            with self.assertRaisesRegex(ValueError,"Unknown Royal Lab source group"):
+                replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute(
+            "SELECT active FROM hospital_lab_tests WHERE code='OLD'").fetchone()[0],1)
+
     def test_unresolved_format_never_hides_existing_catalogue(self):
         catalog=synthetic_catalog()
         catalog["tests"][0]["fields"][0]["source_format_id"]=None
