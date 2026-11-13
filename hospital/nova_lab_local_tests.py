@@ -62,6 +62,70 @@ KINDS = {"text", "number", "select"}
 CODE_PREFIX = "NOVA-LOCAL-"
 PARAM_PREFIX = "NLOCAL_"
 
+# This is an unapproved transcription of the Al Sharq Hospital laboratory paper
+# GTT-with-urine-glucose form supplied by the user, NOT a Royal Lab source assay.
+# The pictured chart contains fasting, 1-hour, 2-hour blood and urine glucose.
+# No assay-specific glucose load, pregnancy protocol, reference interval,
+# diagnosis thresholds, laboratory method or hospital price were provided.
+# A separate administrator must confirm those details before activation.
+GTT_URINE_NAME = "Glucose Tolerance Test (GTT) with Urine Glucose"
+GTT_URINE_TEMPLATE_ID = "gtt-urine-0-1-2h"
+GTT_URINE_OPTIONS = ["Negative", "Trace", "+1", "+2", "+3", "+4"]
+
+
+def gtt_urine_template():
+    """Prefill the existing NOVA local-test editor, never create a live test.
+
+    Patient name, sex, age, date, doctor and file number come from NOVA's
+    existing patient/order records; they are intentionally not duplicated.
+    """
+    fields = [
+        {"key": "glucose_load", "label": "Glucose Load",
+         "kind": "text", "unit": ""},
+        {"key": "specimen", "label": "Specimen",
+         "kind": "select", "options": ["Plasma", "Serum"]},
+        {"key": "method_recorded", "label": "Method",
+         "kind": "text", "unit": ""},
+    ]
+    for time_key, display in (
+        ("fasting", "Fasting (0 hour)"),
+        ("one_hour", "1 Hour"),
+        ("two_hours", "2 Hours"),
+    ):
+        fields.append({"key": "blood_" + time_key,
+                       "label": display + " - Blood Glucose",
+                       "kind": "number", "unit": "mg/dL"})
+        fields.append({"key": "urine_" + time_key,
+                       "label": display + " - Urine Glucose",
+                       "kind": "select", "options": list(GTT_URINE_OPTIONS),
+                       "unit": ""})
+    fields.extend([
+        {"key": "interpretation", "label": "Interpretation",
+         "kind": "text", "unit": ""},
+        {"key": "comments", "label": "Comments",
+         "kind": "text", "unit": ""},
+    ])
+    normalized = _fields(fields)
+    return {
+        "template_id": GTT_URINE_TEMPLATE_ID,
+        "name": GTT_URINE_NAME,
+        "section": "Chemistry",
+        "price": None,  # never invent a charge in Sudanese pounds
+        "fields": normalized,
+        "method": "",
+        "evidence": "",
+        "rationale": "Transcribed from the photographed Al Sharq Hospital laboratory GTT with urine glucose form.",
+        "state": "suggestion_only",
+        "ready_for_patient_results": False,
+        "reference_ranges_verified": False,
+        "clinical_warning": (
+            "Confirm glucose load, assay method, patient-specific protocol, "
+            "lab charge and reference/interpretation criteria independently; "
+            "the photograph does not certify clinical thresholds."
+        ),
+    }
+
+
 
 def init(conn):
     if not isinstance(conn, sqlite3.Connection):
