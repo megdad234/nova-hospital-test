@@ -144,6 +144,8 @@ on:
       - 'tests/test_royallab_nova_departments.py'
       - 'hospital/royallab_nova_ict_malaria_reconciliation.py'
       - 'tests/test_royallab_nova_ict_malaria_reconciliation.py'
+      - 'hospital/royallab_nova_stool_layout.py'
+      - 'tests/test_royallab_nova_stool_layout.py'
       - 'hospital/royallab_nova_gtt_photo_reconciliation.py'
       - 'tests/test_royallab_nova_gtt_photo_reconciliation.py'
       - 'hospital/royallab_existing_catalog_replacement.py'
@@ -507,6 +509,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Original Royal Lab 367-test department audit failed' }
           python -m unittest discover -s tests -p 'test_royallab_nova_ict_malaria_reconciliation.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Malaria ICT original dropdown or historical RESULT migration failed' }
+          python -m unittest discover -s tests -p 'test_royallab_nova_stool_layout.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Stool photo layout or preserved original result choices failed' }
           python -m unittest discover -s tests -p 'test_royallab_nova_gtt_photo_reconciliation.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'GTT 240 photo worksheet and historical safety tests failed' }
           python -m unittest discover -s tests -p 'test_royallab_existing_catalog_replacement.py' -v
