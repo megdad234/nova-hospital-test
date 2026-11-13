@@ -171,7 +171,7 @@
       name.placeholder = 'اسم الفحص الجديد';
       name.setAttribute('aria-label','اسم الفحص');
       const section = document.createElement('input');
-      section.placeholder = 'قسم المعمل مثل الكيمياء الحيوية';
+      section.placeholder = 'القسم مثل Chemistry أو Hematology';
       section.setAttribute('aria-label', 'قسم الفحص');
       const price = document.createElement('input');
       price.type = 'number';
@@ -180,6 +180,10 @@
       price.placeholder = 'سعر الفحص بالجنيه';
       price.setAttribute('aria-label','سعر الفحص');
       const fieldsArea = document.createElement('section');
+      const gttTemplateButton = document.createElement('button');
+      gttTemplateButton.type = 'button';
+      gttTemplateButton.textContent = 'تهيئة فحص GTT مع سكر البول من استمارة المعمل';
+      gttTemplateButton.title = 'مسودة قابلة للمراجعة، لا تعتمد أو تنشئ فحصاً تلقائياً';
       const add = document.createElement('button');
       add.type = 'button';
       add.textContent = 'إضافة حقل نتيجة جديد';
@@ -198,7 +202,7 @@
       const status = document.createElement('p');
       status.setAttribute('role','status');
       const approvals = document.createElement('section');
-      area.append(note,selector,name,section,price,fieldsArea,add,
+      area.append(note,selector,gttTemplateButton,name,section,price,fieldsArea,add,
         method,evidence,rationale,propose,refresh,status,approvals);
       panel.append(summary,area);
       root.appendChild(panel);
@@ -279,6 +283,7 @@
         evidence.value = '';
         rationale.value = '';
         status.textContent = '';
+        propose.disabled = false;
         makeField();
       }
       async function loadLocalTests() {
@@ -294,6 +299,50 @@
         if (Array.from(selector.options).some(o => o.value === previous))
           selector.value = previous;
       }
+      gttTemplateButton.addEventListener('click', async function () {
+        gttTemplateButton.disabled = true;
+        try {
+          const suggestion = await fetchJson('/local/templates/gtt-urine');
+          if (!suggestion || suggestion.template_id !== 'gtt-urine-0-1-2h' ||
+              suggestion.state !== 'suggestion_only' ||
+              suggestion.ready_for_patient_results !== false ||
+              !Array.isArray(suggestion.fields) || !suggestion.fields.length)
+            throw new Error('تعذر التحقق من نموذج GTT المرجعي');
+          const existing = localTests.find(t =>
+            safeText(t.name).trim().toLowerCase() ===
+              safeText(suggestion.name).trim().toLowerCase());
+          if (existing) {
+            status.textContent = 'الفحص موجود مسبقاً تحت اسم ' + safeText(existing.name) +
+              '؛ اختره من قائمة الفحوص المحلية بدل إنشاء نسخة مكررة.';
+            return;
+          }
+          // Never overwrite an existing local form or previously typed edits.
+          if (selector.value || price.value || name.value.trim() ||
+              Array.from(fieldsArea.querySelectorAll('fieldset')).some(box =>
+                box.querySelector('[data-local-label]').value.trim())) {
+            status.textContent = 'ابدأ فحصاً جديداً وامسح المدخلات الحالية قبل تهيئة نموذج GTT، حتى لا نفقد عملك.';
+            return;
+          }
+          selector.value = '';
+          clearForm();
+          fieldsArea.replaceChildren();
+          for (const field of suggestion.fields) makeField(field);
+          name.value = safeText(suggestion.name);
+          section.value = safeText(suggestion.section);
+          price.value = '';  // Charge NOT present on the photographed paper.
+          method.value = '';
+          evidence.value = '';
+          rationale.value = safeText(suggestion.rationale);
+          status.textContent =
+            'تم تجهيز نموذج GTT حسب الورقة: صائم، بعد ساعة، بعد ساعتين، ' +
+            'سكر الدم وسكر البول. أدخل سعر الفحص وطريقة التحليل ومرجعها أولاً، ' +
+            'ثم أرسل المقترح لاعتماد مراجع مستقل. لا توجد نتائج أو مديات طبيعية معتمدة تلقائياً.';
+        } catch (err) {
+          status.textContent = safeText(err.message);
+        } finally {
+          gttTemplateButton.disabled = false;
+        }
+      });
       selector.addEventListener('change', async function () {
         const id = selector.value;
         clearForm();
