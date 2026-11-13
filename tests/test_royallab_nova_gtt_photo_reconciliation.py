@@ -71,7 +71,7 @@ class GTTWorksheetRepairTests(unittest.TestCase):
         self.assertEqual(res["gtt_photo_reconciled_fields"],11)
         test=self.db.execute("SELECT id,name,price,category FROM hospital_lab_tests WHERE code=?",
                              (SOURCE_CODE,)).fetchone()
-        self.assertEqual(test[1:],("G.T.T",555,"Chemistry"))
+        self.assertEqual(test[1:],("G.T.T",0,"Chemistry"))
         params=self.db.execute(
            "SELECT code,name,unit,active,sort_order,id FROM hospital_lab_parameters "
            "WHERE test_id=? ORDER BY id",(test[0],)).fetchall()
@@ -97,6 +97,18 @@ class GTTWorksheetRepairTests(unittest.TestCase):
         self.assertEqual(self.db.execute(
           "SELECT original_analyte_name FROM royal_lab_nova_gtt_photo_provenance"
         ).fetchone()[0],"ALP")
+
+    def test_existing_gtt_price_is_not_changed_by_worksheet_repair(self):
+        self.db.execute("""INSERT INTO hospital_lab_tests(code,name,category,price,active)
+             VALUES('ROYAL-240','G.T.T','Chemistry',555,1)""")
+        replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute(
+            "SELECT price FROM hospital_lab_tests WHERE code='ROYAL-240'"
+        ).fetchone()[0],555)
+        replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute(
+            "SELECT price FROM hospital_lab_tests WHERE code='ROYAL-240'"
+        ).fetchone()[0],555)
 
     def test_repeated_boot_preserves_parameter_ids_and_historical_result(self):
         replace_catalog(self.db,{},approved=True)
