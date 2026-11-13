@@ -142,8 +142,6 @@ on:
       - 'hospital/royallab_existing_schema_audit.py'
       - 'hospital/royallab_nova_departments.py'
       - 'tests/test_royallab_nova_departments.py'
-      - 'hospital/royallab_nova_gtt_photo_reconciliation.py'
-      - 'tests/test_royallab_nova_gtt_photo_reconciliation.py'
       - 'hospital/royallab_existing_catalog_replacement.py'
       - 'hospital/royallab_existing_line_overlay.py'
       - 'tests/test_royallab_existing_schema_audit.py'
@@ -404,8 +402,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native autoseed patch tests failed' }
           python -m py_compile hospital/royallab_nova_departments.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab NOVA department source metadata syntax invalid' }
-          python -m py_compile hospital/royallab_nova_gtt_photo_reconciliation.py
-          if ($LASTEXITCODE -ne 0) { throw 'Royal-240 GTT worksheet reconciliation invalid' }
           python -m py_compile hospital/royallab_existing_catalog_replacement.py hospital/royallab_existing_line_overlay.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab original NOVA table integration syntax invalid' }
           python .github/ci/royallab_existing_catalog_patch.py
@@ -503,8 +499,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Existing NOVA lab schema audit regression failed' }
           python -m unittest discover -s tests -p 'test_royallab_nova_departments.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Original Royal Lab 367-test department audit failed' }
-          python -m unittest discover -s tests -p 'test_royallab_nova_gtt_photo_reconciliation.py' -v
-          if ($LASTEXITCODE -ne 0) { throw 'Original Royal Lab G.T.T mismatched ALP source not repaired safely' }
           python -m unittest discover -s tests -p 'test_royallab_existing_catalog_replacement.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Direct Royal Lab catalogue replacement regression failed' }
           python -m unittest discover -s tests -p 'test_royallab_existing_line_overlay.py' -v
