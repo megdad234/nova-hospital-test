@@ -14,6 +14,8 @@ on:
       - 'hospital/royallab_clinical_template_review.py'
       - 'hospital/royallab_nova_departments.py'
       - 'tests/test_royallab_nova_departments.py'
+      - 'hospital/royallab_nova_ict_malaria_reconciliation.py'
+      - 'tests/test_royallab_nova_ict_malaria_reconciliation.py'
       - 'hospital/royallab_nova_gtt_photo_reconciliation.py'
       - 'tests/test_royallab_nova_gtt_photo_reconciliation.py'
       - 'hospital/royallab_existing_catalog_replacement.py'
@@ -118,6 +120,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify malaria ICT source-proven dropdown and legacy NOVA order safety
+        run: python -m unittest discover -s tests -p 'test_royallab_nova_ict_malaria_reconciliation.py' -v
       - name: Audit original laboratory source without editing it
         run: python .github/ci/royallab_source_audit.py
       - name: Map original NOVA lab save and print integration points
