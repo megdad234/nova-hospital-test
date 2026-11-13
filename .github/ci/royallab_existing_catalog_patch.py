@@ -40,6 +40,8 @@ def save_values(c,actor,data):
     _nova_local_validate(c,data)
     from hospital.royallab_nova_gtt_photo_reconciliation import validate_save_payload as _gtt_validate
     _gtt_validate(c,data)
+    from hospital.royallab_nova_ict_malaria_reconciliation import validate_save_payload as _ict_validate
+    _ict_validate(c,data)
     return _original_nova_local_save_values(c,actor,data)
 '''
 
