@@ -161,6 +161,11 @@ def _backfill_unreported_orders(conn, test_id, param_schema):
     if not needed.issubset(items):
         # Lightweight source-audit fixtures lack the complete runtime schema.
         return 0
+    conn.execute("""CREATE TABLE IF NOT EXISTS royal_lab_nova_gtt_migrated_items (
+        item_id INTEGER PRIMARY KEY,
+        migrated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        source_alp_retained INTEGER NOT NULL DEFAULT 1
+    )""")
     params=conn.execute("""SELECT id,code,name,unit FROM hospital_lab_parameters
         WHERE test_id=? AND active=1 AND code LIKE ?
         ORDER BY sort_order,id""",(test_id,PARAM_PREFIX+"%")).fetchall()
@@ -186,6 +191,8 @@ def _backfill_unreported_orders(conn, test_id, param_schema):
             conn.execute("""INSERT OR IGNORE INTO hospital_lab_lines
                 (item_id,parameter_id,code,name,unit,reference_range,value)
                 VALUES(?,?,?,?,?,'','')""",(item_id,param_id,code,label,unit))
+        conn.execute("""INSERT OR IGNORE INTO royal_lab_nova_gtt_migrated_items
+            (item_id) VALUES(?)""",(item_id,))
         count+=1
     return count
 
@@ -214,19 +221,19 @@ def overlay_order_detail(conn, detail):
         if not row or row[0]!=SOURCE_CODE:
             out["items"].append(item)
             continue
-        historical=(row[1] in ("approved","published") or (row[2] or 0)>0
-                    or bool(str(row[3] or "").strip()))
-        if "hospital_lab_revisions" in _tables(conn):
-            historical |= bool(conn.execute("""SELECT 1 FROM hospital_lab_revisions
-                WHERE item_id=? LIMIT 1""",(item_id,)).fetchone())
-        if any(str(line.get("value") or "").strip() for line in item["lines"]):
-            historical=True
-        if not historical:
-            # All original-result snapshots are preserved in SQLite, only the
-            # incorrect ALP is omitted from the unreported staff UI/PDF.
+        # Explicit provenance of a safe migration: only never-revised, blank
+        # ALP orders receive this marker. After the new GTT values are saved,
+        # ALP must STILL stay invisible; looking at result_version would wrongly
+        # reveal it again. Genuine historical ALP findings have no marker.
+        migrated=("royal_lab_nova_gtt_migrated_items" in _tables(conn)
+                  and bool(conn.execute("""SELECT 1 FROM
+                      royal_lab_nova_gtt_migrated_items WHERE item_id=?""",
+                      (item_id,)).fetchone()))
+        if migrated:
             item["lines"]=[line for line in item["lines"]
                 if not (str(line.get("code") or "").startswith("ROYAL_FMT_")
-                        and str(line.get("name") or "").upper()=="ALP")]
+                        and str(line.get("name") or "").upper()=="ALP"
+                        and not str(line.get("value") or "").strip())]
         out["items"].append(item)
     return out
 
