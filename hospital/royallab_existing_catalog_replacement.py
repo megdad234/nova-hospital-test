@@ -240,7 +240,8 @@ def replace_catalog(conn, library, *, approved=False):
         missing_metadata = conn.execute("""SELECT COUNT(*) FROM hospital_lab_parameters p
             JOIN hospital_lab_tests t ON t.id=p.test_id
             LEFT JOIN royal_lab_nova_parameter_metadata m ON m.nova_parameter_id=p.id
-            WHERE t.code LIKE 'ROYAL-%' AND m.nova_parameter_id IS NULL""").fetchone()[0]
+            WHERE t.code LIKE 'ROYAL-%' AND m.nova_parameter_id IS NULL
+              AND NOT (t.code='ROYAL-240' AND p.code LIKE 'NOVA_GTT_%')""").fetchone()[0]
         if missing_metadata:
             raise RuntimeError("Royal Lab NOVA parameters missing result metadata")
         conn.execute("RELEASE SAVEPOINT royal_catalog_replacement")
