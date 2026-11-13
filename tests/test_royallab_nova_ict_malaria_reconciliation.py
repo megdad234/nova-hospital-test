@@ -2,8 +2,11 @@
 
 No patient names, no production DB, no fabricated values or inferred kit species.
 """
+import json
 import sqlite3
 import unittest
+from hospital.royallab_catalog_audit import SOURCE
+from hospital.royallab_native_result_form import native_catalog
 from unittest.mock import patch
 from hospital.royallab_existing_catalog_replacement import replace_catalog
 from hospital.royallab_existing_line_overlay import overlay_existing_order_lines
@@ -81,6 +84,15 @@ class MalariaICTPhotoTests(unittest.TestCase):
             hospital_lab_lines WHERE item_id=? ORDER BY id""",(item_id,)).fetchall()
         return {"items":[{"id":item_id,
             "lines":[dict(zip(("id","parameter_id","code","name","value"),row)) for row in lines]}]}
+
+    def test_actual_royal_source_ict_options_from_archive_are_preserved(self):
+        library=json.loads(SOURCE.read_text(encoding="utf-8-sig"))
+        native=native_catalog(library)
+        field=_proven_source(native["tests"])
+        self.assertEqual(field["source_analyte_id"],"165")
+        self.assertEqual(field["source_format_id"],"30")
+        self.assertIn(field["kind"],("select","select_or_text","select_or_number"))
+        self.assertIs(field["active"],False)
 
     def test_recovered_source_exact_identity_and_options(self):
         field=_proven_source(catalog()["tests"])
