@@ -13,6 +13,8 @@ def overlay_order_detail(conn,detail,role):
     detail=overlay_existing_order_lines(conn,detail)
     from hospital.nova_lab_local_tests import overlay_order_detail as _local_overlay
     detail=_local_overlay(conn,detail)
+    from hospital.nova_gtt_royal240_fix import overlay_order_detail as _gtt_overlay
+    detail=_gtt_overlay(conn,detail)
     if not isinstance(detail,dict) or not isinstance(detail.get('items'),list):return detail
     items=detail['items']
     if not items:return detail
