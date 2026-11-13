@@ -245,6 +245,15 @@ def propose(conn, actor, *, local_id=None, name, section, price, fields,
     # Blood Sugar Curve; reject repeat submissions of the same exact GTT form.
     # This does not apply to other user-defined test families.
     if local_id is None and name.casefold() == GTT_URINE_NAME.casefold():
+        # The real Royal Lab G.T.T TestID 240 has now been reconciled to the
+        # photographed worksheet. Do not sell a duplicate second GTT form.
+        installed = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE name='royal_lab_nova_gtt_photo_provenance'"
+        ).fetchone()
+        if installed and conn.execute(
+            "SELECT 1 FROM hospital_lab_tests WHERE code='ROYAL-240' AND active=1"
+        ).fetchone():
+            raise ValueError("G.T.T already exists with the reviewed blood/urine worksheet")
         existing = conn.execute("""SELECT 1 FROM hospital_lab_tests
             WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) LIMIT 1""", (name,)).fetchone()
         proposed = conn.execute("""SELECT 1 FROM nova_lab_local_proposals
