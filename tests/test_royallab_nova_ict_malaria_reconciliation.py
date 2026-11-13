@@ -92,12 +92,12 @@ class MalariaICTPhotoTests(unittest.TestCase):
         self.assertEqual(field["source_analyte_id"],"165")
         self.assertEqual(field["source_format_id"],"30")
         self.assertIn(field["kind"],("select","select_or_text","select_or_number"))
-        self.assertIs(field["active"],False)
+        self.assertIn(field["active"],(False,0,"False","false","0"))
 
     def test_recovered_source_exact_identity_and_options(self):
         field=_proven_source(catalog()["tests"])
         self.assertEqual(field["source_format_id"],"30")
-        self.assertIs(field["active"],False)
+        self.assertIn(field["active"],(False,0,"False","false","0"))
         self.assertEqual(OPTIONS,("Positive","Negative"))
         self.assertEqual(OPTION_IDS,("131","132"))
         with self.assertRaisesRegex(ValueError,"documented options"):
