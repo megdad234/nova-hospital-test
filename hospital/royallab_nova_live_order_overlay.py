@@ -15,6 +15,8 @@ def overlay_order_detail(conn,detail,role):
     detail=_local_overlay(conn,detail)
     from hospital.royallab_nova_gtt_photo_reconciliation import overlay_order_detail as _gtt_overlay
     detail=_gtt_overlay(conn,detail)
+    from hospital.royallab_nova_ict_malaria_reconciliation import overlay_order_detail as _ict_overlay
+    detail=_ict_overlay(conn,detail)
     if not isinstance(detail,dict) or not isinstance(detail.get('items'),list):return detail
     items=detail['items']
     if not items:return detail
