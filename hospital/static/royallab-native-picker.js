@@ -300,6 +300,12 @@
           selector.value = previous;
       }
       gttTemplateButton.addEventListener('click', async function () {
+        // The source Royal-240 G.T.T is now reconciled to the paper worksheet.
+        // The original GTT should be ordered, not duplicated as a local test.
+        if (Array.isArray(state.tests) && state.tests.some(t => t && t.code === 'ROYAL-240')) {
+          status.textContent = 'فحص G.T.T موجود في Chemistry بنموذج السكر والبول الصحيح؛ افتحه من طلب الفحوصات بدلاً من إنشاء نسخة مكررة.';
+          return;
+        }
         gttTemplateButton.disabled = true;
         try {
           const suggestion = await fetchJson('/local/templates/gtt-urine');
