@@ -29,6 +29,9 @@ def init(c, *args, **kwargs):
         raise RuntimeError("Royal Lab source missing; refusing old NOVA catalogue")
     _library = _royal_json.loads(_source.read_text(encoding="utf-8-sig"))
     _replace(c, _library, approved=True)
+    # One audited worksheet replacement for the existing G.T.T TestID 240.
+    from hospital.nova_gtt_royal240_fix import install as _gtt_install
+    _gtt_install(c)
     from hospital.nova_lab_local_tests import restore_active as _nova_local_restore
     _nova_local_restore(c)
     return result
@@ -38,7 +41,7 @@ _original_nova_local_save_values = save_values
 def save_values(c,actor,data):
     from hospital.nova_lab_local_tests import validate_save_payload as _nova_local_validate
     _nova_local_validate(c,data)
-    from hospital.royallab_nova_gtt_photo_reconciliation import validate_save_payload as _gtt_validate
+    from hospital.nova_gtt_royal240_fix import validate_save_payload as _gtt_validate
     _gtt_validate(c,data)
     return _original_nova_local_save_values(c,actor,data)
 '''
