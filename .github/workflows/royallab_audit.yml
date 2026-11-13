@@ -14,6 +14,8 @@ on:
       - 'hospital/royallab_clinical_template_review.py'
       - 'hospital/royallab_nova_departments.py'
       - 'tests/test_royallab_nova_departments.py'
+      - 'hospital/royallab_nova_gtt_photo_reconciliation.py'
+      - 'tests/test_royallab_nova_gtt_photo_reconciliation.py'
       - 'hospital/royallab_existing_catalog_replacement.py'
       - 'tests/test_royallab_existing_catalog_replacement.py'
       - 'hospital/royallab_source_sibling_review.py'
