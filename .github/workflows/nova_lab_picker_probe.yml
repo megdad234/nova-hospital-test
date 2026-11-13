@@ -1,0 +1,29 @@
+name: NOVA Lab Picker Source Probe
+on:
+  push:
+    branches: [feature/royallab-full-migration-20261111]
+    paths: ['.github/workflows/nova_lab_picker_probe.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect original lab picker card rendering only
+        run: |
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          path='NOVA_Hospital_GitHub_Ready_Source.zip'
+          with zipfile.ZipFile(path) as z:
+              files=[x for x in z.namelist() if x.endswith('hospital/static/app.js')]
+              assert len(files)==1,files
+              text=z.read(files[0]).decode('utf-8')
+          for token in ('function testChoices(', '<div class="quick-tests">', 'data-pickcheck', 'ROYAL-'):
+              idx=text.find(token)
+              if idx>=0:
+                  print('NOVA_LAB_PICKER_RENDER',repr(token),repr(text[max(0,idx-150):idx+3300]))
+          PY
