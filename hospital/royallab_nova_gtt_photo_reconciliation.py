@@ -205,7 +205,15 @@ def overlay_order_detail(conn, detail):
     """
     if not isinstance(detail,dict) or not isinstance(detail.get("items"),list):
         return detail
-    if "hospital_order_items" not in _tables(conn):
+    tables=_tables(conn)
+    if "hospital_order_items" not in tables or "hospital_lab_tests" not in tables:
+        return detail
+    # Historical synthetic fixtures may omit the catalogue code field.
+    # Only the full original NOVA schema can be safely reconciled.
+    if not {"id","code"}.issubset(_columns(conn,"hospital_lab_tests")):
+        return detail
+    if not {"id","test_id","result_status","result_version","result_text"}.issubset(
+            _columns(conn,"hospital_order_items")):
         return detail
     out={**detail,"items":[]}
     for original in detail["items"]:
