@@ -241,6 +241,17 @@ def propose(conn, actor, *, local_id=None, name, section, price, fields,
             raise ValueError("This test has historical orders; create a new test version instead")
     name = _text(name, "test name", 2, 160)
     section = _text(section, "test section", 2, 100)
+    # The new GTT template is a named local assay, distinct from Royal Lab's
+    # Blood Sugar Curve; reject repeat submissions of the same exact GTT form.
+    # This does not apply to other user-defined test families.
+    if local_id is None and name.casefold() == GTT_URINE_NAME.casefold():
+        existing = conn.execute("""SELECT 1 FROM hospital_lab_tests
+            WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) LIMIT 1""", (name,)).fetchone()
+        proposed = conn.execute("""SELECT 1 FROM nova_lab_local_proposals
+            WHERE state='pending' AND LOWER(TRIM(name))=LOWER(TRIM(?))
+            LIMIT 1""", (name,)).fetchone()
+        if existing or proposed:
+            raise ValueError("GTT with urine glucose already exists or awaits independent review")
     price = _money(price)
     data = _fields(fields)
     method = _text(method, "laboratory method", 4, 300)
