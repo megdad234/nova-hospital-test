@@ -14,7 +14,8 @@ on:
       - '.github/ci/nova_batch01_patch.py'
       - '.github/ci/nova_batch02_patch.py'
       - '.github/ci/nova_batch03_patch.py'
-      - '.github/ci/nova_lab_picker_original_probe.py'
+      - '.github/ci/nova_lab_hide_internal_codes.py'
+      - 'tests/test_nova_lab_hide_internal_codes.py'
       - '.github/ci/nova_batch04_lab_reception.py'
       - '.github/ci/nova_alsharq_lab_seed.py'
       - '.github/ci/nova_batch05_cashier_pharmacy.py'
@@ -178,9 +179,6 @@ jobs:
           if(!(Test-Path 'windows/build-windows.ps1')){throw 'Windows build script missing'}
           if(!(Test-Path 'windows/ci-acceptance.ps1')){throw 'Windows acceptance script missing'}
           Write-Host 'NOVA_SOURCE_EXTRACTED'
-      - name: Probe original lab card markup without patient data
-        shell: pwsh
-        run: python .github/ci/nova_lab_picker_original_probe.py
       - name: Inspect exact original NOVA English lab category labels
         shell: pwsh
         run: |
@@ -456,6 +454,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab typed UI regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_lab_a4_css_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab A4 CSS regression failed; installer blocked' }
+      - name: Hide Royal Lab internal IDs from test picker cards
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests -p 'test_nova_lab_hide_internal_codes.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Lab picker code-visibility regression failed' }
+          python .github/ci/nova_lab_hide_internal_codes.py
+          if ($LASTEXITCODE -ne 0) { throw 'Internal ROYAL IDs still visible in lab picker' }
+          node --check hospital/static/app.js
+          if ($LASTEXITCODE -ne 0) { throw 'Lab picker presentation patch invalid JavaScript' }
       - name: Bundle pinned Royal Lab original catalog into Windows source
         shell: pwsh
         env:
