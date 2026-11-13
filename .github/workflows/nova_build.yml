@@ -14,6 +14,7 @@ on:
       - '.github/ci/nova_batch01_patch.py'
       - '.github/ci/nova_batch02_patch.py'
       - '.github/ci/nova_batch03_patch.py'
+      - '.github/ci/nova_lab_picker_original_probe.py'
       - '.github/ci/nova_batch04_lab_reception.py'
       - '.github/ci/nova_alsharq_lab_seed.py'
       - '.github/ci/nova_batch05_cashier_pharmacy.py'
@@ -177,6 +178,9 @@ jobs:
           if(!(Test-Path 'windows/build-windows.ps1')){throw 'Windows build script missing'}
           if(!(Test-Path 'windows/ci-acceptance.ps1')){throw 'Windows acceptance script missing'}
           Write-Host 'NOVA_SOURCE_EXTRACTED'
+      - name: Probe original lab card markup without patient data
+        shell: pwsh
+        run: python .github/ci/nova_lab_picker_original_probe.py
       - name: Inspect exact original NOVA English lab category labels
         shell: pwsh
         run: |
