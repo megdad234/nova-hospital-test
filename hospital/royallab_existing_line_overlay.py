@@ -29,7 +29,12 @@ def overlay_existing_order_lines(conn, detail):
             if type(param_id) is not int:
                 # Resolve by exact original NOVA line code when parameter_id absent.
                 code=line.get("code")
-                if not isinstance(code,str) or not code.startswith("ROYAL_FMT_"):
+                # PHOTO_GTT_240_* is a separately documented local form
+                # mapped to the original G.T.T TestID, not a source format.
+                if not isinstance(code,str) or not (
+                    code.startswith("ROYAL_FMT_") or
+                    code.startswith("ROYAL_GTT_240_")
+                ):
                     continue
                 matches=conn.execute("""SELECT p.id FROM hospital_lab_parameters p
                     JOIN hospital_order_items i ON i.test_id=p.test_id
