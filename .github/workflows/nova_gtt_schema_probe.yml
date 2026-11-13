@@ -26,6 +26,6 @@ jobs:
                   for t in stmt.targets:
                       if isinstance(t,ast.Name) and t.id=='SCHEMA':
                           print("GTT_ORIGINAL_SCHEMA=",str(ast.literal_eval(stmt.value))[:24000])
-              if isinstance(stmt,ast.FunctionDef) and stmt.name in ('init','create_order','order_detail','save_values','create_order_items','order_new','create_order_with_tests','submit_order','result_summary'):
+              if isinstance(stmt,ast.FunctionDef) and stmt.name in ('init','create_order','order_detail','save_values','ensure_order_lines','lines','item_lines','test_form','submit_order','result_summary'):
                   print('GTT_FUNCTION',stmt.name,ast.get_source_segment(source,stmt)[:22000])
           PY
