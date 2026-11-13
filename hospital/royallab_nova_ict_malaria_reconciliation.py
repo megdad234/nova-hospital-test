@@ -107,7 +107,8 @@ def reconcile_in_existing_nova(c,catalog):
         raise RuntimeError("Original malaria ICT result options were altered")
     # Explicitly revive the original *same* parameter ID only in NOVA, without
     # claiming that the archived Royal Lab parameter was originally active.
-    c.execute("UPDATE hospital_lab_parameters SET active=1 WHERE id=?",(rows[0][0],))
+    c.execute("UPDATE hospital_lab_parameters SET name=?,active=1 WHERE id=?",
+              (FIELD_NAME,rows[0][0]))
     c.execute("""UPDATE royal_lab_nova_parameter_metadata SET kind='select'
         WHERE nova_parameter_id=?""",(rows[0][0],))
     c.execute("""UPDATE hospital_lab_tests SET name=? WHERE id=?""",
