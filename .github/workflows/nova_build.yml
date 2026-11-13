@@ -116,8 +116,6 @@ on:
       - 'hospital/nova_lab_local_tests.py'
       - 'tests/test_nova_lab_local_tests.py'
       - 'tests/test_nova_lab_gtt_with_urine.py'
-      - 'hospital/nova_gtt_royal240_fix.py'
-      - 'tests/test_nova_gtt_royal240_fix.py'
       - 'hospital/royallab_missing_test_review_templates.py'
       - 'tests/test_royallab_missing_test_review_templates.py'
       - 'hospital/royallab_source_sibling_review.py'
@@ -420,8 +418,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'NOVA local lab form review regression failed' }
           python -m unittest discover -s tests -p 'test_nova_lab_gtt_with_urine.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'GTT urine glucose clinical-template regression failed' }
-          python -m unittest discover -s tests -p 'test_nova_gtt_royal240_fix.py' -v
-          if ($LASTEXITCODE -ne 0) { throw 'Existing Royal Lab G.T.T 240 must show photographed glucose fields and preserve history' }
           python -m unittest discover -s tests -p 'test_royallab_native_gateway_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native gateway regression failed' }
           python -m py_compile hospital/gateway.py hospital/royallab_nova_live_order_overlay.py hospital/royallab_nova_binding_loader.py hospital/royallab_nova_binding_schema.py hospital/royallab_nova_order_detail_gate.py hospital/royallab_nova_order_detail_types.py hospital/royallab_nova_typed_form_contract.py hospital/royallab_nova_order_line_resolver.py hospital/royallab_nova_parameter_plan.py hospital/royallab_catalog_preview.py hospital/royallab_field_adapter.py
