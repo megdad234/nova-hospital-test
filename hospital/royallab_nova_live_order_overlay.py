@@ -17,6 +17,10 @@ def overlay_order_detail(conn,detail,role):
     detail=_gtt_overlay(conn,detail)
     from hospital.royallab_nova_ict_malaria_reconciliation import overlay_order_detail as _ict_overlay
     detail=_ict_overlay(conn,detail)
+    # Organize original TestID 8 stool fields using source-verified
+    # format IDs; do not change their result inputs or archived reports.
+    from hospital.royallab_nova_stool_layout import display_order_detail as _stool_display
+    detail=_stool_display(conn,detail)
     if not isinstance(detail,dict) or not isinstance(detail.get('items'),list):return detail
     items=detail['items']
     if not items:return detail
