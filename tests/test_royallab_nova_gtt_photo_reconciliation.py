@@ -12,6 +12,7 @@ from hospital.royallab_existing_catalog_replacement import replace_catalog
 from hospital.royallab_existing_line_overlay import overlay_existing_order_lines
 from hospital.royallab_nova_gtt_photo_reconciliation import (
     FIELDS, URINE_CHOICES, SOURCE_CODE, PARAM_PREFIX, _source_confirmed,
+    overlay_order_detail as photo_overlay,validate_save_payload as gtt_validate,
 )
 from hospital.royallab_native_result_form import native_catalog
 from hospital.royallab_catalog_audit import SOURCE
@@ -153,6 +154,96 @@ class GTTWorksheetRepairTests(unittest.TestCase):
         self.assertEqual(loaded[4]["royal_lab_field"]["kind"],"select")
         self.assertEqual(loaded[4]["royal_lab_field"]["options"],list(URINE_CHOICES))
         self.assertTrue(all(l.get("royal_lab_field") for l in loaded))
+
+    def _make_legacy_order_schema(self):
+        self.db.execute("ALTER TABLE hospital_order_items ADD COLUMN result_status TEXT DEFAULT 'pending'")
+        self.db.execute("ALTER TABLE hospital_order_items ADD COLUMN result_version INTEGER DEFAULT 0")
+        self.db.execute("ALTER TABLE hospital_order_items ADD COLUMN result_text TEXT DEFAULT ''")
+        self.db.execute("ALTER TABLE hospital_lab_lines ADD COLUMN unit TEXT DEFAULT ''")
+        self.db.execute("ALTER TABLE hospital_lab_lines ADD COLUMN reference_range TEXT DEFAULT ''")
+        self.db.execute("CREATE TABLE hospital_lab_revisions(id INTEGER PRIMARY KEY,item_id INTEGER)")
+
+    def _detail(self,item_id):
+        result=self.db.execute("""SELECT id,parameter_id,code,name,value FROM
+            hospital_lab_lines WHERE item_id=? ORDER BY id""",(item_id,)).fetchall()
+        return {"items":[{"id":item_id,"lines":[
+            dict(zip(("id","parameter_id","code","name","value"),row))
+            for row in result]}]}
+
+    def test_existing_paid_blank_alp_order_migrates_into_correct_gtt_form(self):
+        self._make_legacy_order_schema()
+        replace_catalog(self.db,{},approved=True)
+        tid=self.db.execute("SELECT id FROM hospital_lab_tests WHERE code='ROYAL-240'").fetchone()[0]
+        bad=self.db.execute("""SELECT id,code FROM hospital_lab_parameters
+            WHERE test_id=? AND name='ALP'""",(tid,)).fetchone()
+        self.db.execute("INSERT INTO hospital_order_items(id,test_id) VALUES(2001,?)",(tid,))
+        self.db.execute("""INSERT INTO hospital_lab_lines
+            (id,item_id,parameter_id,code,name,value) VALUES(9001,2001,?,?,'ALP','')""",
+            bad)
+        replace_catalog(self.db,{},approved=True)
+        self.assertEqual(self.db.execute(
+            "SELECT COUNT(*) FROM hospital_lab_lines WHERE item_id=2001").fetchone()[0],12)
+        self.assertEqual(self.db.execute(
+            "SELECT COUNT(*) FROM royal_lab_nova_gtt_migrated_items WHERE item_id=2001").fetchone()[0],1)
+        details=overlay_existing_order_lines(self.db,self._detail(2001))
+        shown=photo_overlay(self.db,details)["items"][0]["lines"]
+        self.assertEqual(len(shown),11)
+        self.assertEqual([line["name"] for line in shown],[f[1] for f in FIELDS])
+        self.assertTrue(all(line["royal_lab_field"]["kind"] in ("number","select","text")
+                            for line in shown))
+        self.assertEqual(self.db.execute("SELECT value FROM hospital_lab_lines WHERE id=9001").fetchone(),("",))
+        self.assertEqual(self.db.execute(
+            "SELECT result_status,result_version FROM hospital_order_items WHERE id=2001").fetchone(),
+            ("pending",0))
+        # The wrong ALP does NOT reappear after this item has been saved.
+        fasting=next(line for line in shown if line["code"]==PARAM_PREFIX+"blood_fasting")
+        self.db.execute("UPDATE hospital_lab_lines SET value='92' WHERE id=?",(fasting["id"],))
+        self.db.execute("UPDATE hospital_order_items SET result_version=1,result_status='draft' WHERE id=2001")
+        shown_again=photo_overlay(self.db,self._detail(2001))["items"][0]["lines"]
+        self.assertEqual(len(shown_again),11)
+        self.assertNotIn("ALP",[x["name"] for x in shown_again])
+
+    def test_old_approved_result_never_migrates_or_loses_original_alp(self):
+        self._make_legacy_order_schema()
+        replace_catalog(self.db,{},approved=True)
+        tid=self.db.execute("SELECT id FROM hospital_lab_tests WHERE code='ROYAL-240'").fetchone()[0]
+        bad=self.db.execute("""SELECT id,code FROM hospital_lab_parameters
+            WHERE test_id=? AND name='ALP'""",(tid,)).fetchone()
+        self.db.execute("""INSERT INTO hospital_order_items
+            (id,test_id,result_status,result_version) VALUES(2002,?,'approved',1)""",(tid,))
+        self.db.execute("""INSERT INTO hospital_lab_lines
+            (id,item_id,parameter_id,code,name,value) VALUES(9002,2002,?,?,'ALP','55')""",bad)
+        replace_catalog(self.db,{},approved=True)
+        self.assertFalse(self.db.execute(
+            "SELECT 1 FROM royal_lab_nova_gtt_migrated_items WHERE item_id=2002").fetchone())
+        self.assertEqual(self.db.execute(
+            "SELECT COUNT(*) FROM hospital_lab_lines WHERE item_id=2002").fetchone()[0],1)
+        record=photo_overlay(self.db,self._detail(2002))["items"][0]["lines"]
+        self.assertEqual([(x["name"],x["value"]) for x in record],[("ALP","55")])
+
+    def test_corrected_gtt_numeric_and_urine_inputs_are_validated(self):
+        self._make_legacy_order_schema()
+        replace_catalog(self.db,{},approved=True)
+        tid=self.db.execute("SELECT id FROM hospital_lab_tests WHERE code='ROYAL-240'").fetchone()[0]
+        bad=self.db.execute("SELECT id,code FROM hospital_lab_parameters WHERE test_id=? AND name='ALP'",
+                            (tid,)).fetchone()
+        self.db.execute("INSERT INTO hospital_order_items(id,test_id) VALUES(2003,?)",(tid,))
+        self.db.execute("""INSERT INTO hospital_lab_lines
+            (id,item_id,parameter_id,code,name,value) VALUES(9003,2003,?,?,'ALP','')""",bad)
+        replace_catalog(self.db,{},approved=True)
+        codes=dict(self.db.execute("SELECT code,id FROM hospital_lab_lines WHERE item_id=2003"))
+        gtt_validate(self.db,{"item_id":2003,"values":[
+            {"line_id":codes[PARAM_PREFIX+"blood_fasting"],"value":"97"},
+            {"line_id":codes[PARAM_PREFIX+"urine_fasting"],"value":"Trace"}]})
+        for invalid in ("ALP","NaN","Infinity","-2"):
+            with self.subTest(invalid=invalid),self.assertRaises(ValueError):
+                gtt_validate(self.db,{"item_id":2003,"values":[
+                    {"line_id":codes[PARAM_PREFIX+"blood_fasting"],"value":invalid}]})
+        with self.assertRaisesRegex(ValueError,"dropdown"):
+            gtt_validate(self.db,{"item_id":2003,"values":[
+                {"line_id":codes[PARAM_PREFIX+"urine_fasting"],"value":"Other"}]})
+        with self.assertRaisesRegex(ValueError,"ALP"):
+            gtt_validate(self.db,{"item_id":2003,"values":[{"line_id":9003,"value":"53"}]})
 
     def test_unrelated_source_does_not_trigger_photo_override(self):
         fake=source_like_fixture()
