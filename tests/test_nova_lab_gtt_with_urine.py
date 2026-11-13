@@ -72,6 +72,8 @@ class GTTTemplateTests(unittest.TestCase):
             self.assertEqual(f["kind"], "select")
             self.assertEqual(f["options"],
                              ["Negative", "Trace", "+1", "+2", "+3", "+4"])
+        self.assertEqual(t["fields"][0]["kind"], "number")
+        self.assertEqual(t["fields"][0]["unit"], "g")
         self.assertEqual(t["fields"][1]["options"], ["Plasma", "Serum"])
         self.assertTrue(all(f["key"] != "patient_name" for f in t["fields"]))
 
