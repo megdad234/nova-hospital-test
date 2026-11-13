@@ -8,7 +8,6 @@ import json
 import sqlite3
 from hospital.royallab_native_result_form import native_catalog
 from hospital.royallab_nova_parameter_plan import source_code
-from hospital.royallab_nova_gtt_photo_reconciliation import reconcile_in_existing_nova
 from hospital.royallab_nova_departments import (
     DEPARTMENT_SCHEMA, PREVIOUS_AUTO_ARABIC_CATEGORIES,
     for_source_test, verify_original_departments)
@@ -208,17 +207,6 @@ def replace_catalog(conn, library, *, approved=False):
                      field["kind"],json.dumps(field["options"],ensure_ascii=False),
                      json.dumps(field["numeric_ranges"],ensure_ascii=False),
                      json.dumps(field["text_ranges"],ensure_ascii=False)))
-        # Royal Lab TestID 240 is incorrectly exported as G.T.T -> ALP.
-        # Replace ONLY the future-order clinical form with the user-supplied
-        # 0/1/2-hour blood-and-urine GTT paper layout; old lines survive.
-        photo_gtt_fields = 0
-        source_test_240 = next(t for t in plan["tests"]
-                               if t["source_test_id"] == "240")
-        if (source_test_240["name"].strip().casefold() == "g.t.t"
-                and len(source_test_240["fields"]) == 1
-                and source_test_240["fields"][0]["label"].strip() == "ALP"):
-            photo_gtt_fields = reconcile_in_existing_nova(
-                conn, plan["tests"], params_schema)
         count = conn.execute("SELECT COUNT(*) FROM hospital_lab_tests WHERE code LIKE 'ROYAL-%' AND active=1").fetchone()[0]
         if count != 367:
             raise RuntimeError("NOVA replacement count mismatch")
@@ -231,7 +219,7 @@ def replace_catalog(conn, library, *, approved=False):
             "SELECT COUNT(*) FROM hospital_lab_tests WHERE active=1 AND code NOT LIKE 'ROYAL-%'").fetchone()[0]
         if active_legacy:
             raise RuntimeError("Legacy NOVA tests still active after replacement")
-        expected_parameters = sum(len(t["fields"]) for t in plan["tests"]) + photo_gtt_fields
+        expected_parameters = sum(len(t["fields"]) for t in plan["tests"])
         actual_metadata = conn.execute(
             "SELECT COUNT(*) FROM royal_lab_nova_parameter_metadata").fetchone()[0]
         if actual_metadata != expected_parameters:
@@ -240,7 +228,8 @@ def replace_catalog(conn, library, *, approved=False):
         missing_metadata = conn.execute("""SELECT COUNT(*) FROM hospital_lab_parameters p
             JOIN hospital_lab_tests t ON t.id=p.test_id
             LEFT JOIN royal_lab_nova_parameter_metadata m ON m.nova_parameter_id=p.id
-            WHERE t.code LIKE 'ROYAL-%' AND m.nova_parameter_id IS NULL""").fetchone()[0]
+            WHERE t.code LIKE 'ROYAL-%' AND m.nova_parameter_id IS NULL
+              AND NOT (t.code='ROYAL-240' AND p.code LIKE 'NOVA_GTT_%')""").fetchone()[0]
         if missing_metadata:
             raise RuntimeError("Royal Lab NOVA parameters missing result metadata")
         conn.execute("RELEASE SAVEPOINT royal_catalog_replacement")
@@ -249,6 +238,5 @@ def replace_catalog(conn, library, *, approved=False):
         conn.execute("RELEASE SAVEPOINT royal_catalog_replacement")
         raise
     return {"active_royal_lab_tests":367,"historical_tests_preserved":True,
-            "gtt_photo_reconciled_fields":photo_gtt_fields,
             "department_metadata_rows":367,
             "source_fields_needing_review":plan["source_fields_needing_review"]}
