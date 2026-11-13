@@ -29,10 +29,6 @@ def init(c, *args, **kwargs):
         raise RuntimeError("Royal Lab source missing; refusing old NOVA catalogue")
     _library = _royal_json.loads(_source.read_text(encoding="utf-8-sig"))
     _replace(c, _library, approved=True)
-    # User-confirmed hospital paper GTT fields replace the *incorrect* ALP
-    # display on source TestID 240; patient history and source IDs are kept.
-    from hospital.nova_gtt_royal240_fix import install as _nova_gtt_fix
-    _nova_gtt_fix(c)
     from hospital.nova_lab_local_tests import restore_active as _nova_local_restore
     _nova_local_restore(c)
     return result
