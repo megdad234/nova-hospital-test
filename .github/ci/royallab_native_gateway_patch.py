@@ -6,17 +6,7 @@ Original test identifiers are used; no legacy test-name matching.
 from pathlib import Path
 ANCHOR="return self.reply(royallab_nova_live_order_overlay.overlay_order_detail(c,core.order_detail(c,oid,role),role))"
 IMPORT="from hospital import core, lab, finance, admin, royallab_nova_live_order_overlay"
-POST_ROUTES="""                    if path=='/api/hospital/royallab-native/local/tests':
-                        core.require_role(role,'admin','lab','reception')
-                        return self.reply(nova_lab_local_tests.list_local(c))
-                    if path=='/api/hospital/royallab-native/local/proposals':
-                        core.require_role(role,'admin','lab')
-                        return self.reply(nova_lab_local_tests.proposals(c))
-                    if path.startswith('/api/hospital/royallab-native/local/form/'):
-                        core.require_role(role,'admin','lab')
-                        return self.reply(nova_lab_local_tests.local_form(
-                            c,core.integer(path.rsplit('/',1)[-1],'الفحص المحلي',1)))
-                    if path=='/api/hospital/royallab-native/local/propose':
+POST_ROUTES="""                    if path=='/api/hospital/royallab-native/local/propose':
                         core.require_role(role,'admin','lab')
                         return self.reply(nova_lab_local_tests.propose(
                             c,user,local_id=(core.integer(data.get('local_id'),'الفحص المحلي',1)
@@ -79,7 +69,20 @@ GET_DRAFT_ROUTE="""                    if path.startswith('/api/hospital/royalla
                         return self.reply(royallab_native_order_bridge.load_order_item_draft(
                             c,user,core.integer(path.rsplit('/',1)[-1],'رقم فحص الطلب',1)))
 """
-ROUTES="""                    if path=='/api/hospital/royallab-native/tests':
+ROUTES="""                    if path=='/api/hospital/royallab-native/local/tests':
+                        core.require_role(role,'admin','lab','reception')
+                        return self.reply(nova_lab_local_tests.list_local(c))
+                    if path=='/api/hospital/royallab-native/local/proposals':
+                        core.require_role(role,'admin','lab')
+                        return self.reply(nova_lab_local_tests.proposals(c))
+                    if path.startswith('/api/hospital/royallab-native/local/form/'):
+                        core.require_role(role,'admin','lab')
+                        return self.reply(nova_lab_local_tests.local_form(
+                            c,core.integer(path.rsplit('/',1)[-1],'الفحص المحلي',1)))
+                    if path=='/api/hospital/royallab-native/local/templates/gtt-urine':
+                        core.require_role(role,'admin','lab')
+                        return self.reply(nova_lab_local_tests.gtt_urine_template())
+                    if path=='/api/hospital/royallab-native/tests':
                         core.require_role(role,'admin','reception','lab')
                         return self.reply(royallab_native_catalog_api.catalog_response(c))
                     if path.startswith('/api/hospital/royallab-native/form/'):
