@@ -10,7 +10,18 @@ from hospital.nova_gtt_royal240_fix import (
     TARGET_CODE, PREFIX, FIELDS, install, overlay_order_detail,
     validate_save_payload)
 from hospital.royallab_existing_catalog_replacement import replace_catalog
-from tests.test_royallab_existing_catalog_replacement import synthetic_catalog
+def synthetic_catalog():
+    return {"tests":[{
+        "source_test_id":str(i), "name":"Royal Test "+str(i),
+        "source_department_id":"1", "review_flags":[],
+        "fields":[{
+            "source_format_id":str(i+1),
+            "label":"ALP" if i==240 else "Result",
+            "kind":"select", "unit":"",
+            "options":[{"id":"P","label":"Positive","active":True}],
+            "numeric_ranges":[], "text_ranges":[]
+        }]} for i in range(367)]}
+
 
 
 def db_fixture():
