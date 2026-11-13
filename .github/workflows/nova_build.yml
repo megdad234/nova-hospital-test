@@ -114,6 +114,8 @@ on:
       - 'hospital/nova_lab_local_tests.py'
       - 'tests/test_nova_lab_local_tests.py'
       - 'tests/test_nova_lab_gtt_with_urine.py'
+      - 'hospital/royallab_missing_test_review_templates.py'
+      - 'tests/test_royallab_missing_test_review_templates.py'
       - 'hospital/royallab_source_sibling_review.py'
       - 'tests/test_royallab_source_sibling_review.py'
       - 'hospital/royallab_native_catalog_api.py'
@@ -463,6 +465,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab real source native SQLite import failed' }
           python -m py_compile hospital/royallab_source_sibling_review.py
           if ($LASTEXITCODE -ne 0) { throw 'Original Royal Lab sibling evidence module invalid' }
+          python -m unittest discover -s tests -p 'test_royallab_missing_test_review_templates.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Royal Lab 27 blocked test source evidence audit failed' }
           python -m unittest discover -s tests -p 'test_royallab_source_sibling_review.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Original Royal Lab sibling clinical review regression failed' }
       - name: Verify Royal Lab native result draft persistence
