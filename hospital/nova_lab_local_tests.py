@@ -81,7 +81,7 @@ def gtt_urine_template():
     """
     fields = [
         {"key": "glucose_load", "label": "Glucose Load",
-         "kind": "text", "unit": ""},
+         "kind": "number", "unit": "g"},
         {"key": "specimen", "label": "Specimen",
          "kind": "select", "options": ["Plasma", "Serum"]},
         {"key": "method_recorded", "label": "Method",
