@@ -9,6 +9,7 @@ import sqlite3
 from hospital.royallab_native_result_form import native_catalog
 from hospital.royallab_nova_parameter_plan import source_code
 from hospital.royallab_nova_gtt_photo_reconciliation import reconcile_in_existing_nova
+from hospital.royallab_nova_ict_malaria_reconciliation import reconcile_in_existing_nova as reconcile_ict_malaria
 from hospital.royallab_nova_departments import (
     DEPARTMENT_SCHEMA, PREVIOUS_AUTO_ARABIC_CATEGORIES,
     for_source_test, verify_original_departments)
@@ -208,6 +209,14 @@ def replace_catalog(conn, library, *, approved=False):
                      field["kind"],json.dumps(field["options"],ensure_ascii=False),
                      json.dumps(field["numeric_ranges"],ensure_ascii=False),
                      json.dumps(field["text_ranges"],ensure_ascii=False)))
+        # Royal Lab TestID 14 contains Positive/Negative options from its own
+        # ResultFormatID 30, but the original analyte is inactive. The lab's
+        # screenshot shows NOVA's single-text RESULT fallback. Restore that
+        # *exact* source field by an explicit documented hospital override.
+        ict_malaria_fields = 0
+        source_test_14 = next(t for t in plan["tests"] if t["source_test_id"] == "14")
+        if source_test_14["name"].strip().casefold()=="ict fof malaria":
+            ict_malaria_fields = reconcile_ict_malaria(conn,plan["tests"])
         # G.T.T TestID 240 was wrongly linked to ALP in the recovered source.
         # Repair the actual NOVA test using the hospital's 0/1/2-hour chart;
         # keep original ALP parameter and all historical result data unchanged.
@@ -251,5 +260,6 @@ def replace_catalog(conn, library, *, approved=False):
         raise
     return {"active_royal_lab_tests":367,"historical_tests_preserved":True,
             "gtt_photo_reconciled_fields":photo_gtt_fields,
+            "ict_malaria_original_dropdown_fields":ict_malaria_fields,
             "department_metadata_rows":367,
             "source_fields_needing_review":plan["source_fields_needing_review"]}
