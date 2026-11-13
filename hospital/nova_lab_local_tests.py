@@ -248,7 +248,7 @@ def propose(conn, actor, *, local_id=None, name, section, price, fields,
         # The real Royal Lab G.T.T TestID 240 has now been reconciled to the
         # photographed worksheet. Do not sell a duplicate second GTT form.
         installed = conn.execute(
-            "SELECT 1 FROM sqlite_master WHERE name='royal_lab_nova_gtt_photo_provenance'"
+            "SELECT 1 FROM sqlite_master WHERE name='nova_gtt_royal240_field_metadata'"
         ).fetchone()
         if installed and conn.execute(
             "SELECT 1 FROM hospital_lab_tests WHERE code='ROYAL-240' AND active=1"
