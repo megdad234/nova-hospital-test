@@ -315,7 +315,7 @@ def review_suggestion(conn,catalog_id,source_test_id):
                                 not field.get("manual_untyped_draft_only") and
                                 not field.get("manual_missing_closed_options_draft_only")})
     else:
-        for label,kind in ([] if kit_variants else CANDIDATE_FIELDS.get(source_id, [])):
+        for label,kind in CANDIDATE_FIELDS.get(source_id, []):
             proposal.append({"key":"f"+str(len(proposal)+1),
                              "label":label, "kind":kind, "unit":"",
                              "option_labels":[], "source_proven":False})
