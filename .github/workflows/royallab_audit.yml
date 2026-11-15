@@ -30,6 +30,8 @@ on:
       - 'tests/test_royallab_nova_gtt_photo_reconciliation.py'
       - 'hospital/royallab_existing_catalog_replacement.py'
       - 'tests/test_royallab_existing_catalog_replacement.py'
+      - '.github/ci/royallab_lab_catalog_visibility_patch.py'
+      - 'tests/test_royallab_lab_catalog_visibility_patch.py'
       - 'hospital/royallab_source_sibling_review.py'
       - 'tests/test_royallab_source_sibling_review.py'
       - 'hospital/nova_lab_local_tests.py'
@@ -132,6 +134,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify all 367 Royal Lab tests searchable (Vitamin D/VDRL beyond original 200 cap)
+        run: python -m unittest discover -s tests -p 'test_royallab_lab_catalog_visibility_patch.py' -v
       - name: Verify side-by-side urine result controls without merging source IDs
         run: python -m unittest discover -s tests -p 'test_royallab_urine_pair_ui_patch.py' -v
       - name: Verify stool report fields, original options and unrelated orders
