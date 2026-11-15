@@ -10,6 +10,7 @@ from hospital.royallab_native_result_form import native_catalog
 from hospital.royallab_nova_parameter_plan import source_code
 from hospital.royallab_nova_gtt_photo_reconciliation import reconcile_in_existing_nova
 from hospital.royallab_nova_ict_malaria_reconciliation import reconcile_in_existing_nova as reconcile_ict_malaria
+from hospital.royallab_nova_ptinr_photo_reconciliation import reconcile_in_existing_nova as reconcile_ptinr
 from hospital.royallab_nova_departments import (
     DEPARTMENT_SCHEMA, PREVIOUS_AUTO_ARABIC_CATEGORIES,
     for_source_test, verify_original_departments)
@@ -217,6 +218,13 @@ def replace_catalog(conn, library, *, approved=False):
         source_test_14 = next(t for t in plan["tests"] if t["source_test_id"] == "14")
         if source_test_14["name"].strip().casefold()=="ict fof malaria":
             ict_malaria_fields = reconcile_ict_malaria(conn,plan["tests"])
+        # Local hospital photo confirms two PT/INR fields and references.
+        # This alters ONLY new TestID 22 order-entry parameters, never print
+        # templates, existing patient result lines, bills or source definitions.
+        source_test_22 = next(t for t in plan["tests"]
+                              if t["source_test_id"] == "22")
+        if source_test_22["name"].strip() == "PT/INR":
+            reconcile_ptinr(conn, plan["tests"], params_schema)
         # G.T.T TestID 240 was wrongly linked to ALP in the recovered source.
         # Repair the actual NOVA test using the hospital's 0/1/2-hour chart;
         # keep original ALP parameter and all historical result data unchanged.
