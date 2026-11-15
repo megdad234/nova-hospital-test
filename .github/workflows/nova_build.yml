@@ -167,6 +167,8 @@ on:
       - 'tests/test_royallab_existing_line_overlay.py'
       - '.github/ci/nova_legacy_lab_category_audit.py'
       - '.github/ci/royallab_existing_catalog_patch.py'
+      - '.github/ci/royallab_lab_catalog_visibility_patch.py'
+      - 'tests/test_royallab_lab_catalog_visibility_patch.py'
       - '.github/ci/royallab_actual_nova_schema_gate.py'
       - 'tests/test_royallab_existing_catalog_patch.py'
   workflow_dispatch:
@@ -432,6 +434,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab original NOVA table integration syntax invalid' }
           python .github/ci/royallab_existing_catalog_patch.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab existing NOVA catalogue patch failed' }
+          python .github/ci/royallab_lab_catalog_visibility_patch.py
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA full lab catalog 200-item visibility patch failed' }
+          python -m unittest discover -s tests -p 'test_royallab_lab_catalog_visibility_patch.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Vitamin D/VDRL and 367-test search visibility regression failed' }
           python -m unittest discover -s tests -p 'test_royallab_existing_catalog_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab direct catalogue patch regression failed' }
           python .github/ci/royallab_native_gateway_patch.py
