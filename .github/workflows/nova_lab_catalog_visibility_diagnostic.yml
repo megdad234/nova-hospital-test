@@ -1,0 +1,40 @@
+name: NOVA read-only lab price catalog visibility diagnostic
+on:
+  push:
+    branches: [feature/royallab-full-migration-20261111]
+    paths:
+      - '.github/workflows/nova_lab_catalog_visibility_diagnostic.yml'
+  workflow_dispatch:
+jobs:
+  locate-visibility:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect only existing unmodified NOVA source ZIP and relevant patches
+        shell: bash
+        run: |
+          python - <<'PY'
+          from zipfile import ZipFile
+          from pathlib import Path
+          import re
+          archive=Path('NOVA_Hospital_GitHub_Ready_Source.zip')
+          if not archive.exists(): raise SystemExit('Original NOVA ZIP missing')
+          pat=re.compile(r'إعداد فحوصات المعمل|أسعار وفحوصات المعمل|فحص متاح|لا توجد بيانات بعد|available tests|function\s+catalog|function\s+testChoices|hospital/tests|/tests|[Ll][Ii][Mm][Ii][Tt].{0,6}200|slice\s*\(\s*0\s*,\s*200\s*\)',re.I)
+          with ZipFile(archive) as z:
+            for name in z.namelist():
+              if not name.startswith('hospital/') or not name.endswith(('.py','.js','.html')):continue
+              if '/static/' in name and not any(q in name for q in ('app.js','admin','finance')):continue
+              try: s=z.read(name).decode('utf-8-sig')
+              except UnicodeDecodeError:continue
+              lines=s.splitlines()
+              found=[i for i,line in enumerate(lines) if pat.search(line)]
+              if not found:continue
+              print('FILE',name,'total lines',len(lines),'matches',len(found))
+              for pos in found[:35]:
+                start=max(0,pos-6);stop=min(len(lines),pos+8)
+                print('--- lines',start+1,'-',stop,'---')
+                for k in range(start,stop):
+                  print(f'{k+1}: {lines[k][:320]}')
+          PY
