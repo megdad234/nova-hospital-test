@@ -81,6 +81,8 @@ on:
       - '.github/ci/royallab_order_route_audit.py'
       - '.github/ci/royallab_typed_input_patch.py'
       - 'tests/test_royallab_typed_input_patch.py'
+      - '.github/ci/royallab_urine_pair_ui_patch.py'
+      - 'tests/test_royallab_urine_pair_ui_patch.py'
       - 'tests/test_royallab_combined_ui_patches.py'
       - 'hospital/royallab_nova_binding_schema.py'
       - 'hospital/royallab_nova_live_order_overlay.py'
@@ -124,6 +126,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify side-by-side urine result controls without merging source IDs
+        run: python -m unittest discover -s tests -p 'test_royallab_urine_pair_ui_patch.py' -v
       - name: Verify stool report fields, original options and unrelated orders
         run: python -m unittest discover -s tests -p 'test_royallab_nova_stool_layout.py' -v
       - name: Verify urine photo layout with independent Crystals/Cast/Others fields
