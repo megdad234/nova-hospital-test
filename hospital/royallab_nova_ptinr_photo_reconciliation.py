@@ -84,16 +84,23 @@ def reconcile_in_existing_nova(conn, catalog, param_schema):
     """
     source = _original(catalog)
     needed = {"reference_all", "reference_male", "reference_female", "sort_order"}
-    if not needed.issubset(param_schema):
-        raise RuntimeError("NOVA PT/INR reference-range columns missing")
+    has_references = needed.issubset(param_schema)
+    # Royal Lab's disposable SOURCE-only import smoke fixture deliberately
+    # uses a minimal NOVA table (id/code/name/unit/active). Do not create a
+    # fake reference schema in that fixture. Real NOVA has all four columns.
+    if not has_references and needed.intersection(param_schema):
+        raise RuntimeError("Partially migrated NOVA PT/INR reference schema")
     test = conn.execute("SELECT id,name FROM hospital_lab_tests WHERE code=?",
                         (TEST_CODE,)).fetchone()
     if not test or str(test[1]).strip() != TEST_NAME:
         raise RuntimeError("NOVA PT/INR test identity does not match original")
     test_id = test[0]
-    params = conn.execute("""SELECT id,code,name,unit,active,reference_all,
-        reference_male,reference_female,sort_order
-        FROM hospital_lab_parameters WHERE test_id=?""", (test_id,)).fetchall()
+    select_cols = ("id,code,name,unit,active,reference_all,reference_male,"
+                   "reference_female,sort_order" if has_references else
+                   "id,code,name,unit,active,'' AS reference_all,"
+                   "'' AS reference_male,'' AS reference_female,0 AS sort_order")
+    params = conn.execute("SELECT " + select_cols +
+        " FROM hospital_lab_parameters WHERE test_id=?", (test_id,)).fetchall()
     by_code = {r[1]: r for r in params}
     if len(by_code) != len(params):
         raise RuntimeError("Duplicate NOVA PT/INR parameter codes")
@@ -102,11 +109,14 @@ def reconcile_in_existing_nova(conn, catalog, param_schema):
     if any(x not in by_code for x in wanted | {control_code}):
         raise RuntimeError("Expected Royal Lab PT, INR or PT Control parameter missing")
 
-    conn.execute(SCHEMA)
-    prior = conn.execute("""SELECT pt_display_reference,inr_display_reference,
-        pt_source_format_id,inr_source_format_id FROM
-        royal_lab_nova_ptinr_photo_provenance WHERE source_test_id=?""",
-        (SOURCE_ID,)).fetchone()
+    if has_references:
+        conn.execute(SCHEMA)
+        prior = conn.execute("""SELECT pt_display_reference,inr_display_reference,
+            pt_source_format_id,inr_source_format_id FROM
+            royal_lab_nova_ptinr_photo_provenance WHERE source_test_id=?""",
+            (SOURCE_ID,)).fetchone()
+    else:
+        prior = None
     if prior and (prior[0], prior[1], prior[2], prior[3]) != (
             FIELDS[0][4], FIELDS[1][4], FIELDS[0][0], FIELDS[1][0]):
         raise RuntimeError("PT/INR photo provenance changed; review required")
@@ -131,7 +141,7 @@ def reconcile_in_existing_nova(conn, catalog, param_schema):
             WHERE nova_parameter_id=?""", (p[0],))
         # First install makes the requested photo reference effective. On
         # subsequent boots, protect any locally edited reference and sorting.
-        if prior is None:
+        if has_references and prior is None:
             conn.execute("""UPDATE hospital_lab_parameters
               SET reference_all=?,reference_male='',reference_female='',
                   sort_order=? WHERE id=?""", (reference, order, p[0]))
@@ -148,7 +158,7 @@ def reconcile_in_existing_nova(conn, catalog, param_schema):
     # line for NEW PT/INR orders, as requested in the pictured two-field form.
     conn.execute("UPDATE hospital_lab_parameters SET active=0 WHERE id=?",
                  (control_param[0],))
-    if prior is None:
+    if has_references and prior is None:
         conn.execute("""INSERT INTO royal_lab_nova_ptinr_photo_provenance
             (source_test_id,hospital_reference,pt_source_format_id,
              inr_source_format_id,pt_display_reference,inr_display_reference,
@@ -158,7 +168,8 @@ def reconcile_in_existing_nova(conn, catalog, param_schema):
              FIELDS[0][4], FIELDS[1][4],
              int(source["288"].get("kind") == "text"), CONTROL_FORMAT))
     live = conn.execute("""SELECT code FROM hospital_lab_parameters
-        WHERE test_id=? AND active=1 ORDER BY sort_order,id""",
+        WHERE test_id=? AND active=1""" +
+        (" ORDER BY sort_order,id" if has_references else " ORDER BY id"),
         (test_id,)).fetchall()
     if {r[0] for r in live} != wanted or len(live) != 2:
         raise RuntimeError("PT/INR must expose exactly two result fields")
