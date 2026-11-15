@@ -148,7 +148,11 @@ class HandwrittenSourceTests(unittest.TestCase):
                        return_value=[]):
                 suggestion=review_suggestion(db,1,tid)
             self.assertEqual(suggestion["source_test_id"],tid)
-            self.assertEqual(suggestion["fields"],[])
+            # Keep the pre-existing unapproved vitamin-D hint for reviewer
+            # compatibility; method alternatives are new, not replacements.
+            self.assertEqual(len(suggestion["fields"]),1 if tid=="368" else 0)
+            self.assertTrue(all(f["source_proven"] is False
+                                for f in suggestion["fields"]))
             self.assertFalse(suggestion["ready_for_patient_results"])
             self.assertTrue(suggestion["requires_independent_approval"])
             self.assertGreaterEqual(len(suggestion["method_variants"]),2)
