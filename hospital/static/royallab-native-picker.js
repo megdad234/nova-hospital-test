@@ -139,6 +139,8 @@
     // Original Royal Lab sibling assays are references, not merged results.
     const siblingPanel = document.createElement('section');
     siblingPanel.className = 'royal-lab-sibling-evidence';
+    const methodVariantPanel = document.createElement('section');
+    methodVariantPanel.className = 'nova-lab-unapproved-method-choices';
     const clearProposalButton = document.createElement('button');
     clearProposalButton.type = 'button';
     clearProposalButton.textContent = 'مسح حقول المسودة المقترحة';
@@ -148,7 +150,7 @@
       reviewStatus.textContent = 'تم مسح حقول المسودة فقط؛ لم تتغير نتائج مرضى أو نماذج معتمدة.';
     });
     reviewBody.append(help, reviewSelect, suggestButton, siblingPanel,
-      proposalFields, addFieldButton, clearProposalButton,
+      methodVariantPanel, proposalFields, addFieldButton, clearProposalButton,
       methodInput, evidenceInput, rationaleInput, proposeButton,
       reviewHistoryContainer, reviewStatus);
     reviewPanel.append(reviewHeading, reviewBody);
@@ -184,6 +186,12 @@
       gttTemplateButton.type = 'button';
       gttTemplateButton.textContent = 'تهيئة فحص GTT مع سكر البول من استمارة المعمل';
       gttTemplateButton.title = 'مسودة قابلة للمراجعة، لا تعتمد أو تنشئ فحصاً تلقائياً';
+      const brucellaVariant = document.createElement('select');
+      brucellaVariant.setAttribute('aria-label','تحديد كيت ICT Brucella قبل تعبئة المسودة');
+      const brucellaTemplateButton = document.createElement('button');
+      brucellaTemplateButton.type = 'button';
+      brucellaTemplateButton.textContent = 'تهيئة ICT Brucella حسب كيت المعمل (للمراجعة فقط)';
+      brucellaTemplateButton.title = 'اختيار مسودة غير معتمدة لا يفعّل الفحص';
       const add = document.createElement('button');
       add.type = 'button';
       add.textContent = 'إضافة حقل نتيجة جديد';
@@ -202,7 +210,8 @@
       const status = document.createElement('p');
       status.setAttribute('role','status');
       const approvals = document.createElement('section');
-      area.append(note,selector,gttTemplateButton,name,section,price,fieldsArea,add,
+      area.append(note,selector,gttTemplateButton,brucellaVariant,
+        brucellaTemplateButton,name,section,price,fieldsArea,add,
         method,evidence,rationale,propose,refresh,status,approvals);
       panel.append(summary,area);
       root.appendChild(panel);
@@ -220,6 +229,10 @@
         el.textContent = safeText(text);
         return el;
       }
+      brucellaVariant.append(
+        newOption('','— اختر الكيت الفعلي —'),
+        newOption('brucella-ict-combined','كيت نتيجة Brucella Ab واحدة'),
+        newOption('brucella-ict-igm-igg','كيت يفصل Brucella IgM وIgG'));
       function makeField(data) {
         const f = data || {};
         const box = document.createElement('fieldset');
@@ -299,6 +312,54 @@
         if (Array.from(selector.options).some(o => o.value === previous))
           selector.value = previous;
       }
+      brucellaTemplateButton.addEventListener('click', async function () {
+        const chosen = brucellaVariant.value;
+        if (!chosen) {
+          status.textContent = 'اختار نوع الكيت المثبت عندكم، لأن ICT Brucella مش هو Widal Brucella.';
+          return;
+        }
+        if (selector.value || name.value.trim() || price.value ||
+            Array.from(fieldsArea.querySelectorAll('fieldset')).some(box =>
+              box.querySelector('[data-local-label]').value.trim())) {
+          status.textContent = 'افتح مسودة فحص جديدة وفارغة؛ ما حنمسح أو نستبدل الحقول المكتوبة.';
+          return;
+        }
+        brucellaTemplateButton.disabled = true;
+        try {
+          const template = await fetchJson('/local/templates/ict-brucella');
+          if (!template || template.template_group !== 'ict-brucella' ||
+              template.state !== 'suggestion_only' ||
+              template.ready_for_patient_results !== false ||
+              !Array.isArray(template.variants) || !template.variants.length)
+            throw new Error('تعذر التحقق من مسودات ICT Brucella');
+          if (localTests.some(t =>
+              safeText(t.name).trim().toLowerCase() ===
+              safeText(template.name).trim().toLowerCase())) {
+            status.textContent = 'ICT Brucella موجود كفحص محلي؛ راجع الفحص الحالي بدل تكراره.';
+            return;
+          }
+          const variant = template.variants.find(v => v.variant_id === chosen &&
+            v.source_proven === false && v.ready_for_patient_results === false);
+          if (!variant || !Array.isArray(variant.fields) || !variant.fields.length)
+            throw new Error('نوع الكيت غير مدعوم بالمقترح؛ استخدم محرر الفحوص يدوياً');
+          selector.value = '';
+          clearForm();
+          fieldsArea.replaceChildren();
+          for (const field of variant.fields) makeField(field);
+          name.value = safeText(template.name);
+          section.value = safeText(template.section);
+          price.value = '';
+          method.value = '';
+          evidence.value = '';
+          rationale.value = safeText(template.rationale);
+          status.textContent = 'مسودة فقط: ' + safeText(variant.warning) +
+            ' أضف السعر وطريقة الفحص ومرجع الكيت الحقيقي؛ لا اعتماد تلقائي ولا تعديل لـWidal.';
+        } catch (error) {
+          status.textContent = safeText(error.message);
+        } finally {
+          brucellaTemplateButton.disabled = false;
+        }
+      });
       gttTemplateButton.addEventListener('click', async function () {
         // The source Royal-240 G.T.T is now reconciled to the paper worksheet.
         // The original GTT should be ordered, not duplicated as a local test.
@@ -510,6 +571,44 @@
       choices.hidden = candidate.kind !== 'select';
       return true;
     }
+    function renderMethodVariants(data, selected) {
+      methodVariantPanel.replaceChildren();
+      const choices = Array.isArray(data.method_variants) ? data.method_variants : [];
+      if (!choices.length) return;
+      const heading = document.createElement('h4');
+      heading.textContent = 'اختر طريقة التحليل أو نوع الكيت قبل اقتراح حقول النتائج';
+      const note = document.createElement('p');
+      note.textContent = 'كل النماذج المقترحة غير معتمدة من مصدر Royal Lab؛ لا تفعّل نتائج المرضى. راجع الكيت مع مسؤول المعمل ثم اطلب اعتماداً مستقلاً.';
+      methodVariantPanel.append(heading,note);
+      for (const variant of choices) {
+        if (variant.source_proven !== false ||
+            variant.ready_for_patient_results !== false ||
+            variant.requires_independent_approval !== true ||
+            !Array.isArray(variant.fields)) continue;
+        const container = document.createElement('details');
+        const title = document.createElement('summary');
+        title.textContent = safeText(variant.label);
+        const warning = document.createElement('p');
+        warning.textContent = safeText(variant.warning);
+        container.append(title,warning);
+        const use = document.createElement('button');
+        use.type = 'button';
+        use.textContent = 'اختيار هذا الكيت للمسودة غير المعتمدة';
+        use.addEventListener('click', function () {
+          if (selected !== reviewSelect.value) return;
+          if (proposalFields.querySelector('fieldset')) {
+            reviewStatus.textContent = 'امسح حقول المسودة الموجودة أولاً؛ لا نكتب فوق بيانات مدخلة.';
+            return;
+          }
+          const added = variant.fields.reduce((count, field) =>
+            count + Number(applyReviewCandidate(field)), 0);
+          reviewStatus.textContent = 'تم وضع ' + added + ' حقول في مسودة غير معتمدة. ' +
+            'اذكر اسم الكيت وطريقته ومرجعه في طلب المراجعة؛ لا نفترض مدى طبيعي.';
+        });
+        container.appendChild(use);
+        methodVariantPanel.appendChild(container);
+      }
+    }
     function renderSiblingEvidence(data, selected) {
       siblingPanel.replaceChildren();
       const related = Array.isArray(data.related_source_forms) ? data.related_source_forms : [];
@@ -584,6 +683,7 @@
           throw new Error('مقترح المراجعة غير صالح');
         for (const candidate of result.fields) applyReviewCandidate(candidate);
         renderSiblingEvidence(result,selected);
+        renderMethodVariants(result,selected);
         // Display evidence as an optional review aid, never as an approved result.
         const evidenceHint = result.external_guidance;
         if (evidenceHint && evidenceHint.can_activate_without_review === false) {
@@ -701,6 +801,7 @@
       reviewStatus.textContent = 'النموذج بانتظار اعتماد شخص مخوّل مختلف عن مُعدّه';
     }
     reviewSelect.addEventListener('change', function () {
+      methodVariantPanel.replaceChildren();
       siblingPanel.replaceChildren();
       proposalFields.replaceChildren();
       fieldSequence = 0;
