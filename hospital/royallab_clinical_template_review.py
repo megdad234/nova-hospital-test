@@ -270,6 +270,10 @@ def review_suggestion(conn,catalog_id,source_test_id):
     kit_variants = review_variant_candidates(source_id)
     proposal = []
     warnings = []
+    if kit_variants:
+        warnings.append("Method-specific alternatives are unapproved suggestions; "
+                        "verify kit or analyzer and its actual reporting format "
+                        "before proposing a clinical template")
     inactive=(False,0,"False","false","0")
     if source_fields:
         for field in source_fields:
