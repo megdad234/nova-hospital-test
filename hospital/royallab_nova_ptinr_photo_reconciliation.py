@@ -142,7 +142,7 @@ def reconcile_in_existing_nova(conn, catalog, param_schema):
     ctrl_meta = conn.execute("""SELECT source_test_id,source_format_id FROM
         royal_lab_nova_parameter_metadata WHERE nova_parameter_id=?""",
         (control_param[0],)).fetchone()
-    if ctrl_meta != (SOURCE_ID, CONTROL_FORMAT):
+    if not ctrl_meta or tuple(ctrl_meta) != (SOURCE_ID, CONTROL_FORMAT):
         raise RuntimeError("Original PT Control source metadata missing")
     # Keep the historical source format/parameter row, but no extra control
     # line for NEW PT/INR orders, as requested in the pictured two-field form.
