@@ -146,6 +146,8 @@ on:
       - 'tests/test_royallab_nova_departments.py'
       - 'hospital/royallab_nova_ict_malaria_reconciliation.py'
       - 'tests/test_royallab_nova_ict_malaria_reconciliation.py'
+      - 'hospital/royallab_nova_ptinr_photo_reconciliation.py'
+      - 'tests/test_royallab_nova_ptinr_photo_reconciliation.py'
       - 'hospital/royallab_nova_stool_layout.py'
       - 'tests/test_royallab_nova_stool_layout.py'
       - 'hospital/royallab_nova_urine_layout.py'
@@ -412,6 +414,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab native autoseed patch tests failed' }
           python -m py_compile hospital/royallab_nova_departments.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab NOVA department source metadata syntax invalid' }
+          python -m py_compile hospital/royallab_nova_ptinr_photo_reconciliation.py
+          if ($LASTEXITCODE -ne 0) { throw 'PT/INR photographed result fields invalid' }
           python -m py_compile hospital/royallab_nova_gtt_photo_reconciliation.py
           if ($LASTEXITCODE -ne 0) { throw 'GTT 240 audited worksheet module invalid' }
           python -m py_compile hospital/royallab_existing_catalog_replacement.py hospital/royallab_existing_line_overlay.py
@@ -516,6 +520,8 @@ jobs:
           python -m unittest discover -s tests -p 'test_royallab_nova_departments.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Original Royal Lab 367-test department audit failed' }
           python -m unittest discover -s tests -p 'test_royallab_nova_ict_malaria_reconciliation.py' -v
+          python -m unittest discover -s tests -p 'test_royallab_nova_ptinr_photo_reconciliation.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'PT/INR exact photo ranges or numeric entry tests failed' }
           if ($LASTEXITCODE -ne 0) { throw 'Malaria ICT original dropdown or historical RESULT migration failed' }
           python -m unittest discover -s tests -p 'test_royallab_nova_stool_layout.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Stool photo layout or preserved original result choices failed' }
