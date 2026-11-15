@@ -37,4 +37,27 @@ jobs:
                 print('--- lines',start+1,'-',stop,'---')
                 for k in range(start,stop):
                   print(f'{k+1}: {lines[k][:320]}')
+          print('=== EXACT CATALOG DATA PATH ===')
+          with ZipFile(archive) as z:
+            for name in ('hospital/lab.py','hospital/core.py','hospital/static/app.js','hospital/gateway.py'):
+              src=z.read(name).decode('utf-8-sig')
+              lines=src.splitlines()
+              print('SOURCE',name,len(lines))
+              if name.endswith('.py'):
+                for i,line in enumerate(lines):
+                  if re.search(r'^(def\s+(tests|init)\s*\(|from\s+hospital\.lab\s+import|import\s+hospital\.lab|from\s+\.lab\s+import)',line):
+                    print('----',name,'L',i+1,'----')
+                    for k in range(max(0,i-2),min(len(lines),i+45)):
+                      print(f'{k+1}: {lines[k][:1800]}')
+                  elif re.search(r'LIMIT\s+200|LIMIT\s+\?|list_tests|hospital_lab_tests.*active',line,re.I) and name.endswith('lab.py'):
+                    print('SUSPECT',i+1,line[:1800])
+              else:
+                for i,line in enumerate(lines):
+                  if ('function viewCatalog(' in line or
+                      'function filterCatalog(' in line or
+                      'function catalogRows(' in line or
+                      'function refreshData(' in line or
+                      "catalog-search" in line or
+                      "catalog-search" in line):
+                    print('UI',i+1,line[:8500])
           PY
