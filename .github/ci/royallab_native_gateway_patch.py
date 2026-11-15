@@ -82,6 +82,10 @@ ROUTES="""                    if path=='/api/hospital/royallab-native/local/test
                     if path=='/api/hospital/royallab-native/local/templates/gtt-urine':
                         core.require_role(role,'admin','lab')
                         return self.reply(nova_lab_local_tests.gtt_urine_template())
+                    if path=='/api/hospital/royallab-native/local/templates/ict-brucella':
+                        core.require_role(role,'admin','lab')
+                        from hospital.royallab_nova_handwritten_lab_templates import brucella_ict_local_templates
+                        return self.reply(brucella_ict_local_templates())
                     if path=='/api/hospital/royallab-native/tests':
                         core.require_role(role,'admin','reception','lab')
                         return self.reply(royallab_native_catalog_api.catalog_response(c))
