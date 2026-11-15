@@ -20,7 +20,7 @@ jobs:
           from pathlib import Path
           import re
           archive=Path('NOVA_Hospital_GitHub_Ready_Source.zip')
-          targets=['pharmacy/static/app.js','pharmacy/core.py','pharmacy/stock.py','pharmacy/db.py','pharmacy/gateway.py']
+          targets=['pharmacy/static/app.js','pharmacy/app.py','pharmacy/core.py','pharmacy/stock.py','pharmacy/db.py','pharmacy/gateway.py']
           keys=[
             'function stockAdjustModal(', 'function adjLoadLots(', 'function adjSyncLot(',
             'function stock(', 'function saveStockAdjust(', 'function submitStockAdjust(',
@@ -49,6 +49,8 @@ jobs:
                 else:merged.append((a,b))
               if name.endswith('app.js'):
                 merged=merged[:12]
+              if name.endswith('app.py'):
+                merged=merged[:26]
               for a,b in merged:
                 print('--- LINES',a+1,'to',b,'---')
                 for idx in range(a,b):print(f'{idx+1}: {lines[idx][:2500]}')
