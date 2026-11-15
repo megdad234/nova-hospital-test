@@ -11,6 +11,8 @@ on:
       - 'hospital/royallab_catalog_audit.py'
       - 'hospital/royallab_historical_schema_audit.py'
       - 'hospital/royallab_missing_test_review_templates.py'
+      - 'hospital/royallab_nova_handwritten_lab_templates.py'
+      - 'tests/test_royallab_handwritten_lab_templates.py'
       - 'hospital/royallab_clinical_template_review.py'
       - 'hospital/royallab_nova_departments.py'
       - 'tests/test_royallab_nova_departments.py'
@@ -138,6 +140,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_royallab_nova_urine_layout.py' -v
       - name: Verify PT/INR entry fields and photo reference values, unchanged printing
         run: python -m unittest discover -s tests -p 'test_royallab_nova_ptinr_photo_reconciliation.py' -v
+      - name: Verify handwritten ICT/CRP/Dengue/VitD method proposals, unchanged existing assays
+        run: python -m unittest discover -s tests -p 'test_royallab_handwritten_lab_templates.py' -v
       - name: Verify ICT Typhoid photo-confirmed IgG/IgM dropdowns without changing Widal
         run: python -m unittest discover -s tests -p 'test_royallab_nova_ict_typhoid_reconciliation.py' -v
       - name: Verify malaria ICT source-proven dropdown and legacy NOVA order safety
