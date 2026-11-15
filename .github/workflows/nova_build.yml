@@ -96,6 +96,8 @@ on:
       - 'tests/test_royallab_nova_resolved_draft.py'
       - '.github/ci/royallab_typed_input_patch.py'
       - 'tests/test_royallab_typed_input_patch.py'
+      - '.github/ci/royallab_urine_pair_ui_patch.py'
+      - 'tests/test_royallab_urine_pair_ui_patch.py'
       - 'hospital/royallab_nova_typed_form_contract.py'
       - 'tests/test_royallab_nova_typed_form_contract.py'
       - 'tests/test_royallab_source_bool.py'
@@ -454,6 +456,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab JS print patch rejected; installer blocked' }
           python .github/ci/royallab_typed_input_patch.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab typed UI patch rejected; installer blocked' }
+          python .github/ci/royallab_urine_pair_ui_patch.py
+          if ($LASTEXITCODE -ne 0) { throw 'Urine paired result UI patch rejected; installer blocked' }
           python .github/ci/royallab_lab_a4_css_patch.py
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab A4 CSS patch rejected; installer blocked' }
           node --check hospital/static/app.js
@@ -461,6 +465,8 @@ jobs:
           python -m unittest discover -s tests -p 'test_royallab_lab_print_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab JS print regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_typed_input_patch.py' -v
+          python -m unittest discover -s tests -p 'test_royallab_urine_pair_ui_patch.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Source-safe urine paired inputs regression failed' }
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab typed UI regression failed; installer blocked' }
           python -m unittest discover -s tests -p 'test_royallab_lab_a4_css_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Royal Lab A4 CSS regression failed; installer blocked' }
