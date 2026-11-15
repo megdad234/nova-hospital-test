@@ -262,10 +262,12 @@ def review_suggestion(conn,catalog_id,source_test_id):
     """
     from hospital.royallab_native_catalog_store import effective_source_form
     from hospital.royallab_missing_test_review_templates import CANDIDATE_FIELDS, REVIEW_EVIDENCE
+    from hospital.royallab_nova_handwritten_lab_templates import review_variant_candidates
     original = _source(conn,catalog_id,str(source_test_id))
     source_id = str(source_test_id)
     form = effective_source_form(original)
     source_fields = form.get("fields") or []
+    kit_variants = review_variant_candidates(source_id)
     proposal = []
     warnings = []
     inactive=(False,0,"False","false","0")
@@ -286,6 +288,15 @@ def review_suggestion(conn,catalog_id,source_test_id):
             if kind not in KINDS:
                 warnings.append("Mixed or unsupported source field requires method-specific input review: " + label)
                 continue
+            # Do not automatically put the untyped CRP/vitamin D fallback in
+            # the result editor as if it were a verified local assay method.
+            # Offer explicit method alternatives instead, for a real reviewer
+            # to select WITH kit documentation and independent signoff.
+            if kit_variants and (not field.get("types") or
+                str(field.get("source_format_id") or "").startswith("ANALYTE-")):
+                warnings.append("Original field has no usable ResultFormat; "
+                                "select a documented assay method before proposing: " + label)
+                continue
             choices = []
             if kind == "select":
                 options = [o for o in field.get("options",[]) if isinstance(o,dict)
@@ -304,12 +315,13 @@ def review_suggestion(conn,catalog_id,source_test_id):
                                 not field.get("manual_untyped_draft_only") and
                                 not field.get("manual_missing_closed_options_draft_only")})
     else:
-        for label,kind in CANDIDATE_FIELDS.get(source_id, []):
+        for label,kind in ([] if kit_variants else CANDIDATE_FIELDS.get(source_id, [])):
             proposal.append({"key":"f"+str(len(proposal)+1),
                              "label":label, "kind":kind, "unit":"",
                              "option_labels":[], "source_proven":False})
     if not proposal:
-        warnings.append("No unambiguous template fields exist; obtain actual method and kit protocol")
+        warnings.append("No independently proven default results exist; choose only a kit-verified "
+                        "method proposal and confirm its reference, or obtain original laboratory protocol")
     if len(proposal)>MAX_FIELDS:
         raise ValueError("More than 120 potential source fields requires laboratory review")
     # Advisory metadata only: other original TestIDs NEVER become source
@@ -322,7 +334,8 @@ def review_suggestion(conn,catalog_id,source_test_id):
                  "clinical_source_proven":False,
                  "can_activate_without_review":False} if hint else None)
     return {"source_test_id":source_id,"source_test_name":original["name"],
-            "fields":proposal,"warnings":warnings,"external_guidance":guidance,
+            "fields":proposal,"method_variants":kit_variants,
+            "warnings":warnings,"external_guidance":guidance,
             "related_source_forms":related_source_forms,
             "ready_for_patient_results":False,
             "needs_method_documentation":True,
