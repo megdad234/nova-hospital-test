@@ -94,17 +94,6 @@ def reconcile_in_existing_nova(conn, catalog, param_schema):
     if "royal_lab_nova_parameter_metadata" not in _tables(conn):
         raise RuntimeError("Royal Lab original parameter metadata missing")
 
-    for analyte, label, sid in FIELD_SPECS:
-        code = source_code(sid)
-        param = by_code[code]
-        if (str(param[2]).strip() != label or str(param[3] or "").strip() or param[4] != 1):
-            raise RuntimeError("Typhoid original NOVA field is not active or differs")
-        metadata = conn.execute("""SELECT source_test_id,source_format_id,kind,
-            options_json FROM royal_lab_nova_parameter_metadata
-            WHERE nova_parameter_id=?""", (param[0],)).fetchone()
-        if (not metadata or tuple(metadata[:3]) != (SOURCE_TEST_ID, sid, "text")
-                or json.loads(metadata[3]) != []):
-            raise RuntimeError("Typhoid original no-format metadata differs")
     conn.execute(PROVENANCE_SQL)
     prior = conn.execute("""SELECT source_analytes_json, confirmed_options_json
         FROM royal_lab_nova_ict_typhoid_photo_provenance WHERE source_test_id=?""",
@@ -113,15 +102,30 @@ def reconcile_in_existing_nova(conn, catalog, param_schema):
     expected_options = json.dumps(OPTIONS, ensure_ascii=False)
     if prior and (prior[0], prior[1]) != (expected_source, expected_options):
         raise RuntimeError("Existing hospital Typhoid form override differs")
+    expected_option_rows = [{"id":str(i + 1), "label":value, "active":True}
+                            for i, value in enumerate(OPTIONS)]
+    for analyte, label, sid in FIELD_SPECS:
+        code = source_code(sid)
+        param = by_code[code]
+        if (str(param[2]).strip() != label or str(param[3] or "").strip() or param[4] != 1):
+            raise RuntimeError("Typhoid original NOVA field is not active or differs")
+        metadata = conn.execute("""SELECT source_test_id,source_format_id,kind,
+            options_json FROM royal_lab_nova_parameter_metadata
+            WHERE nova_parameter_id=?""", (param[0],)).fetchone()
+        if not metadata or tuple(metadata[:2]) != (SOURCE_TEST_ID, sid):
+            raise RuntimeError("Typhoid original no-format metadata differs")
+        original = metadata[2] == "text" and json.loads(metadata[3]) == []
+        local = (prior is not None and metadata[2] == "select" and
+                 json.loads(metadata[3]) == expected_option_rows)
+        if not (original or local):
+            raise RuntimeError("Typhoid original metadata or reviewed override differs")
     for position, (_analyte, label, sid) in enumerate(FIELD_SPECS, 1):
         code = source_code(sid)
         param_id = by_code[code][0]
         # Stored in NOVA metadata, never in original RoyalLabDB JSON.
-        opts = [{"id":str(i + 1), "label":value, "active":True}
-                for i, value in enumerate(OPTIONS)]
         conn.execute("""UPDATE royal_lab_nova_parameter_metadata SET
             kind='select',options_json=? WHERE nova_parameter_id=?""",
-            (json.dumps(opts, ensure_ascii=False), param_id))
+            (json.dumps(expected_option_rows, ensure_ascii=False), param_id))
         # The existing source fields have no original sorting metadata.
         # Set photo order on the first installation only, never overwrite
         # administrator ordering when the local override is already present.
