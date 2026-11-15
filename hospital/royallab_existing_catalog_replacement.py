@@ -10,6 +10,7 @@ from hospital.royallab_native_result_form import native_catalog
 from hospital.royallab_nova_parameter_plan import source_code
 from hospital.royallab_nova_gtt_photo_reconciliation import reconcile_in_existing_nova
 from hospital.royallab_nova_ict_malaria_reconciliation import reconcile_in_existing_nova as reconcile_ict_malaria
+from hospital.royallab_nova_ict_typhoid_reconciliation import reconcile_in_existing_nova as reconcile_ict_typhoid
 from hospital.royallab_nova_ptinr_photo_reconciliation import reconcile_in_existing_nova as reconcile_ptinr
 from hospital.royallab_nova_departments import (
     DEPARTMENT_SCHEMA, PREVIOUS_AUTO_ARABIC_CATEGORIES,
@@ -218,6 +219,14 @@ def replace_catalog(conn, library, *, approved=False):
         source_test_14 = next(t for t in plan["tests"] if t["source_test_id"] == "14")
         if source_test_14["name"].strip().casefold()=="ict fof malaria":
             ict_malaria_fields = reconcile_ict_malaria(conn,plan["tests"])
+        # The original TestID 309 Typhoid ICT has THREE active analytes
+        # but no ResultFormats. Apply the hospital's explicit screenshot
+        # Positive/Negative override on those SAME parameter IDs only.
+        # TestID 347 and Widal TestID 115 are deliberately untouched.
+        source_test_309 = next(t for t in plan["tests"]
+                               if t["source_test_id"] == "309")
+        if source_test_309["name"].strip() == "ICT for Typhoid":
+            reconcile_ict_typhoid(conn, plan["tests"], params_schema)
         # Local hospital photo confirms two PT/INR fields and references.
         # This alters ONLY new TestID 22 order-entry parameters, never print
         # templates, existing patient result lines, bills or source definitions.
