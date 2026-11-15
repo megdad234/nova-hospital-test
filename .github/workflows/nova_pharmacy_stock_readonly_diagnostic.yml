@@ -1,0 +1,55 @@
+name: NOVA read-only pharmacy inventory adjustment source inspection
+on:
+  push:
+    branches: [feature/royallab-full-migration-20261111]
+    paths:
+      - '.github/workflows/nova_pharmacy_stock_readonly_diagnostic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect original batch editor and stock adjustment contracts without writing data
+        shell: bash
+        run: |
+          python - <<'PY'
+          from zipfile import ZipFile
+          from pathlib import Path
+          import re
+          archive=Path('NOVA_Hospital_GitHub_Ready_Source.zip')
+          targets=['pharmacy/static/app.js','pharmacy/core.py','pharmacy/stock.py','pharmacy/db.py','pharmacy/gateway.py']
+          keys=[
+            'function stockAdjustModal(', 'function adjLoadLots(', 'function adjSyncLot(',
+            'function stock(', 'function saveStockAdjust(', 'function submitStockAdjust(',
+            'def stock_adjust(', 'def adjust_stock(', 'def adjust(', 'def inventory(',
+            'def inventory_adjust(', 'def stock_adjustment(', 'def stock(', 
+            'adj-lot', 'adj-batch', 'adj-diff','adj-cost','stock-adjust', 'unit_cost_milli',
+            'UNRECORDED-PUR-'
+          ]
+          with ZipFile(archive) as z:
+            for name in targets:
+              if name not in z.namelist(): continue
+              lines=z.read(name).decode('utf-8-sig').splitlines()
+              print('=== FILE',name,':',len(lines),'LINES ===')
+              hits=[i for i,line in enumerate(lines) if any(x in line for x in keys)]
+              windows=[]
+              for i in hits:
+                a=max(0,i-3);b=min(len(lines),i+26)
+                if name.endswith('app.js') and 'function stockAdjustModal(' in lines[i]:
+                  b=min(len(lines),i+160)
+                elif name.endswith('.py') and re.match(r'^def (stock_adjust|adjust_stock|adjust|inventory_adjust|stock_adjustment)\(',lines[i]):
+                  b=min(len(lines),i+130)
+                windows.append((a,b))
+              merged=[]
+              for a,b in sorted(windows):
+                if merged and merged[-1][1]>=a:merged[-1]=(merged[-1][0],max(b,merged[-1][1]))
+                else:merged.append((a,b))
+              if name.endswith('app.js'):
+                merged=merged[:12]
+              for a,b in merged:
+                print('--- LINES',a+1,'to',b,'---')
+                for idx in range(a,b):print(f'{idx+1}: {lines[idx][:2500]}')
+          PY
