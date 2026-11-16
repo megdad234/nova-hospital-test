@@ -107,6 +107,9 @@ def search_queue(conn, *, role, q="", period="today",
     base = """WITH listing AS (
         SELECT o.id, o.order_no, o.patient_id, o.status, o.created_at,
                o.total, p.full_name AS patient_name, p.patient_no,
+               substr((SELECT group_concat(i.test_name, '، ')
+                       FROM hospital_order_items i WHERE i.order_id=o.id),
+                      1, 300) AS tests_preview,
                (SELECT count(*) FROM hospital_order_items i
                 WHERE i.order_id=o.id) AS tests_count,
                (SELECT count(*) FROM hospital_order_items i
@@ -145,8 +148,8 @@ def search_queue(conn, *, role, q="", period="today",
     offset = (page-1)*page_size
     direction = _SORTS[sort]
     cursor = conn.execute(base + """ SELECT id,order_no,patient_id,status,
-        created_at,total,patient_name,patient_no,tests_count,approved_count,
-        draft_count FROM listing """ + filtered +
+        created_at,total,patient_name,patient_no,tests_preview,
+        tests_count,approved_count,draft_count FROM listing """ + filtered +
         " ORDER BY created_at " + direction + ", id " + direction +
         " LIMIT ? OFFSET ?", params + [page_size, offset])
     cols = [d[0] for d in cursor.description]
