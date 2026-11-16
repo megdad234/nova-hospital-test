@@ -47,4 +47,15 @@ jobs:
                     print('FUNCTION',i+1,l[:250])
                   if any(term in l for term in ('lab/orders','orderChoices(', 'ordersTable(', 'viewLab(', 'renderLab(', 'lab-work', 'lab-order', 'order-list', 'labResults(', 'recentOrders', 'labState.', 'state.orders')):
                     print('HIT',i+1,l[:1900])
+          print('=== EXACT FRONTEND AND GATEWAY ANCHORS ===')
+          with ZipFile('NOVA_Hospital_GitHub_Ready_Source.zip') as z:
+            for name,interesting in [
+              ('hospital/static/app.js',[19,25,29,30,32,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56]),
+              ('hospital/gateway.py',list(range(248,281))),
+              ('hospital/core.py',list(range(275,291))),
+            ]:
+              ls=z.read(name).decode('utf-8-sig').splitlines()
+              print('SOURCE',name)
+              for no in interesting:
+                if no<=len(ls):print('EXACT',no,ls[no-1][:17500])
           PY
