@@ -1,0 +1,50 @@
+name: NOVA read-only laboratory order search inspection
+on:
+  push:
+    branches: [feature/royallab-full-migration-20261111]
+    paths:
+      - '.github/workflows/nova_lab_order_readonly_diagnostic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect source code only (no databases and no writes)
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import re
+          with ZipFile('NOVA_Hospital_GitHub_Ready_Source.zip') as z:
+            for name in ['hospital/lab.py','hospital/core.py','hospital/gateway.py','hospital/static/app.js']:
+              if name not in z.namelist():continue
+              lines=z.read(name).decode('utf-8-sig').splitlines()
+              print('===== FILE',name,'LINES',len(lines),'=====')
+              if name.endswith('.py'):
+                for i,l in enumerate(lines):
+                  if re.match(r'^(def |class )',l):
+                    print('FUNCTION',i+1,l[:200])
+                hits=[i for i,l in enumerate(lines) if re.search(
+                  r'def (orders|order_detail|patients|order_history|save_values|search_orders)|'
+                  r'order_no|hospital_orders|/api/hospital/orders|'
+                  r"'/api/hospital/order|lab/orders|def (lab_.*|list_.*)\(",l,re.I)]
+                spans=[]
+                for i in hits:
+                  a=max(0,i-3);b=min(len(lines),i+23)
+                  if re.match(r'^def ',lines[i]):b=min(len(lines),i+90)
+                  if spans and a <= spans[-1][1]:spans[-1]=(spans[-1][0],max(spans[-1][1],b))
+                  else:spans.append((a,b))
+                for a,b in spans[:25]:
+                  print('--- RANGE',a+1,b,'---')
+                  for k in range(a,b):print(f'{k+1}: {lines[k][:1200]}')
+              else:
+                for i,l in enumerate(lines):
+                  if re.search(r'function\s+\w*(?:[Ll]ab|[Oo]rder|[Pp]atient|[Tt]est)\w*\s*\(',l):
+                    print('FUNCTION',i+1,l[:250])
+                  if any(term in l for term in ('lab/orders','orderChoices(', 'ordersTable(', 'viewLab(', 'renderLab(', 'lab-work', 'lab-order', 'order-list', 'labResults(', 'recentOrders', 'labState.', 'state.orders')):
+                    print('HIT',i+1,l[:1900])
+          PY
