@@ -1,0 +1,42 @@
+name: NOVA Lab print original CSS inspection (read-only)
+on:
+  push:
+    branches: [feature/royallab-full-migration-20261111]
+    paths:
+      - '.github/workflows/nova_lab_print_readonly_diagnostic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect print CSS only, no changed runtime files
+        shell: bash
+        run: |
+          python - <<'PY'
+          from zipfile import ZipFile
+          import re
+          path='NOVA_Hospital_GitHub_Ready_Source.zip'
+          with ZipFile(path) as zip:
+            for fname in ('hospital/static/style.css','hospital/static/app.js'):
+              lines=zip.read(fname).decode('utf-8-sig').splitlines()
+              print('====',fname,'line_count',len(lines))
+              terms=r'@page|@media print|print-area|printing-lab|lab-print|lab-results|print-head|print-patient|print-test|lab-print-test|print-foot|print-logo|page-break|break-inside|orientation|landscape|table-layout|overflow'
+              locations=[i for i,x in enumerate(lines) if re.search(terms,x,re.I)]
+              windows=[]
+              for i in locations:
+                if fname.endswith('app.js') and not ('function printReport(' in lines[i] or 'printing-lab' in lines[i]):
+                  continue
+                start=max(0,i-2);end=min(len(lines),i+8)
+                if windows and start<=windows[-1][1]:
+                  windows[-1]=(windows[-1][0],max(end,windows[-1][1]))
+                else: windows.append((start,end))
+              if fname.endswith('app.js'):
+                windows=windows[:8]
+              for a,b in windows[:45]:
+                print('---',a+1,b)
+                for j in range(a,b):
+                  print('%s: %s'%(j+1,lines[j][:800]))
+          PY
