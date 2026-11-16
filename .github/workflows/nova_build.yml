@@ -169,6 +169,11 @@ on:
       - '.github/ci/royallab_existing_catalog_patch.py'
       - '.github/ci/royallab_lab_catalog_visibility_patch.py'
       - 'tests/test_royallab_lab_catalog_visibility_patch.py'
+      - 'hospital/nova_lab_queue_search.py'
+      - 'hospital/static/nova_lab_queue_ui.js'
+      - '.github/ci/nova_lab_queue_patch.py'
+      - 'tests/test_nova_lab_queue_search.py'
+      - 'tests/test_nova_lab_queue_patch.py'
       - '.github/ci/royallab_actual_nova_schema_gate.py'
       - 'tests/test_royallab_existing_catalog_patch.py'
   workflow_dispatch:
@@ -499,6 +504,21 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Internal ROYAL IDs still visible in lab picker' }
           node --check hospital/static/app.js
           if ($LASTEXITCODE -ne 0) { throw 'Lab picker presentation patch invalid JavaScript' }
+      - name: Apply read-only laboratory order history, date filters and pagination
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests -p 'test_nova_lab_queue_search.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA paid-order queue backend role/filter/pagination regression failed' }
+          python -m unittest discover -s tests -p 'test_nova_lab_queue_patch.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA lab-only queue patch safety regression failed' }
+          python .github/ci/nova_lab_queue_patch.py
+          if ($LASTEXITCODE -ne 0) { throw 'Original NOVA lab queue UI or route changed; setup blocked' }
+          python -m py_compile hospital/nova_lab_queue_search.py hospital/gateway.py
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA lab filtered backend or gateway invalid' }
+          node --check hospital/static/app.js
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA lab filtered queue UI invalid' }
+          python -m unittest discover -s tests -p 'test_nova_lab_queue_patch.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'NOVA installed lab queue UI regression failed' }
       - name: Bundle pinned Royal Lab original catalog into Windows source
         shell: pwsh
         env:
