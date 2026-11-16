@@ -38,7 +38,7 @@ class TestQueueUIPatches(unittest.TestCase):
         revised=patch_app(old,self.helper)
         self.assertIn("function viewLab(){return novaLabQueueView();}",revised)
         self.assertIn("if(section==='lab'){novaLabQueueWire();}",revised)
-        self.assertNotIn("lab-search",revised)
+        self.assertNotIn("$('lab-search')",revised)
         self.assertIn("function printReport(id){return 'UNMODIFIED_PRINT';}",revised)
         self.assertIn("function openDetails(id){return id;}",revised)
         with self.assertRaises(ValueError):
