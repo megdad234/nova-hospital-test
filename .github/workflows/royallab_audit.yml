@@ -32,6 +32,11 @@ on:
       - 'tests/test_royallab_existing_catalog_replacement.py'
       - '.github/ci/royallab_lab_catalog_visibility_patch.py'
       - 'tests/test_royallab_lab_catalog_visibility_patch.py'
+      - 'hospital/nova_lab_queue_search.py'
+      - 'hospital/static/nova_lab_queue_ui.js'
+      - '.github/ci/nova_lab_queue_patch.py'
+      - 'tests/test_nova_lab_queue_search.py'
+      - 'tests/test_nova_lab_queue_patch.py'
       - 'hospital/royallab_source_sibling_review.py'
       - 'tests/test_royallab_source_sibling_review.py'
       - 'hospital/nova_lab_local_tests.py'
@@ -134,6 +139,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify all historic paid lab orders date/name/test search and pagination
+        run: python -m unittest discover -s tests -p 'test_nova_lab_queue_search.py' -v
+      - name: Verify lab-only order queue UI/route safety, unchanged results and printing
+        run: python -m unittest discover -s tests -p 'test_nova_lab_queue_patch.py' -v
       - name: Verify all 367 Royal Lab tests searchable (Vitamin D/VDRL beyond original 200 cap)
         run: python -m unittest discover -s tests -p 'test_royallab_lab_catalog_visibility_patch.py' -v
       - name: Verify side-by-side urine result controls without merging source IDs
