@@ -1,0 +1,60 @@
+/* Standalone LAB report document only. Never loaded by pharmacy, invoices,
+   hospital normal pages or thermal receipts. Important: @page must be
+   UNNAMED and global in the isolated print document. */
+@page { size: A4 portrait; margin: 11mm 12mm 12mm; }
+html, body { margin:0!important; padding:0!important; min-width:0!important;
+  max-width:100%!important; width:auto!important; background:white!important;
+  overflow:visible!important; color:#17372e; direction:rtl;
+  font-family:Tahoma,Arial,sans-serif; font-size:9.5pt; line-height:1.4; }
+*, *::before, *::after { box-sizing:border-box; }
+.lab-print { display:block; width:100%!important; max-width:100%!important;
+  min-width:0!important; margin:0!important; padding:0!important;
+  background:#fff; color:#17372e; direction:rtl; }
+.print-head { display:flex; align-items:center; justify-content:center;
+  gap:12px; min-height:0; border-bottom:1.5pt solid #096b5e;
+  padding:4px 2px 8px; break-after:avoid-page; }
+.print-hospital { min-width:0; text-align:center; overflow-wrap:anywhere; }
+.print-head h2 { font-size:17pt; margin:0; line-height:1.25; color:#103f39; }
+.print-head h3 { font-size:11pt; margin:4px 0 0; color:#096b5e; }
+.print-head p { font-size:8.5pt; margin:2px 0; color:#536f64; }
+.print-logo { width:auto; height:auto; max-width:74px; max-height:62px; object-fit:contain; }
+.print-patient { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  column-gap:14px; row-gap:3px; padding:8px 2px; font-size:9pt;
+  border-bottom:1px solid #a7c2b6; break-inside:avoid-page; }
+.print-patient > * { min-width:0; overflow-wrap:anywhere; }
+.lab-print-test { display:block; min-width:0; max-width:100%;
+  margin:8px 0 0; break-inside:auto!important; }
+.print-test { display:block; font-size:10pt; line-height:1.3;
+  background:#e7f2ec; border-right:3px solid #096b5e;
+  color:#174838; padding:4px 8px; margin:0 0 4px;
+  break-after:avoid-page; page-break-after:avoid; }
+.lab-print table { display:table!important; width:100%!important;
+  max-width:100%!important; min-width:0!important;
+  table-layout:fixed!important; border-collapse:collapse!important;
+  direction:rtl; border:1px solid #becdc5; margin:0; }
+.lab-print thead { display:table-header-group!important; }
+.lab-print tbody { display:table-row-group!important; }
+.lab-print tr { break-inside:avoid-page!important; page-break-inside:avoid!important; }
+.lab-print th, .lab-print td { border:1px solid #bdccc4;
+  min-width:0!important; padding:4px 5px;
+  font-size:8.4pt; line-height:1.28; text-align:right;
+  overflow-wrap:anywhere!important; word-break:normal;
+  white-space:normal!important; vertical-align:top; }
+.lab-print th { background:#ecf4ef; color:#214c3e; font-weight:bold; }
+.lab-print th:nth-child(1),.lab-print td:nth-child(1) { width:34%!important; }
+.lab-print th:nth-child(2),.lab-print td:nth-child(2) { width:17%!important; }
+.lab-print th:nth-child(3),.lab-print td:nth-child(3) { width:17%!important; }
+.lab-print th:nth-child(4),.lab-print td:nth-child(4) { width:32%!important; }
+.lab-print tr.lab-print-group th, .lab-print tr.nova-lab-section th {
+  width:100%!important; background:#e5f0e9!important;
+  break-after:avoid-page; }
+.lab-print .print-foot { display:flex; justify-content:space-between; gap:10px;
+  padding:6px 2px 0; margin-top:8px; border-top:1px solid #b5ccc0;
+  color:#486c5d; font-size:7.5pt; break-inside:avoid-page; }
+.lab-print b[dir="auto"], .lab-print span[dir="ltr"],.lab-print td[dir="ltr"] {
+  unicode-bidi:isolate; }
+@media print {
+  html,body { height:auto!important; }
+  .print-head,.print-test,.lab-print th {
+    -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
