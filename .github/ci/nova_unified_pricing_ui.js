@@ -172,5 +172,34 @@ document.addEventListener('DOMContentLoaded',()=>{
  };
  const active=document.querySelector('[data-page].active');
  if(active)nav(active.getAttribute('data-page'));
+
+ // LAN multi-user: check the central server's last approved price revision.
+ // Refresh only on a revision change; preserve open sale rows, draft quantities
+ // and purchase inputs. A stale checkout is also rejected by the backend.
+ let previousRevision=null,pollBusy=false;
+ const checkPriceRevision=async()=>{
+   if(pollBusy||pending||document.hidden||typeof state!=='object'||!state.user)return;
+   pollBusy=true;
+   try{
+     const info=await request('nova-price-revision');
+     const next=Number(info.revision||0);
+     if(previousRevision!==null&&next!==previousRevision){
+       const oldPrices=(state.saleRows||[]).map(row=>({
+         id:Number(row.package_id),price:skuPack(row.package_id)?.sale_price
+       }));
+       if(typeof refresh==='function')await refresh();
+       const changed=oldPrices.some(p=>skuPack(p.id)?.sale_price!==p.price);
+       if(typeof redraw==='function')redraw();
+       if(changed&&typeof toast==='function')
+         toast('تم تحديث سعر دواء في سلة البيع من جهاز آخر؛ راجع الإجمالي قبل الاعتماد',true);
+     }
+     previousRevision=next;
+   }catch(e){/* Account may not have price/sale permissions; checkout still verifies quotes. */}
+   finally{pollBusy=false}
+ };
+ setInterval(checkPriceRevision,15000);
+ window.addEventListener('focus',checkPriceRevision);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkPriceRevision()});
+ checkPriceRevision();
 });
 })();
