@@ -148,12 +148,12 @@ def nova_price_list_approve(c,p,uid):
                                         nova_price_signature(pid,old,new)):
                 raise ValueError('يجب معاينة الأسعار أولاً قبل اعتمادها')
             if not 0<new<=1000000000000:raise ValueError('سعر بيع غير صالح')
-            stocked=one(c,'''SELECT pk.id FROM packages pk
+            stocked=one(c,"""SELECT pk.id FROM packages pk
                  JOIN products pr ON pr.id=pk.product_id
                  WHERE pk.id=? AND pr.active=1
                  AND EXISTS (SELECT 1 FROM lots l WHERE l.product_id=pr.id
                  AND l.status='sellable' AND l.qty_base>0
-                 AND (l.expiry='' OR l.expiry>=date('now')))''',(pid,))
+                 AND (l.expiry='' OR l.expiry>=date('now')))""",(pid,))
             if not stocked:raise ValueError('الصنف لم يعد متاحاً؛ أعد المعاينة')
             proposed.append({'package_id':pid,'old_sale_price':old,
                              'price':new,'mode':'linked'})
