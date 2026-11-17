@@ -20,7 +20,9 @@ jobs:
           with zipfile.ZipFile("NOVA_Hospital_GitHub_Ready_Source.zip") as z:
               css=z.read("hospital/static/style.css").decode("utf-8-sig")
               js=z.read("hospital/static/app.js").decode("utf-8-sig")
-              html=z.read("hospital/index.html").decode("utf-8-sig")
+              html=""
+              for candidate in ("hospital/static/index.html","hospital/templates/index.html","hospital/web/index.html","hospital/index.html"):
+                  if candidate in z.namelist():html=z.read(candidate).decode("utf-8-sig");break
           ls=css.splitlines()
           print("ORIGINAL CSS LENGTH",len(css),"LINES",len(ls))
           print("PAGE/PORTRAIT/LANDSCAPE RULES")
