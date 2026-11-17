@@ -6,7 +6,7 @@ from pathlib import Path
 
 source=Path("pharmacy/app.py").read_text(encoding="utf-8")
 tree=ast.parse(source)
-names={"nova_price_list_preview","nova_price_list_approve","nova_price_list_history","nova_price_list_rollback","nova_price_signature","nova_price_list_file_rows"}
+names={"nova_price_list_preview","nova_price_list_approve","nova_price_list_history","nova_price_list_rollback","nova_price_signature","nova_price_list_file_rows","nova_pricing_apply"}
 functions=[node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name in names]
 assert {node.name for node in functions}==names
 # Extract functions so the test cannot start the pharmacy server or alter its production DB.
@@ -30,7 +30,11 @@ def finish(c):c.execute("COMMIT")
 def rollback(c):c.execute("ROLLBACK")
 def audit(c,uid,action,details):
  c.execute("INSERT INTO audit(created_at,user_id,action,details) VALUES('now',?,?,?)",(uid,action,__import__("json").dumps(details)))
-namespace.update(begin=begin,finish=finish,rollback=rollback,audit=audit)
+namespace.update(begin=begin,finish=finish,rollback=rollback,audit=audit,
+                 one=lambda c,sql,args=():c.execute(sql,args).fetchone(),
+                 query=lambda c,sql,args=():c.execute(sql,args).fetchall(),
+                 posint=lambda v,label:int(v) if int(v)>0 else (_ for _ in ()).throw(ValueError(label)),
+                 amt=lambda v,label:int(v) if str(v).isdigit() else (_ for _ in ()).throw(ValueError(label)))
 preview=namespace["nova_price_list_preview"]
 approve=namespace["nova_price_list_approve"]
 history=namespace["nova_price_list_history"]
