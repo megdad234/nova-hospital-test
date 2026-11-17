@@ -305,7 +305,7 @@ source=one(source,
 
 source=one(source,
     "'/api/v1/nova-sale-price-catalog':'prices','/api/v1/nova-manual-price-history':'prices',",
-    "'/api/v1/nova-price-revision':'prices','/api/v1/nova-sale-price-catalog':'prices','/api/v1/nova-manual-price-history':'prices',",
+    "'/api/v1/nova-price-revision':'sale','/api/v1/nova-sale-price-catalog':'prices','/api/v1/nova-manual-price-history':'prices',",
     'read permission')
 source=one(source,
     "'/api/v1/nova-sale-price-catalog':lambda:nova_sale_price_catalog(c,{'q':parse_qs(urlparse(self.path).query).get('q',[''])[0]}),",
