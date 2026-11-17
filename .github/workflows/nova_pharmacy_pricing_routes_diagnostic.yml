@@ -54,4 +54,16 @@ jobs:
                     if n not in seen:
                       print('UI_LINE',n+1,ls[n][:2200])
                       seen.add(n)
+
+          print('=== TARGETED WRITER AND UI AUDIT ===')
+          with ZipFile('NOVA_Hospital_GitHub_Ready_Source.zip') as z:
+            app=z.read('pharmacy/app.py').decode('utf-8-sig').splitlines()
+            for span in ((252,265),(652,673),(1267,1307),(1328,1360)):
+              print('PYBLOCK',span)
+              for n in range(span[0],span[1]+1): print(f'{n}: {app[n-1][:1650]}')
+            js=z.read('pharmacy/static/app.js').decode('utf-8-sig').splitlines()
+            for span in ((15,28),(33,48),(65,76),(87,91)):
+              print('JSBLOCK',span)
+              for n in range(span[0],span[1]+1): print(f'{n}: {js[n-1][:2400]}')
+          print('=== END TARGETED AUDIT ===')
           PY
