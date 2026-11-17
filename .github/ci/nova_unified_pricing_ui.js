@@ -164,6 +164,29 @@ function open(packageId){
 }
 window.novaOpenUnifiedPrices=open;
 
+// Old price-list page is retained as an explicit advanced bulk-pricing tool,
+// but the default entry point is one grouped medicine/package editor.
+// This avoids two contradictory looking price screens.
+const oldPriceGrid=pricing;
+pricing=function(){
+ return '<section class="panel"><div class="panel-head"><h2>أسعار بيع الأصناف</h2></div>'+
+ '<p class="help">سعر واحد معتمد لكل تعبئة في قاعدة البيانات. اختر دواءً وعدّل العلبة أو الشريط؛ ستُحدّث الشاشة المرتبطة تلقائياً.</p>'+
+ '<button class="btn" onclick="novaOpenUnifiedPrices()">فتح إدارة الأسعار الموحدة</button>'+
+ '<button class="btn outline" onclick="novaShowAdvancedPrices()">تعديل جماعي متقدم (اختياري)</button>'+
+ '<div id="nova-advanced-prices" hidden></div></section>';
+};
+window.novaShowAdvancedPrices=function(){
+ const slot=document.getElementById('nova-advanced-prices');
+ if(!slot)return;
+ if(slot.hidden){
+   if(!slot.dataset.rendered){
+     slot.innerHTML=oldPriceGrid();
+     slot.dataset.rendered='true';
+   }
+   slot.hidden=false;
+ }else{slot.hidden=true}
+};
+
 // Old medicine catalogue's mixed price/barcode modal is separated.
 // Barcode edits cannot write the sale_price column, even with stale UI state.
 window.novaSaveBarcodeOnly=async id=>{
