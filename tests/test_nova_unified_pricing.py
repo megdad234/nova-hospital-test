@@ -179,7 +179,8 @@ class UnifiedPriceTests(unittest.TestCase):
         self.assertIn('changed=nova_pricing_apply(c,chosen)',self.source)
     def test_pricing_ui_groups_units_and_previews_each_change(self):
         js=(ROOT/'pharmacy/static/nova_manual_price_editor.js').read_text(encoding='utf-8')
-        for word in ['expected_related:snapshot','ربط العلبة والشريط تلقائيًا',
+        for word in ['novaSaveBarcodeOnly','const oldPriceGrid=pricing','novaShowAdvancedPrices',
+                     'expected_related:snapshot','ربط العلبة والشريط تلقائيًا',
                      "mode:mode.value",'nova-unified-prices','النظام']:
             if word=='النظام':continue
             self.assertIn(word,js)
