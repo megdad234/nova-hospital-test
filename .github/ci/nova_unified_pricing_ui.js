@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  nav=function(page){
    previousNav(page);
    launch.remove();
-   if(!['stock','inventory','prices','pricing','products','catalog'].includes(page))return;
+   if(!['stock','inventory','products','catalog'].includes(page))return;
    const root=document.querySelector('main')||document.querySelector('#app');
    const target=root?.querySelector('.panel-head')||root?.querySelector('.panel')||root;
    if(target)target.prepend(launch);
