@@ -10,12 +10,12 @@ import json
 from pathlib import Path
 
 REPORT_SIGNATURE = "async function printReport(id)"
-OLD_PRINT = ("const area=$('print-area');area.innerHTML=content;"
-             "document.body.classList.add('printing-lab');"
-             "const cleanup=()=>{document.body.classList.remove('printing-lab');"
-             "area.innerHTML=''};"
-             "window.addEventListener('afterprint',cleanup,{once:true});"
-             "window.print()")
+OLD_PRINT = """    const area=$('print-area');area.innerHTML=html;
+    document.body.classList.add('printing-lab');
+    const cleanup=()=>{document.body.classList.remove('printing-lab');area.innerHTML=''};
+    window.addEventListener('afterprint',cleanup,{once:true});
+    await Promise.all([...area.querySelectorAll('img')].map(x=>x.decode?.().catch(()=>{})||Promise.resolve()));
+    window.print();"""
 MARKER="/* NOVA_LAB_ISOLATED_A4_PORTRAIT_V2 */"
 
 def patch(source, css):
@@ -81,7 +81,7 @@ function novaLabPrintA4Portrait(reportMarkup){
 }
 '''.replace("__NOVA_LAB_CSS__",js_css)
     source=source.replace(REPORT_SIGNATURE,helper+"\n"+REPORT_SIGNATURE,1)
-    source=source.replace(OLD_PRINT,"novaLabPrintA4Portrait(content)",1)
+    source=source.replace(OLD_PRINT,"    novaLabPrintA4Portrait(html);",1)
     return source
 
 def apply(root):
