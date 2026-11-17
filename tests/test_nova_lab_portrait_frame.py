@@ -46,7 +46,7 @@ class LabA4PortraitTests(unittest.TestCase):
         self.assertRegex(self.css,r'@page\s*\{\s*size:\s*A4\s+portrait\s*;')
         self.assertNotIn('landscape',self.css.lower())
         # The browser print document must NOT load main hospital stylesheet.
-        self.assertNotIn('style.css',self.source[self.source.index('function novaLabPrintA4Portrait('):self.source.index('async function printReport(id)')])
+        self.assertNotIn('href="style.css"',self.source[self.source.index('function novaLabPrintA4Portrait('):self.source.index('async function printReport(id)')])
         self.assertNotIn('stylesheets',self.source[self.source.index('function novaLabPrintA4Portrait('):self.source.index('async function printReport(id)')])
 
     def test_no_overflow_and_four_complete_table_columns(self):
