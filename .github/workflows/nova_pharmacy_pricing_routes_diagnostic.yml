@@ -1,0 +1,57 @@
+name: NOVA pharmacy pricing routes read-only source audit
+on:
+  push:
+    branches: [feature/royallab-full-migration-20261111]
+    paths:
+      - '.github/workflows/nova_pharmacy_pricing_routes_diagnostic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trace all price editors and POS display using original ZIP (no application changes)
+        shell: bash
+        run: |
+          python - <<'PY'
+          from zipfile import ZipFile
+          import re,ast
+          with ZipFile('NOVA_Hospital_GitHub_Ready_Source.zip') as z:
+            for fn in ('pharmacy/app.py','pharmacy/static/app.js','pharmacy/static/ux_v14.js'):
+              src=z.read(fn).decode('utf-8-sig')
+              ls=src.splitlines()
+              print('===== SOURCE',fn,'LINES',len(ls),'=====')
+              if fn.endswith('app.py'):
+                tree=ast.parse(src)
+                words=['package','product','catalog','price','sell','purchase','sale','stock','adjust','update','edit','unit','return']
+                defs=[n for n in tree.body if isinstance(n, (ast.FunctionDef,ast.AsyncFunctionDef)) and any(w in n.name.lower() for w in words)]
+                print('FUNCTIONS',[(n.name,n.lineno,n.end_lineno) for n in defs])
+                for n in defs:
+                  if n.name in ('catalog','products','create_product','update_product','get_product','sale','sell','purchase','stock_adjust','price_history','product','update_package','update_prices','packages','product_save','price_update'):
+                    print('---- FULL FUNCTION',n.name,n.lineno,n.end_lineno,'----')
+                    for i in range(n.lineno-1,min(n.end_lineno,n.lineno+140)):
+                      print(str(i+1)+': '+ls[i][:1900])
+                for i,l in enumerate(ls):
+                  if (re.search(r'UPDATE packages SET sale_price|INSERT INTO packages|SELECT .{0,120}sale_price|\x27/api/v1/products|\x27/api/v1/product|\x27/api/v1/package|\x27/api/v1/sale',l,re.I) and len(l)<5000):
+                    print('PRICE_SQL/ROUTE',i+1,l[:1600])
+              else:
+                for i,l in enumerate(ls):
+                  if re.search(r'^(?:async )?function\s+|^const\s+\w+\s*=|^let\s+\w+\s*=',l):
+                    if re.search(r'price|prod|catalog|sku|pack|save|edit|sale|refresh|search|purchase|buy|unit|pos',l,re.I):
+                      print('UI_FN',i+1,l[:650])
+                patterns = [
+                  r'function\s+(?:product|catalog|editProduct|saveProduct|pos|filterCards|skuPack|refresh|buy|purchase)\b',
+                  r'تعديل سعر البيع',r'السعر/الباركود',r'العبوات والأسعار',r'function saleTotal\b',
+                  r'function\s+nova\w+Price',r'function\s+price',r'sale_price',
+                ]
+                hits=[i for i,l in enumerate(ls) if any(re.search(p,l,re.I) for p in patterns)]
+                seen=set()
+                for i in hits[:110]:
+                  lo=max(0,i-3);hi=min(len(ls),i+6)
+                  for n in range(lo,hi):
+                    if n not in seen:
+                      print('UI_LINE',n+1,ls[n][:2200])
+                      seen.add(n)
+          PY
