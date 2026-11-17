@@ -4,7 +4,7 @@ import sqlite3
 from pathlib import Path
 src=Path('pharmacy/app.py').read_text(encoding='utf-8')
 tree=ast.parse(src)
-names={'nova_sale_price_catalog','nova_manual_sale_price','nova_manual_price_history'}
+names={'nova_sale_price_catalog','nova_manual_sale_price','nova_manual_price_history','nova_pricing_apply'}
 funcs=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in names]
 assert {n.name for n in funcs}==names
 scope={}
@@ -13,17 +13,21 @@ c=sqlite3.connect(':memory:',isolation_level=None)
 c.row_factory=sqlite3.Row
 c.executescript("""
 CREATE TABLE products(id INTEGER PRIMARY KEY,name TEXT,strength TEXT,active INTEGER);
-CREATE TABLE packages(id INTEGER PRIMARY KEY,product_id INTEGER,unit_name TEXT,barcode TEXT,sale_price INTEGER);
+CREATE TABLE packages(id INTEGER PRIMARY KEY,product_id INTEGER,unit_name TEXT,barcode TEXT,sale_price INTEGER,factor INTEGER DEFAULT 1,is_default INTEGER DEFAULT 1);
 CREATE TABLE stock_movements(id INTEGER PRIMARY KEY,package_id INTEGER,qty INTEGER);
 CREATE TABLE sales(id INTEGER PRIMARY KEY,total INTEGER);
 CREATE TABLE audit(id INTEGER PRIMARY KEY,created_at TEXT DEFAULT CURRENT_TIMESTAMP,user_id INTEGER,action TEXT,details TEXT);
 INSERT INTO products VALUES(1,'Panadol','500mg',1);
-INSERT INTO packages VALUES(1,1,'box','ABC123',6000);
+INSERT INTO packages(id,product_id,unit_name,barcode,sale_price) VALUES(1,1,'box','ABC123',6000);
 INSERT INTO stock_movements VALUES(1,1,50);
 INSERT INTO sales VALUES(1,6000);
 """)
 import json
-scope.update(begin=lambda c:c.execute('BEGIN IMMEDIATE'),finish=lambda c:c.execute('COMMIT'),
+scope.update(one=lambda c,sql,args=():c.execute(sql,args).fetchone(),
+             query=lambda c,sql,args=():c.execute(sql,args).fetchall(),
+             posint=lambda v,label:int(v) if int(v)>0 else (_ for _ in ()).throw(ValueError(label)),
+             amt=lambda v,label:int(v) if str(v).isdigit() else (_ for _ in ()).throw(ValueError(label)),
+             begin=lambda c:c.execute('BEGIN IMMEDIATE'),finish=lambda c:c.execute('COMMIT'),
              rollback=lambda c:c.execute('ROLLBACK'),
              audit=lambda c,uid,action,details:c.execute('INSERT INTO audit(user_id,action,details) VALUES(?,?,?)',(uid,action,json.dumps(details))))
 find=scope['nova_sale_price_catalog'];edit=scope['nova_manual_sale_price']
