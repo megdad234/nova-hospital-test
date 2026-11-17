@@ -1,7 +1,7 @@
 name: NOVA Hospital - Build and Test Windows Setup
 on:
   push:
-    branches: [main, feature/royallab-full-migration-20261111, feature/nova-unified-pharmacy-pricing-20261117]
+    branches: [main, feature/royallab-full-migration-20261111, feature/nova-unified-pharmacy-pricing-20261117, feature/nova-lab-print-hardfix-20261117]
     paths:
       - 'NOVA_Hospital_GitHub_Ready_Source.zip'
       - '.github/workflows/nova_build.yml'
@@ -108,6 +108,9 @@ on:
       - 'tests/test_royallab_source_bool.py'
       - '.github/ci/royallab_lab_print_patch.py'
       - '.github/ci/royallab_lab_a4_css_patch.py'
+      - '.github/ci/nova_lab_portrait_frame_patch.py'
+      - '.github/ci/nova_lab_portrait_print.css'
+      - 'tests/test_nova_lab_portrait_frame.py'
       - 'tests/test_royallab_lab_a4_css_patch.py'
       - 'tests/test_royallab_lab_print_patch.py'
       - '.github/ci/royallab_source_bundle_preflight.py'
@@ -530,6 +533,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'NOVA lab filtered queue UI invalid' }
           python -m unittest discover -s tests -p 'test_nova_lab_queue_patch.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'NOVA installed lab queue UI regression failed' }
+      - name: Apply isolated A4 portrait laboratory printing — Edge and Chrome hardfix
+        shell: pwsh
+        run: |
+          python -m py_compile .github/ci/nova_lab_portrait_frame_patch.py
+          if ($LASTEXITCODE -ne 0) { throw 'Lab portrait print patch Python syntax failed' }
+          python .github/ci/nova_lab_portrait_frame_patch.py
+          if ($LASTEXITCODE -ne 0) { throw 'Lab print isolation patch rejected; installer blocked' }
+          node --check hospital/static/app.js
+          if ($LASTEXITCODE -ne 0) { throw 'Lab isolated portrait report JS invalid; installer blocked' }
+          python -m unittest discover -s tests -p 'test_nova_lab_portrait_frame.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'A4 portrait lab report regression failed; installer blocked' }
       - name: Bundle pinned Royal Lab original catalog into Windows source
         shell: pwsh
         env:
