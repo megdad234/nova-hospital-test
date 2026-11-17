@@ -32,7 +32,7 @@ class LabA4PortraitTests(unittest.TestCase):
         # JS lab report is still the original report endpoint and clinical data.
         report=src[i:src.find('\nfunction ',i+30) if src.find('\nfunction ',i+30)>0 else i+14000]
         self.assertIn("api('lab/report/'+id)",report)
-        self.assertIn('novaLabPrintA4Portrait(content)',report)
+        self.assertIn('novaLabPrintA4Portrait(html)',report)
         self.assertNotIn("document.body.classList.add('printing-lab')",report)
         self.assertNotIn('window.print()',report)
         self.assertIn('reportMarkup',src)
@@ -76,7 +76,7 @@ class LabA4PortraitTests(unittest.TestCase):
         helper=src[src.index('\n/* NOVA_LAB_ISOLATED_A4_PORTRAIT_V2 */'):
                    src.index('async function printReport(id)')]
         original=src.replace(helper,'',1).replace(
-            'novaLabPrintA4Portrait(content)',self.module.OLD_PRINT,1)
+            '    novaLabPrintA4Portrait(html);',self.module.OLD_PRINT,1)
         self.assertEqual(self.module.patch(original,self.css),src)
         with self.assertRaises(RuntimeError):
             self.module.patch(src,self.css)
