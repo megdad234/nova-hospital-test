@@ -344,4 +344,18 @@ UI.write_text(js,encoding='utf-8')
 
 client=Path('.github/ci/nova_unified_pricing_ui.js').read_text(encoding='utf-8')
 Path('pharmacy/static/nova_manual_price_editor.js').write_text(client,encoding='utf-8')
+# Legacy upgrade fixture used the previous price-only update API. Keep its
+# original guarantee (an upgrade does not overwrite a configured price) while
+# supplying the new required optimistic-concurrency token. No test is skipped.
+legacy_test=Path('pharmacy/tests/test_workstation_upgrade.py')
+if legacy_test.exists():
+    t=legacy_test.read_text(encoding='utf-8')
+    old="app.edit_package(self.c,{'package_id':pkg,'sale_price':8900},self.uid)"
+    new=("app.edit_package(self.c,{'package_id':pkg,'sale_price':8900,"
+         "'old_sale_price':self.c.execute("
+         "'SELECT sale_price FROM packages WHERE id=?',(pkg,)).fetchone()[0]},self.uid)")
+    if t.count(old)!=1:
+        raise RuntimeError('NOVA_UPGRADE_PRICE_TEST_CONTRACT_CHANGED')
+    legacy_test.write_text(t.replace(old,new,1),encoding='utf-8')
+
 print('NOVA_UNIFIED_PRICING_APPLIED')
