@@ -1,0 +1,41 @@
+name: NOVA lab printer exact source audit
+on:
+  push:
+    branches: [feature/nova-lab-print-hardfix-20261117]
+    paths: ['.github/workflows/nova_lab_print_root_cause.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exact source CSS page rules and lab print DOM
+        shell: bash
+        run: |
+          python - <<'PY'
+          import zipfile,re
+          from pathlib import Path
+          with zipfile.ZipFile("NOVA_Hospital_GitHub_Ready_Source.zip") as z:
+              css=z.read("hospital/static/style.css").decode("utf-8-sig")
+              js=z.read("hospital/static/app.js").decode("utf-8-sig")
+              html=z.read("hospital/index.html").decode("utf-8-sig")
+          ls=css.splitlines()
+          print("ORIGINAL CSS LENGTH",len(css),"LINES",len(ls))
+          print("PAGE/PORTRAIT/LANDSCAPE RULES")
+          pat=re.compile(r'@page|landscape|portrait|printing-lab|#print-area|lab-print|@media print|print-only|width:.*mm',re.I)
+          for i,l in enumerate(ls):
+              if pat.search(l):
+                  print(str(i+1)+": "+l[:600])
+          print("CSS END:",css[-7500:])
+          print("LAB JS PRINTOUT")
+          for x in ('async function printReport(id)','function printReport(', 'window.print()', 'printing-lab'):
+              for m in list(re.finditer(re.escape(x),js))[:8]:
+                  print(x,'pos',m.start(),js[max(0,m.start()-250):m.start()+5800][:5800])
+          print("HTML CSS REFERENCES:",*[l for l in html.splitlines() if 'style.css' in l or 'app.js' in l or 'print-area' in l],sep="\n")
+          print("BATCH04 print route patch references")
+          patch=Path('.github/ci/nova_batch04_lab_reception.py').read_text(encoding='utf-8')
+          for m in list(re.finditer(r'printReport|lab-results|@page|landscape|print-area|printing-lab',patch,re.I))[:24]:
+              print('OFFSET',m.start(),patch[max(0,m.start()-90):m.start()+1100][:1300])
+          PY
