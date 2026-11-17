@@ -7,6 +7,7 @@ This patch creates a clean SAME-ORIGIN print document (hidden iframe) with
 a single UNNAMED @page A4 portrait; pharmacy and receipts are untouched.
 """
 import json
+import re
 from pathlib import Path
 
 REPORT_SIGNATURE = "async function printReport(id)"
@@ -23,7 +24,7 @@ def patch(source, css):
         raise RuntimeError("Lab print hardfix already applied")
     if source.count(REPORT_SIGNATURE)!=1 or source.count(OLD_PRINT)!=1:
         raise RuntimeError("The real NOVA printReport contract changed; refusing speculative patch")
-    if css.count("@page")!=1 or "size: A4 portrait;" not in css:
+    if len(re.findall(r'(?m)^\\s*@page\\s*\\{',css))!=1 or "size: A4 portrait;" not in css:
         raise RuntimeError("Standalone LAB stylesheet is not exclusively A4 portrait")
     if "@media print" not in css or "table-layout:fixed" not in css:
         raise RuntimeError("Standalone LAB table print CSS missing")
