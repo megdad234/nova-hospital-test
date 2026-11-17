@@ -155,8 +155,40 @@ historyBtn.onclick=async()=>{
    }
  }catch(e){if(v===version)status.textContent=e.message}
 };
-function open(){panel.hidden=false;search.focus();if(search.value.trim().length>=2)doSearch()}
+function open(packageId){
+ if(typeof packageId==='number'){
+   const pack=skuPack(packageId);
+   if(pack)search.value=pack.product.name;
+ }
+ panel.hidden=false;search.focus();if(search.value.trim().length>=2)doSearch();
+}
 window.novaOpenUnifiedPrices=open;
+
+// Old medicine catalogue's mixed price/barcode modal is separated.
+// Barcode edits cannot write the sale_price column, even with stale UI state.
+window.novaSaveBarcodeOnly=async id=>{
+ const btn=document.getElementById('nova-only-barcode-save');
+ if(btn)btn.disabled=true;
+ try{
+   await request('package',{package_id:id,barcode:v('edit-pk-barcode')});
+   closeModal();
+   if(typeof refresh==='function')await refresh();
+   if(typeof redraw==='function')redraw();
+   if(typeof toast==='function')toast('تم حفظ الباركود دون تغيير أسعار البيع');
+ }catch(e){if(typeof toast==='function')toast(e.message,true)}
+ finally{if(btn)btn.disabled=false}
+};
+editPackageModal=function(id){
+ const pack=skuPack(id);
+ if(!pack)return;
+ const head=el('div');
+ const barcode=f('باركود العبوة','edit-pk-barcode','text',pack.barcode||'');
+ const info='<div class="help">السعر الحالي: '+money(pack.sale_price)+
+  ' · أسعار العلبة والشريط تُدار من شاشة الأسعار الموحدة. حفظ الباركود لا يغير السعر.</div>';
+ const buttons='<div class="actions section"><button id="nova-only-barcode-save" class="btn" onclick="novaSaveBarcodeOnly('+Number(id)+')">حفظ الباركود فقط</button>'+
+   '<button class="btn outline" onclick="closeModal();novaOpenUnifiedPrices('+Number(id)+')">تعديل أسعار جميع التعبئات</button></div>';
+ modal('باركود عبوة · '+pack.product.name,barcode+info+buttons);
+};
 document.addEventListener('DOMContentLoaded',()=>{
  document.body.append(panel);
  const launch=el('button','إدارة أسعار البيع الموحدة');
