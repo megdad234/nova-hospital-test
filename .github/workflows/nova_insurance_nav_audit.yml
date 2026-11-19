@@ -1,0 +1,31 @@
+name: Read-only NOVA insurance configuration navigation audit
+on:
+  push:
+    branches: [audit/nova-insurance-navigation-20261119]
+    paths: ['.github/workflows/nova_insurance_nav_audit.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Read original finance and insurance management routes
+      shell: bash
+      run: |
+        python - <<'PY'
+        import zipfile,re,ast
+        with zipfile.ZipFile("NOVA_Hospital_GitHub_Ready_Source.zip") as z:
+          for fname in ("hospital/finance.py","hospital/gateway.py","hospital/static/app.js","pharmacy/app.py","pharmacy/static/app.js"):
+            if fname not in z.namelist():continue
+            lines=z.read(fname).decode("utf-8-sig").splitlines()
+            print("======",fname,len(lines),"lines======")
+            look=re.compile(r"insur|insurer|insurance|شركة تأمين|شركة التأمين|جهة التأمين|إضافة.*شركة|insurance_contract|partners\b|claims|التأمين والمطالبات|إعدادات الخدمات|إعدادات التأمين",re.I)
+            hits=[i for i,l in enumerate(lines) if look.search(l)]
+            if fname.endswith("app.js"):
+              for i in hits[:100]:
+                print(f"{i+1}: {lines[i][:650]}")
+            else:
+              for i in hits[:115]:
+                print(f"{i+1}: {lines[i][:750]}")
+        PY
