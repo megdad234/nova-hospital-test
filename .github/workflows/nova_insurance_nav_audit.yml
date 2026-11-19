@@ -81,4 +81,25 @@ jobs:
               p=text.find(pattern)
               if p>=0:print('FUNCTION',pattern,'OFFSET',p,'EXCERPT',text[p:p+4800][:4800])
         print('===== END MONTHLY CLAIM =====')
+        print("===== MONTHLY CLAIMS DATE FLOW =====")
+        with zipfile.ZipFile("NOVA_Hospital_GitHub_Ready_Source.zip") as z:
+          for fname in ("hospital/static/admin-ui.js","hospital/admin.py","hospital/gateway.py","hospital/static/finance-ui.js","pharmacy/app.py","pharmacy/static/app.js"):
+            if fname not in z.namelist():continue
+            raw=z.read(fname).decode('utf-8-sig')
+            print("FILE",fname,len(raw))
+            for term in ['function viewAdminPage','adminInsurance','admLoadClaims','function admCompanyPicker','function admClaimRows','function admInsuranceForm','function wireAdminPage','function admDate','function admToolbar','admin/claims','def insurer_claims','def admin_report','def insurance_list','def claim_create','function newClaim','function insurance','function newInsuranceContract']:
+              begin=0
+              while True:
+                hit=raw.find(term,begin)
+                if hit<0:break
+                print("=====",fname,term,"at",hit)
+                print(raw[max(0,hit-160):hit+2600].replace("\n"," "))
+                begin=hit+len(term)
+                if fname.endswith('.py'):break
+            if fname=="hospital/static/admin-ui.js":
+              lines=raw.splitlines()
+              for idx,line in enumerate(lines):
+                if re.search(r'from|to|date|created_at|period|month|من تاريخ|إلى تاريخ|التأمين والمطالبات|كشف|مطالبات',line,re.I):
+                  print("DATE UI LINE",idx+1,line[:3500])
+        print("==== MONTHLY AUDIT END ====")
         PY
