@@ -25,7 +25,7 @@ jobs:
                 if i<105:print(f'{i+1}: {line[:9000]}')
             elif path.endswith('admin.py'):
               for i,line in enumerate(ls):
-                if re.search(r'def .*(report|claims|insurance|settle|period|date)|from_date|to_date|date_from|date_to|start_date|end_date|between|BETWEEN|created_at|insurance\.companies',line,re.I):
+                if 45 <= i+1 <= 65 or 121 <= i+1 <= 150 or 230 <= i+1 <= 242:
                   print(f'{i+1}: {line[:2500]}')
             elif path.endswith('finance-ui.js'):
               for i,line in enumerate(ls):
