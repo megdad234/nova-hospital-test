@@ -42,6 +42,29 @@ jobs:
             for i,line in enumerate(ls):
               if re.search(r'financeSettingsView|wireFinanceSettings|upsert-insurer|insurer-form|insurer-name|إضافة شركة تأمين|حفظ شركة التأمين|شركة التأمين|insurerSave|insurerRates',line,re.I):
                 print('LINES',i+1,line[:5000])
+        print("======= CLAIM DETAIL / DATE RANGE CONTRACT =======")
+        with zipfile.ZipFile("NOVA_Hospital_GitHub_Ready_Source.zip") as z:
+          for fname in ("hospital/static/admin-ui.js","hospital/admin.py","hospital/gateway.py","pharmacy/app.py","pharmacy/static/app.js"):
+            if fname not in z.namelist():continue
+            content=z.read(fname).decode("utf-8-sig")
+            print("#####",fname,"#####")
+            if fname.endswith('admin-ui.js'):
+              for kw in ("admClaimsTable","admCompanyPicker","admLoadClaims","admExportClaims","admCSV","admPrint","viewAdminPage","admin-insurance","admGetRange","dateFrom","adminState","admLoadReport"):
+                pos=content.find(kw)
+                if pos>=0:print("SECTION",kw,"\n",content[max(0,pos-240):min(len(content),pos+3400)])
+            elif fname=="hospital/admin.py":
+              for kw in ("def insurer_claims(","def reports(","def report(","def insurance_","def get_insurer_","def admin_report("):
+                pos=content.find(kw)
+                if pos>=0:print("SECTION",kw,"\n",content[pos:min(len(content),pos+6000)])
+            elif fname=="hospital/gateway.py":
+              for kw in ("path=='/api/hospital/admin/claims'","path=='/api/hospital/admin/report'"):
+                pos=content.find(kw)
+                if pos>=0:print("SECTION",kw,"\n",content[max(0,pos-300):pos+750])
+            elif fname=="pharmacy/app.py":
+              for kw in ("def claim_create(","def insurance_list("):
+                pos=content.find(kw)
+                if pos>=0:print("SECTION",kw,"\n",content[pos:pos+3600])
+        print("===== END CLAIM DETAIL / DATE RANGE =====")
         print("===== END INSURANCE UI =====")
         print('===== MONTHLY CLAIM READONLY ROUTES =====')
         with zipfile.ZipFile("NOVA_Hospital_GitHub_Ready_Source.zip") as z:
