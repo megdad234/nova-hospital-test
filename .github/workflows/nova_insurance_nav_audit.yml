@@ -43,4 +43,19 @@ jobs:
               if re.search(r'financeSettingsView|wireFinanceSettings|upsert-insurer|insurer-form|insurer-name|إضافة شركة تأمين|حفظ شركة التأمين|شركة التأمين|insurerSave|insurerRates',line,re.I):
                 print('LINES',i+1,line[:5000])
         print("===== END INSURANCE UI =====")
+        print('===== MONTHLY CLAIM READONLY ROUTES =====')
+        with zipfile.ZipFile("NOVA_Hospital_GitHub_Ready_Source.zip") as z:
+          for name,patterns in (
+            ("hospital/static/admin-ui.js",["function admCompanyPicker","function admClaimsTable","async function admLoadClaims","function admInsuranceForm","function viewAdminPage","function wireAdminPage"]),
+            ("hospital/admin.py",["def insurer_claims","def settlements","def admin_report","def overview","def insurance"]),
+            ("hospital/static/finance-ui.js",["function viewClaims","function wireClaims"]),
+            ("pharmacy/app.py",["def claim_create","def insurance_list"]),
+            ("pharmacy/static/app.js",["function claims","function newClaim","function saveClaim"])):
+            if name not in z.namelist():continue
+            text=z.read(name).decode('utf-8-sig')
+            print('FILE',name)
+            for pattern in patterns:
+              p=text.find(pattern)
+              if p>=0:print('FUNCTION',pattern,'OFFSET',p,'EXCERPT',text[p:p+4800][:4800])
+        print('===== END MONTHLY CLAIM =====')
         PY
