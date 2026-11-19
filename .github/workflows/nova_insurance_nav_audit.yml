@@ -28,4 +28,19 @@ jobs:
             else:
               for i in hits[:115]:
                 print(f"{i+1}: {lines[i][:750]}")
+        print("====== INSURER SETTINGS FRONTEND ======")
+        with zipfile.ZipFile("NOVA_Hospital_GitHub_Ready_Source.zip") as z:
+          files=[n for n in z.namelist() if n.startswith("hospital/") and (n.endswith('.js') or n.endswith('.html'))]
+          print("ALL WEB FILES",files)
+          for fname in files:
+            content=z.read(fname).decode('utf-8-sig')
+            patterns=['financeSettingsView','wireFinanceSettings','upsert-insurer','insurer-form','insurer-name','شركة تأمين جديدة','إضافة شركة تأمين','insurer_id','insurers']
+            hits=[(term,content.find(term)) for term in patterns if term in content]
+            if not hits:continue
+            print('FILE',fname,'HITS',hits)
+            ls=content.splitlines()
+            for i,line in enumerate(ls):
+              if re.search(r'financeSettingsView|wireFinanceSettings|upsert-insurer|insurer-form|insurer-name|إضافة شركة تأمين|حفظ شركة التأمين|شركة التأمين|insurerSave|insurerRates',line,re.I):
+                print('LINES',i+1,line[:5000])
+        print("===== END INSURANCE UI =====")
         PY
