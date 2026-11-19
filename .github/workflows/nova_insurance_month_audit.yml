@@ -1,0 +1,42 @@
+name: NOVA insurance date filter audit
+on:
+  push:
+    branches: [audit/nova-insurance-navigation-20261119]
+    paths: ['.github/workflows/nova_insurance_month_audit.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Read report date filtering and monthly claim source
+      shell: bash
+      run: |
+        python - <<'PY'
+        import zipfile,re
+        with zipfile.ZipFile('NOVA_Hospital_GitHub_Ready_Source.zip') as z:
+          for path in ('hospital/static/admin-ui.js','hospital/admin.py','hospital/static/finance-ui.js','pharmacy/static/app.js','pharmacy/app.py'):
+            if path not in z.namelist():continue
+            ls=z.read(path).decode('utf-8-sig').splitlines()
+            print('===== '+path+' =====')
+            if path.endswith('admin-ui.js'):
+              for i,line in enumerate(ls):
+                if i<105:print(f'{i+1}: {line[:9000]}')
+            elif path.endswith('admin.py'):
+              for i,line in enumerate(ls):
+                if re.search(r'def .*(report|claims|insurance|settle|period|date)|from_date|to_date|date_from|date_to|start_date|end_date|between|BETWEEN|created_at|insurance\.companies',line,re.I):
+                  print(f'{i+1}: {line[:2500]}')
+            elif path.endswith('finance-ui.js'):
+              for i,line in enumerate(ls):
+                if re.search(r'function viewClaims|function wireClaims|from.*date|month|period',line,re.I):
+                  print(f'{i+1}: {line[:2500]}')
+            elif path.endswith('pharmacy/static/app.js'):
+              for i,line in enumerate(ls):
+                if re.search(r'function newClaim|function claims\(|function saveClaim|function insurance\(',line,re.I):
+                  print(f'{i+1}: {line[:8000]}')
+            else:
+              for i,line in enumerate(ls):
+                if re.search(r'def claim_create|def insurance_list|claim_sales|created_at|period=',line,re.I):
+                  if 655<=i<=719:print(f'{i+1}: {line[:2500]}')
+        PY
